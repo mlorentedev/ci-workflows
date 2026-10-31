@@ -63,4 +63,4 @@ jobs:
           tar -xzf "${tarball}"
       # ubuntu-latest ships yq, which the tests read the workflows with.
       - name: Run the workflow shape tests
-        run: "./bats-core-${BATS_VERSION}/bin/bats tests/"
+        run: '"./bats-core-${BATS_VERSION}/bin/bats" tests/'
