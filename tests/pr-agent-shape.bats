@@ -16,7 +16,7 @@ declares_secrets() {
     [ "$(yq '.on.workflow_call.secrets.PR_AGENT_ANTHROPIC_API_KEY.required' "$1")" = "false" ]
 }
 
-no_secrets_inherit() { ! grep -Eq 'secrets:[[:space:]]*inherit' "$1"; }
+no_secrets_inherit() { [ "$(yq '[.jobs[].secrets | select(. == "inherit")] | length' "$1")" = "0" ]; }
 
 no_branch_literal() { ! yq '... comments=""' "$1" | grep -Ew 'main|master'; }
 
@@ -30,7 +30,11 @@ requires_dotf_version() {
   [ "$(yq '.on.workflow_call.inputs.dotf_version.required' "$1")" = "true" ]
 }
 
-verifies_checksum() { grep -q 'checksums\.txt' "$1" && grep -q 'sha256sum -c' "$1"; }
+# Reads the commands the steps run, so a comment naming them does not count.
+verifies_checksum() {
+  yq '.jobs[].steps[]?.run // ""' "$1" | grep -Ev '^[[:space:]]*#' |
+    grep -E 'checksums\.txt.*sha256sum -c|sha256sum -c.*checksums\.txt'
+}
 
 assert_rule() {
   run "$1" "${WORKFLOW}"
