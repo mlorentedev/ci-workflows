@@ -43,3 +43,24 @@ jobs:
       # file under .github/workflows/.
       - name: Lint workflows and their shell (actionlint + shellcheck)
         run: ./actionlint -color -shellcheck=shellcheck
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      BATS_VERSION: 1.13.0
+      BATS_SHA256: a85e12b8828271a152b338ca8109aa23493b57950987c8e6dff97ba492772ff3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install bats
+        run: |
+          tarball="bats-${BATS_VERSION}.tar.gz"
+          curl -fsSLo "${tarball}" \
+            "https://github.com/bats-core/bats-core/archive/refs/tags/v${BATS_VERSION}.tar.gz"
+          echo "${BATS_SHA256}  ${tarball}" | sha256sum -c -
+          tar -xzf "${tarball}"
+      # ubuntu-latest ships yq, which the tests read the workflows with.
+      - name: Run the workflow shape tests
+        run: "./bats-core-${BATS_VERSION}/bin/bats tests/"

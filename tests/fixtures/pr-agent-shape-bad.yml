@@ -1,0 +1,25 @@
+# Breaks every rule in tests/pr-agent-shape.bats, so each check is shown to fail.
+name: pr-agent
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+    secrets:
+      NAN_API_KEY:
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pr-agent
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "${{ github.workflow_sha }}"
+  nested:
+    uses: ./.github/workflows/other.yml
+    secrets: inherit
