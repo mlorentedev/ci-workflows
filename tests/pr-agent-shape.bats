@@ -4,9 +4,7 @@
 # rule runs against the workflow and against a fixture that breaks it, so a
 # check that stopped matching fails here instead of passing everything.
 
-# The workflow is not written yet. When it lands, point this at
-# .github/workflows/pr-agent.yml and delete pr-agent-shape-good.yml.
-WORKFLOW="${WORKFLOW:-${BATS_TEST_DIRNAME}/fixtures/pr-agent-shape-good.yml}"
+WORKFLOW="${BATS_TEST_DIRNAME}/../.github/workflows/pr-agent.yml"
 BAD="${BATS_TEST_DIRNAME}/fixtures/pr-agent-shape-bad.yml"
 
 only_workflow_call() { [ "$(yq '.on | keys | join(",")' "$1")" = "workflow_call" ]; }

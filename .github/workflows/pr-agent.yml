@@ -1,0 +1,389 @@
+# The PR-Agent reviewer, for any repository in the fleet (ADR-042, TOOL-031).
+# Decisions are `dotf pr gate|preflight|route|guard`, at the release the caller
+# pins. The rationale for each step lives beside the workflow this derives from,
+# dotfiles' .github/workflows/pr-agent.yml.
+#
+# The caller owns triggers, permissions and concurrency, and holds .pr_agent.toml
+# and harness/review-attestation.json, both read from its default branch.
+name: pr-agent
+
+on:
+  workflow_call:
+    inputs:
+      dotf_version:
+        description: The dotf release to install, without the leading v.
+        type: string
+        required: true
+      pool:
+        description: The reviewer pool, `embedded` (the dotf pin's) or a path in the caller.
+        type: string
+        default: embedded
+      declared_model:
+        description: The primary NaN model, openai/<id>. Keep it equal to the pool.
+        type: string
+        required: true
+      declared_fallback_models:
+        description: The other NaN models, a JSON array of openai/<id>.
+        type: string
+        required: true
+    secrets:
+      NAN_API_KEY:
+        required: true
+      PR_AGENT_ANTHROPIC_API_KEY:
+        required: false
+
+jobs:
+  review:
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    if: >
+      (github.event_name == 'pull_request'
+        && github.actor != 'dependabot[bot]'
+        && github.event.pull_request.head.repo.fork == false
+        && !startsWith(github.event.pull_request.head.ref, 'release-please--')) ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request
+        && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+        && startsWith(github.event.comment.body, '/'))
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pr-agent-review-${{ github.repository }}
+      cancel-in-progress: false
+      queue: max
+    timeout-minutes: 34
+    steps:
+      - name: Stamp run start
+        id: start
+        run: echo "started=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+      - name: Record the pull request for the attestation gate
+        id: pr_number
+        if: github.event_name == 'issue_comment'
+        env:
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: printf '%s\n' "$PR_NUMBER" > "$RUNNER_TEMP/pr-number"
+      - name: Publish the pull request number
+        if: github.event_name == 'issue_comment'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: reviewed-pr
+          path: ${{ runner.temp }}/pr-number
+          if-no-files-found: error
+          retention-days: 1
+      - name: Fail if the reviewer has no credential
+        id: credential
+        env:
+          HAS_NAN_API_KEY: ${{ secrets.NAN_API_KEY != '' }}
+        run: |
+          if [ "${HAS_NAN_API_KEY}" != "true" ]; then
+            echo "::error::NAN_API_KEY is not set in this repository's Actions secrets, so PR-Agent cannot review."
+            echo "::error::Remedy: add ci:${GITHUB_REPOSITORY} to NAN_API_KEY's consumers in" \
+              "dotfiles/secrets/registry.yaml, then run: dotf secrets sync ci --repo ${GITHUB_REPOSITORY} NAN_API_KEY"
+            exit 1
+          fi
+      - name: Skip when PR-Agent would receive an empty diff
+        id: reviewable
+        if: steps.credential.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          # The commit of The-PR-Agent/pr-agent audited for the image pinned below.
+          # A bump changes both, from dotfiles' harness/pr-agent-upstream-contract.json.
+          PR_AGENT_REF: 981344be2755e303df501e18e3f60b848a188a80
+        run: |
+          set -uo pipefail
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            pr_state=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" \
+              --jq 'if .merged then "merged" elif .state == "closed" then "closed" elif .draft then "draft" else "open" end' \
+              2>/dev/null) || pr_state=""
+            case "$pr_state" in
+              merged|closed|draft)
+                echo "::notice::PR #${PR_NUMBER} is ${pr_state} now (read from the API, not the event payload); not reviewing it."
+                echo "reviewable=false" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+            esac
+          fi
+          CFG=$(gh api "repos/${GITHUB_REPOSITORY}/contents/.pr_agent.toml?ref=${DEFAULT_BRANCH}" \
+            --jq '.content' 2>/dev/null | base64 -d 2>/dev/null) || CFG=""
+          upstream() { # $1 = path in The-PR-Agent/pr-agent at PR_AGENT_REF; empty on failure
+            gh api "repos/The-PR-Agent/pr-agent/contents/$1?ref=${PR_AGENT_REF}" \
+              --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || true
+          }
+          UPSTREAM_EXT=$(upstream pr_agent/settings/language_extensions.toml)
+          UPSTREAM_HANDLER=$(upstream pr_agent/algo/language_handler.py)
+          FILES=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --paginate \
+            --jq '.[].filename' 2>/dev/null) || FILES=""
+          export CFG FILES UPSTREAM_EXT UPSTREAM_HANDLER
+          kept=$(python3 - <<'PY'
+          import ast, fnmatch, os, re, tomllib
+          ignore = tomllib.loads(os.environ["CFG"]).get("ignore", {})
+          patterns = list(ignore.get("regex", []) or [])
+          for glob in ignore.get("glob", []) or []:
+              patterns.append(fnmatch.translate(glob))
+              if glob.startswith("**/"):
+                  patterns.append(fnmatch.translate(glob[3:]))
+          compiled = [re.compile(p) for p in patterns]
+          ext = os.environ.get("UPSTREAM_EXT", "")
+          bad = {str(e).lower() for e in tomllib.loads(ext).get("bad_extensions", {}).get("default", [])} if ext else set()
+          lits = {}  # is_valid_file's literal lockfile set and suffix tuple, by name
+          for node in ast.walk(ast.parse(os.environ.get("UPSTREAM_HANDLER", ""))):
+              if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name):
+                  try:
+                      lits[node.targets[0].id] = ast.literal_eval(node.value)
+                  except (ValueError, TypeError, SyntaxError):
+                      pass
+          locks = set(lits.get("auto_generated_files_exact", ()))
+          suffixes = tuple(lits.get("auto_generated_suffixes", ()))
+          def typed_out(f):  # is_valid_file at PR_AGENT_REF, inverted
+              return (f.split("/")[-1] in locks or (bool(suffixes) and f.endswith(suffixes))
+                      or f.split(".")[-1].lower() in bad)
+          files = [f for f in os.environ["FILES"].splitlines() if f]
+          if not files:
+              raise SystemExit("no file list")
+          print(sum(1 for f in files if not typed_out(f) and not any(r.match(f) for r in compiled)))
+          PY
+          ) || kept=""
+          if [ "$kept" = "0" ]; then
+            echo "::notice::every file in this PR is in .pr_agent.toml's [ignore] list or of a type" \
+              "PR-Agent never reads (#1417), so PR-Agent" \
+              "has nothing it may read; not running it. This is not a review: review-attestation" \
+              "still needs CodeRabbit or a human (#1618)."
+            echo "reviewable=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "reviewable=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check out the caller's pool
+        if: steps.reviewable.outputs.reviewable != 'false' && inputs.pool != 'embedded'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          sparse-checkout: ${{ inputs.pool }}
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Install dotf
+        if: steps.reviewable.outputs.reviewable != 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DOTF_VERSION: ${{ inputs.dotf_version }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          cd "$RUNNER_TEMP"
+          tarball="dotf_${DOTF_VERSION}_linux_amd64.tar.gz"
+          gh release download "v${DOTF_VERSION}" -R mlorentedev/dotfiles -p "$tarball" -p checksums.txt
+          grep " ${tarball}$" checksums.txt | sha256sum -c -
+          tar -xzf "$tarball" -C bin dotf
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Decide whether this push is reviewed
+        id: push_gate
+        if: github.event.action == 'synchronize'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          SENDER_TYPE: ${{ github.event.sender.type }}
+        run: |
+          set -o pipefail
+          dir=$(mktemp -d)
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate \
+            | jq -s 'add // []' > "$dir/comments.json" || rm -f "$dir/comments.json"
+          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/commits" --paginate \
+            | jq -s 'add // []' > "$dir/commits.json" || rm -f "$dir/commits.json"
+          dotf pr gate --comments "$dir/comments.json" \
+            --commits "$dir/commits.json" --sender-type "${SENDER_TYPE}" | tee -a "$GITHUB_OUTPUT"
+      - name: Probe the declared NaN chain
+        id: models
+        if: steps.reviewable.outputs.reviewable != 'false' && steps.push_gate.outputs.run != 'false'
+        continue-on-error: true
+        env:
+          NAN_API_KEY: ${{ secrets.NAN_API_KEY }}
+          DECLARED_MODEL: ${{ inputs.declared_model }}
+          DECLARED_FALLBACK_MODELS: ${{ inputs.declared_fallback_models }}
+        run: |
+          rc=0
+          dotf pr preflight --model "${DECLARED_MODEL}" \
+            --fallbacks "${DECLARED_FALLBACK_MODELS}" --output "$GITHUB_OUTPUT" || rc=$?
+          echo "exit=${rc}" >> "$GITHUB_OUTPUT"
+          exit "$rc"
+      - name: Draw the reviewer from the pool
+        id: route
+        if: >
+          !cancelled() && steps.credential.outcome == 'success'
+            && steps.reviewable.outcome == 'success'
+            && steps.reviewable.outputs.reviewable != 'false'
+            && steps.push_gate.outputs.run != 'false'
+        env:
+          POOL: ${{ inputs.pool }}
+          NAN_OUTCOME: ${{ steps.models.outcome }}
+          NAN_MODEL: ${{ steps.models.outputs.model }}
+          NAN_FALLBACKS: ${{ steps.models.outputs.fallbacks }}
+          NAN_PREFLIGHT_EXIT: ${{ steps.models.outputs.exit }}
+          PR_AGENT_ANTHROPIC_API_KEY: ${{ secrets.PR_AGENT_ANTHROPIC_API_KEY }}
+          PR_AGENT_PROVIDER: ${{ vars.PR_AGENT_PROVIDER }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+        run: |
+          if pr=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}"); then
+            PR_CHANGED_LINES=$(jq -r '.additions + .deletions' <<<"$pr")
+            PR_LABELS=$(jq -c '[.labels[].name]' <<<"$pr")
+          else
+            PR_CHANGED_LINES="" PR_LABELS="[]"
+          fi
+          export PR_CHANGED_LINES PR_LABELS
+          dotf pr route --pool "${POOL}" --output "$GITHUB_OUTPUT"
+      - name: PR-Agent on Anthropic, drawn first
+        id: pr_agent_anthropic_first
+        if: "!cancelled() && steps.route.outputs.first == 'anthropic'"
+        timeout-minutes: 8
+        continue-on-error: true
+        uses: docker://pragent/pr-agent@sha256:80edef71baa3df28c129d858d4b53784abfc14704c235efb32b6c461d5399a6d  # v0.48.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC__KEY: ${{ secrets.PR_AGENT_ANTHROPIC_API_KEY }}
+          CONFIG__MODEL: ${{ steps.route.outputs.anthropic_model }}
+          CONFIG__MODEL_WEAK: ${{ steps.route.outputs.anthropic_model }}
+          CONFIG__FALLBACK_MODELS: "[]"
+          CONFIG__MAX_MODEL_TOKENS: "200000"
+          CONFIG__CUSTOM_MODEL_MAX_TOKENS: "200000"
+          CONFIG__NO_TEMPERATURE_MODELS: >-
+            ["anthropic/claude-haiku-5-5", "claude-haiku-5-5",
+            "anthropic/claude-sonnet-5-5", "claude-sonnet-5-5"]
+          CONFIG__ENABLE_CLAUDE_ADAPTIVE_THINKING: "true"
+          CONFIG__CLAUDE_ADAPTIVE_THINKING_MODELS_OVERRIDE: '["anthropic/claude-haiku-5-5", "anthropic/claude-sonnet-5-5"]'
+          CONFIG__REASONING_EFFORT: ${{ steps.route.outputs.anthropic_effort }}
+          CONFIG__AI_TIMEOUT: "360"
+          DEFAULT_ANTHROPIC_CHAT_MAX_TOKENS: "40000"
+          CONFIG__MAX_OUTPUT_TOKENS: "40000"
+          CONFIG__PUBLISH_OUTPUT_PROGRESS: false
+          CONFIG__OUTPUT_RUN_DETAILS: "true"
+          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review"]'
+          github_action_config.handle_push_trigger: "true"
+          github_action_config.push_commands: >-
+            ${{ steps.push_gate.outputs.mode == 'incremental' && '["/review -i"]' || '["/review"]' }}
+          github_action_config.push_trigger_ignore_bot_commits: "true"
+          github_action_config.push_trigger_ignore_merge_commits: "true"
+          github_action_config.auto_describe: "false"
+          github_action_config.auto_review: "true"
+          github_action_config.auto_improve: "false"
+          github_action_config.fail_on_tool_errors: "true"
+      - name: Measure whether the Anthropic attempt published
+        id: published_after_anthropic
+        if: >
+          !cancelled() && steps.route.outputs.first == 'anthropic'
+            && steps.route.outputs.second == 'nan'
+            && (github.event_name == 'pull_request'
+              || (github.event_name == 'issue_comment'
+                  && contains(github.event.comment.body, '/review')))
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          BASE_REF: ${{ github.event.repository.default_branch }}
+          STARTED: ${{ steps.start.outputs.started }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
+        run: dotf pr guard --probe --output "$GITHUB_OUTPUT"
+      - name: PR-Agent
+        id: pr_agent
+        if: >
+          !cancelled() && (steps.route.outputs.first == 'nan'
+            || steps.published_after_anthropic.outputs.published == 'false')
+        timeout-minutes: 12
+        continue-on-error: true
+        uses: docker://pragent/pr-agent@sha256:80edef71baa3df28c129d858d4b53784abfc14704c235efb32b6c461d5399a6d  # v0.48.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI__KEY: ${{ secrets.NAN_API_KEY }}
+          OPENAI__API_BASE: https://api.nan.builders/v1
+          CONFIG__MODEL: ${{ steps.route.outputs.nan_model }}
+          CONFIG__FALLBACK_MODELS: ${{ steps.route.outputs.nan_fallbacks }}
+          CONFIG__CUSTOM_MODEL_MAX_TOKENS: "200000"
+          LITELLM__CUSTOM_LLM_PROVIDER: openai
+          LITELLM__FORCE_STREAMING_CUSTOM_LLM_PROVIDER: openai
+          LITELLM__FORCE_STREAMING_API_BASE_SUBSTRINGS: '["api.nan.builders"]'
+          CONFIG__REASONING_EFFORT: low
+          CONFIG__ADDITIONAL_REASONING_EFFORT_MODELS: '["glm5.3-flash"]'
+          CONFIG__RETRY_SAME_MODEL_ON_TIMEOUT: "false"
+          CONFIG__PUBLISH_OUTPUT_PROGRESS: false
+          CONFIG__OUTPUT_RUN_DETAILS: "true"
+          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review"]'
+          github_action_config.handle_push_trigger: "true"
+          github_action_config.push_commands: >-
+            ${{ steps.push_gate.outputs.mode == 'incremental' && '["/review -i"]' || '["/review"]' }}
+          github_action_config.push_trigger_ignore_bot_commits: "true"
+          github_action_config.push_trigger_ignore_merge_commits: "true"
+          github_action_config.auto_describe: "false"
+          github_action_config.auto_review: "true"
+          github_action_config.auto_improve: "false"
+          github_action_config.fail_on_tool_errors: "true"
+
+      - name: Measure whether the NaN attempt published
+        id: published_after_nan
+        if: >
+          !cancelled() && steps.route.outputs.first == 'nan'
+            && steps.route.outputs.second == 'anthropic'
+            && (github.event_name == 'pull_request'
+              || (github.event_name == 'issue_comment'
+                  && contains(github.event.comment.body, '/review')))
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          BASE_REF: ${{ github.event.repository.default_branch }}
+          STARTED: ${{ steps.start.outputs.started }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
+        run: dotf pr guard --probe --output "$GITHUB_OUTPUT"
+      - name: PR-Agent on Anthropic, after NaN published nothing
+        id: pr_agent_anthropic_second
+        if: "!cancelled() && steps.published_after_nan.outputs.published == 'false'"
+        timeout-minutes: 8
+        continue-on-error: true
+        uses: docker://pragent/pr-agent@sha256:80edef71baa3df28c129d858d4b53784abfc14704c235efb32b6c461d5399a6d  # v0.48.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC__KEY: ${{ secrets.PR_AGENT_ANTHROPIC_API_KEY }}
+          CONFIG__MODEL: ${{ steps.route.outputs.anthropic_model }}
+          CONFIG__MODEL_WEAK: ${{ steps.route.outputs.anthropic_model }}
+          CONFIG__FALLBACK_MODELS: "[]"
+          CONFIG__MAX_MODEL_TOKENS: "200000"
+          CONFIG__CUSTOM_MODEL_MAX_TOKENS: "200000"
+          CONFIG__NO_TEMPERATURE_MODELS: >-
+            ["anthropic/claude-haiku-5-5", "claude-haiku-5-5",
+            "anthropic/claude-sonnet-5-5", "claude-sonnet-5-5"]
+          CONFIG__ENABLE_CLAUDE_ADAPTIVE_THINKING: "true"
+          CONFIG__CLAUDE_ADAPTIVE_THINKING_MODELS_OVERRIDE: '["anthropic/claude-haiku-5-5", "anthropic/claude-sonnet-5-5"]'
+          CONFIG__REASONING_EFFORT: ${{ steps.route.outputs.anthropic_effort }}
+          CONFIG__AI_TIMEOUT: "360"
+          DEFAULT_ANTHROPIC_CHAT_MAX_TOKENS: "40000"
+          CONFIG__MAX_OUTPUT_TOKENS: "40000"
+          CONFIG__PUBLISH_OUTPUT_PROGRESS: false
+          CONFIG__OUTPUT_RUN_DETAILS: "true"
+          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review"]'
+          github_action_config.handle_push_trigger: "true"
+          github_action_config.push_commands: >-
+            ${{ steps.push_gate.outputs.mode == 'incremental' && '["/review -i"]' || '["/review"]' }}
+          github_action_config.push_trigger_ignore_bot_commits: "true"
+          github_action_config.push_trigger_ignore_merge_commits: "true"
+          github_action_config.auto_describe: "false"
+          github_action_config.auto_review: "true"
+          github_action_config.auto_improve: "false"
+          github_action_config.fail_on_tool_errors: "true"
+      - name: Fail if no review was published
+        if: >
+          always() && steps.credential.outcome != 'failure'
+            && steps.reviewable.outcome != 'failure'
+            && steps.reviewable.outputs.reviewable != 'false'
+            && steps.push_gate.outputs.run != 'false'
+            && (github.event_name == 'pull_request'
+              || (github.event_name == 'issue_comment'
+                  && contains(github.event.comment.body, '/review')))
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          BASE_REF: ${{ github.event.repository.default_branch }}
+          STARTED: ${{ steps.start.outputs.started }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
+          ATTEMPTS: |
+            ${{ steps.pr_agent_anthropic_first.outcome }} ${{ steps.route.outputs.anthropic_model }}
+            ${{ steps.pr_agent.outcome }} ${{ steps.route.outputs.nan_model }}
+            ${{ steps.pr_agent_anthropic_second.outcome }} ${{ steps.route.outputs.anthropic_model }}
+          ROUTE_NOTE: ${{ steps.route.outputs.note }}
+          ROUTE_OUTCOME: ${{ steps.route.outcome }}
+        run: dotf pr guard
