@@ -176,7 +176,7 @@ jobs:
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Decide whether this push is reviewed
         id: push_gate
-        if: github.event.action == 'synchronize'
+        if: steps.reviewable.outputs.reviewable != 'false' && github.event.action == 'synchronize'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
