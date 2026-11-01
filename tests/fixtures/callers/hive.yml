@@ -1,0 +1,29 @@
+name: pr-agent
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+concurrency:
+  group: pr-agent-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  review:
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    uses: mlorentedev/ci-workflows/.github/workflows/pr-agent.yml@0000000000000000000000000000000000000000
+    with:
+      dotf_version: 0.78.0
+      pool: embedded
+      declared_model: openai/mimo-v2.6-flash
+      declared_fallback_models: '["openai/deepseek-v4-flash", "openai/glm5.3-flash"]'
+    secrets:
+      NAN_API_KEY: ${{ secrets.NAN_API_KEY }}
+      PR_AGENT_ANTHROPIC_API_KEY: ${{ secrets.PR_AGENT_ANTHROPIC_API_KEY }}

@@ -1,0 +1,44 @@
+# Whether a push to a pull request is reviewed: fetches what `dotf pr gate` reads
+# and publishes its decision. The caller installs dotf and owns the event check.
+name: push-gate
+description: Decide with dotf pr gate whether a push to a pull request is reviewed.
+
+inputs:
+  pr_number:
+    description: The pull request the push went to.
+    required: true
+  sender_type:
+    description: The push event's sender.type.
+    required: true
+  token:
+    description: A token that reads the pull request.
+    default: ${{ github.token }}
+
+outputs:
+  run:
+    description: true when the push is reviewed.
+    value: ${{ steps.gate.outputs.run }}
+  mode:
+    description: full or incremental, when run is true.
+    value: ${{ steps.gate.outputs.mode }}
+  reason:
+    description: Why the gate decided that.
+    value: ${{ steps.gate.outputs.reason }}
+
+runs:
+  using: composite
+  steps:
+    - id: gate
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        PR_NUMBER: ${{ inputs.pr_number }}
+        SENDER_TYPE: ${{ inputs.sender_type }}
+      run: |
+        dir=$(mktemp -d)
+        gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate \
+          | jq -s 'add // []' > "$dir/comments.json" || rm -f "$dir/comments.json"
+        gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/commits" --paginate \
+          | jq -s 'add // []' > "$dir/commits.json" || rm -f "$dir/commits.json"
+        dotf pr gate --comments "$dir/comments.json" \
+          --commits "$dir/commits.json" --sender-type "${SENDER_TYPE}" | tee -a "$GITHUB_OUTPUT"
