@@ -93,5 +93,7 @@ fixture with a new shape of consumer.
 ## push-gate
 
 `.github/actions/push-gate` runs `dotf pr gate` and publishes `run`, `mode` and
-`reason`. The caller installs `dotf` first. A gate that errors fails the step,
-so run it with `continue-on-error: true` where an error must mean a full review.
+`reason`. The caller installs `dotf` first. A gate that errors fails the step
+and leaves the outputs empty. Where an error must mean a full review, set
+`continue-on-error: true`, test `run != 'false'` and treat only
+`mode == 'incremental'` as incremental, as `pr-agent.yml` does.
