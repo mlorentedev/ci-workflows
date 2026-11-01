@@ -21,7 +21,9 @@ automation yet. See `README.md` for the consumer contract.
    `on.workflow_call.secrets`; the caller passes each one by name.
 4. **No hard-coded branch names, triggers, `permissions` ceilings or
    `concurrency` groups in a reusable workflow.** The caller owns those. A
-   reusable workflow may declare narrower job-level `permissions:`.
+   reusable workflow may declare narrower job-level `permissions:`, and a
+   repository-wide lane may stay inside a job: that lane is mechanism, and a
+   caller that forgot it would lose the serialisation.
 5. **The public contract is a workflow's `inputs`, `outputs`, `secrets` and
    job ids/names.** Consumers require `<caller job> / <called job>` as a status
    check, so renaming a job, removing an input or adding a required one is a

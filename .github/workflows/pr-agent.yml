@@ -3,8 +3,9 @@
 # pins. The rationale for each step lives beside the workflow this derives from,
 # dotfiles' .github/workflows/pr-agent.yml.
 #
-# The caller owns triggers, permissions and concurrency, and holds .pr_agent.toml
-# and harness/review-attestation.json, both read from its default branch.
+# The caller owns triggers, permissions and workflow-level concurrency, and holds
+# .pr_agent.toml and harness/review-attestation.json, both read from its default
+# branch. The repository-wide review lane stays in the job (AGENTS.md rule 4).
 name: pr-agent
 
 on:
