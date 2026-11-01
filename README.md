@@ -37,6 +37,7 @@ jobs:
 
 - **Secrets are passed by name.** `secrets: inherit` is not used.
 - **The caller owns** triggers, branches, `permissions:` (which caps the called
-  workflow) and `concurrency:`. Workflows here hard-code no branch name.
+  workflow) and workflow-level `concurrency:`. A repository-wide lane may stay
+  inside a job. Workflows here hard-code no branch name.
 - **The check context is `<caller job> / <called job>`.** Renaming a job here
   renames a required check in every consumer, so it is a breaking change.
