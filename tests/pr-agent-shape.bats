@@ -34,6 +34,12 @@ verifies_checksum() {
     grep -E 'checksums\.txt.*sha256sum -c|sha256sum -c.*checksums\.txt'
 }
 
+# ./ would resolve in the caller, so the workflow reaches its action by a pin.
+uses_pinned_push_gate() {
+  yq '.jobs[].steps[]?.uses // ""' "$1" |
+    grep -Eq '^mlorentedev/ci-workflows/\.github/actions/push-gate@[0-9a-f]{40}$'
+}
+
 assert_rule() {
   run "$1" "${WORKFLOW}"
   [ "${status}" -eq 0 ]
@@ -49,3 +55,4 @@ assert_rule() {
 @test "github.workflow_sha is not read" { assert_rule no_github_workflow_sha; }
 @test "dotf_version is a required input" { assert_rule requires_dotf_version; }
 @test "the dotf install verifies a checksum" { assert_rule verifies_checksum; }
+@test "the push gate is the action, pinned by full SHA" { assert_rule uses_pinned_push_gate; }

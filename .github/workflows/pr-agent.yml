@@ -179,19 +179,10 @@ jobs:
         id: push_gate
         if: steps.reviewable.outputs.reviewable != 'false' && github.event.action == 'synchronize'
         continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          SENDER_TYPE: ${{ github.event.sender.type }}
-        run: |
-          set -o pipefail
-          dir=$(mktemp -d)
-          gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate \
-            | jq -s 'add // []' > "$dir/comments.json" || rm -f "$dir/comments.json"
-          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/commits" --paginate \
-            | jq -s 'add // []' > "$dir/commits.json" || rm -f "$dir/commits.json"
-          dotf pr gate --comments "$dir/comments.json" \
-            --commits "$dir/commits.json" --sender-type "${SENDER_TYPE}" | tee -a "$GITHUB_OUTPUT"
+        uses: mlorentedev/ci-workflows/.github/actions/push-gate@c0dd152d9b43d5d24c991796d072bcfc18cef009 # #4, before v0.1.0
+        with:
+          pr_number: ${{ github.event.pull_request.number }}
+          sender_type: ${{ github.event.sender.type }}
       - name: Probe the declared NaN chain
         id: models
         if: steps.reviewable.outputs.reviewable != 'false' && steps.push_gate.outputs.run != 'false'
