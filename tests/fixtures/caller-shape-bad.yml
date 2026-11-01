@@ -1,0 +1,14 @@
+# Breaks every rule in callers.bats, so a rule that stopped matching fails there.
+name: pr-agent
+
+on: pull_request
+
+jobs:
+  review:
+    permissions:
+      contents: read
+    uses: mlorentedev/ci-workflows/.github/workflows/pr-agent.yml@v0.1.0
+    with:
+      dotf_version: 0.78.0
+      pools: embedded
+    secrets: inherit
