@@ -27,12 +27,12 @@ None.
 
 | Check | Command | Result |
 |---|---|---|
-| Cold-start tests | `bats tests` | 21 tests at a7ece3a, last 8 lines read `ok`; the exit code recorded was the pipeline tail's, not bats' |
+| Cold-start tests | `bats tests` | exit 0, 21 tests, re-run at disarm on d17b120 (workflow files unchanged from a7ece3a) |
 | Lint | `actionlint` | exit 0 |
 | Health | `dotf doctor --quick` | 21 passed, 0 failed |
 | Envelope | `cmp` against the source, `git diff --exit-code 496acd8 -- .agent/unattended.yml` | identical, unmutated |
 | Release | 13 polls of `gh api repos/mlorentedev/dotfiles/releases/latest` | v0.78.0 every time; final read 08:51:32Z, v0.78.0 published 2026-11-01T17:56:35Z |
-| Triage queue | `dotf pr triage-queue` | not applicable: no `harness/review-attestation.json` on this repository's default branch (HTTP 404). No open PRs here |
+| Triage queue | `dotf pr triage-queue` | exit 1: unanswerable, no `harness/review-attestation.json` on this default branch (HTTP 404). `pulls?state=open` lists no PR here, so nothing awaits a disposition |
 
 ## Notes for the next arming (read, not built)
 
