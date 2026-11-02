@@ -1,0 +1,27 @@
+version: 1
+run_id: "ciw-20261102T0550Z"
+armed_by: manu
+armed_at: 2026-11-02T05:50:26Z
+expires_at: 2026-11-02T17:35:26Z
+objective: "Open the ci-workflows PR for v0.2.0 against the released dotf verbs, and leave it reviewed and triaged for the owner."
+worktree: /Users/manu/Projects/worktrees/ci-workflows/chore-autopilot-ciw-20261102t0550z
+branch: chore/autopilot-ciw-20261102t0550z
+scope:
+  write_paths: [".github/workflows/pr-agent.yml", ".github/actions/**", "tests/**", "README.md", ".agent/runs/ciw-20261102T0550Z/**"]
+  frozen_paths: [".github/workflows/lint.yml", "**/AGENTS.md", ".agent/unattended.yml"]
+  max_files: 10
+  max_loc: 300
+allowed_commands: [dotf, gh, git, bats, actionlint, yq, jq, caffeinate]
+queue:
+  source: bitacora
+  filter: "One item: #2893 tasks.md lines 126-129, once dotfiles v0.79.0 is published: declare_unreviewed, skip_branch_prefixes with release-please-- leaving the job if, dotf pr reviewable replacing the inline Python, a dotf_version default, and the kubelab fixture. declared_model and declared_fallback_models stay required until dotf's chain is released."
+  max_items: 1
+budget:
+  max_iterations: 4
+  max_minutes_per_iteration: 90
+  max_consecutive_failures: 2
+authority:
+  merge: never
+  push: true
+  open_pr: true
+  advisor_tier: top
