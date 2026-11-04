@@ -18,6 +18,10 @@ Sample: 84 merged pull requests opened by people, 321.6 hours from open to merge
 | draft | 12.5% |
 | **CI on the final commit** | **5.9%** |
 
+The shares add up to 100.7% because the segments overlap slightly. The last push is approximated by the
+earliest check start on the final commit, so a little time lands in two segments. Each share is computed
+against the 321.6 h total.
+
 - Bot pull requests are the slowest class: Dependabot p50 21–42 h, release-please up to 226 h.
 - 4 of the 5 open Dependabot pull requests had a failing check that nobody was acting on.
 - `review-attestation` often fails several times before it passes.
