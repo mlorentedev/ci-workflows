@@ -121,3 +121,95 @@ fixture with a new shape of consumer.
 and leaves the outputs empty. Where an error must mean a full review, set
 `continue-on-error: true`, test `run != 'false'` and treat only
 `mode == 'incremental'` as incremental, as `pr-agent.yml` does.
+
+## changes
+
+`.github/actions/changes` reports which areas of the repository an event
+touched, so a pull request runs only the jobs it needs (ADR-001 decision 4).
+
+```yaml
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      areas: ${{ steps.changes.outputs.areas }}
+    steps:
+      - uses: actions/checkout@<40-hex-sha> # vX.Y.Z
+        with:
+          persist-credentials: false
+      - id: changes
+        uses: mlorentedev/ci-workflows/.github/actions/changes@<40-hex-sha> # vX.Y.Z
+        with:
+          filters: |
+            docs:
+              - "docs/**"
+              - "**/*.md"
+            code:
+              - "src/**"
+              - "go.mod"
+
+  test:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.areas), 'code')
+    # ...
+```
+
+- **The area map.** `filters` takes
+  [paths-filter](https://github.com/dorny/paths-filter) YAML, either inline or
+  as a path in the repository. Each key is an area and each value is a list of
+  globs. The caller owns the map.
+- **Outputs.**
+  - `areas` is a JSON array of the areas the event touched; it is `[]` when
+    none was touched.
+  - `full` is `true` when every area is reported.
+- **Full runs.** The events listed in `full_run_events` (default:
+  `push schedule workflow_dispatch`) skip the filter and report every area. That
+  is how the default branch and the nightly run end up running everything.
+- **Requirements.**
+  - The repository must be checked out first.
+  - The job needs `pull-requests: read`, because the filter lists a pull
+    request's files through the API.
+  - On a full run, the action reads the map with `yq`. If the runner lacks it,
+    the step fails instead of reporting no areas.
+
+## gate
+
+`.github/actions/gate` is the one check branch protection requires
+(ADR-001 decision 3). It fails unless every job its job needs succeeded or was
+skipped, and it names each job that did not.
+
+```yaml
+  gate:
+    needs: [changes, lint, test]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - uses: mlorentedev/ci-workflows/.github/actions/gate@<40-hex-sha> # vX.Y.Z
+        with:
+          needs: ${{ toJSON(needs) }}
+```
+
+- **`if: always()` is required.** Without it, a failed need skips the gate.
+  GitHub counts a skipped required check as passing, so the pull request could
+  merge red.
+- **A job skipped by `changes` passes the gate, and a cancelled job fails it.**
+  So does an empty `needs`: a gate that guards nothing must not pass.
+- **`gate` sees only its direct needs.** Suppose a job that is listed is skipped
+  because a job that is not listed failed. The gate then passes. List every job
+  that must block the merge in the gate's own `needs`.
+- **Moving branch protection to `gate`.** Do it in two pull requests. The first
+  adds the `gate` job next to the checks that are already required. Once `gate`
+  has reported on the default branch, the second makes `gate` the only required
+  status check and keeps the status contexts that come from outside CI, such as
+  `review-attestation`. After that, the jobs behind `gate` can be renamed,
+  skipped or moved into this repository without touching branch protection
+  again.
+- **On Gitea**, whether the runner resolves these composites from this
+  repository, together with the action paths-filter uses inside them, has not
+  been verified yet. Issue #9 tracks the first Gitea consumer.

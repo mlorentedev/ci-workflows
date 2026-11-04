@@ -1,0 +1,75 @@
+# Which areas an event touched (ADR-001 decision 4). A pull request runs what it
+# touches; the events in full_run_events report every area, so the default
+# branch and the nightly run everything. The caller checks the repository out
+# first, and gates each job on `contains(fromJSON(needs.<job>.outputs.areas), '<area>')`.
+name: changes
+description: Report the areas of the caller's map that an event touched.
+
+inputs:
+  filters:
+    description: The area map, as dorny/paths-filter YAML inline or a path in the repository.
+    required: true
+  full_run_events:
+    description: Space-separated events that report every area as changed.
+    default: push schedule workflow_dispatch
+  token:
+    description: A token that lists the pull request's files.
+    default: ${{ github.token }}
+
+outputs:
+  areas:
+    description: JSON array of the areas the event touched.
+    value: ${{ steps.areas.outputs.areas }}
+  full:
+    description: true when the event reports every area.
+    value: ${{ steps.areas.outputs.full }}
+
+runs:
+  using: composite
+  steps:
+    - id: mode
+      shell: bash
+      env:
+        EVENT: ${{ github.event_name }}
+        FULL_RUN_EVENTS: ${{ inputs.full_run_events }}
+      run: |
+        case " ${FULL_RUN_EVENTS} " in
+          *" ${EVENT} "*) echo "full=true" >>"${GITHUB_OUTPUT}" ;;
+          *) echo "full=false" >>"${GITHUB_OUTPUT}" ;;
+        esac
+
+    - id: filter
+      if: steps.mode.outputs.full != 'true'
+      uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+      with:
+        filters: ${{ inputs.filters }}
+        token: ${{ inputs.token }}
+
+    - id: areas
+      shell: bash
+      env:
+        FULL: ${{ steps.mode.outputs.full }}
+        FILTERS: ${{ inputs.filters }}
+        CHANGED: ${{ steps.filter.outputs.changes }}
+      run: |
+        if [ "${FULL}" != "true" ]; then
+          if ! jq -e 'type == "array"' >/dev/null 2>&1 <<<"${CHANGED:-null}"; then
+            echo "::error::changes: paths-filter gave no list of areas"
+            exit 1
+          fi
+          echo "areas=$(jq -c . <<<"${CHANGED}")" >>"${GITHUB_OUTPUT}"
+          echo "full=false" >>"${GITHUB_OUTPUT}"
+          exit 0
+        fi
+        if ! command -v yq >/dev/null; then
+          echo "::error::changes: a full run reads the area map with yq, which this runner lacks"
+          exit 1
+        fi
+        map="${FILTERS}"
+        [ -f "${FILTERS}" ] && map=$(cat "${FILTERS}")
+        if ! yq -e 'tag == "!!map"' >/dev/null 2>&1 <<<"${map}"; then
+          echo "::error::changes: the area map is not a mapping of area names to paths"
+          exit 1
+        fi
+        echo "areas=$(yq -o=json -I=0 'keys' <<<"${map}")" >>"${GITHUB_OUTPUT}"
+        echo "full=true" >>"${GITHUB_OUTPUT}"
