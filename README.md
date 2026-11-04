@@ -3,6 +3,14 @@
 Shared CI for the `mlorentedev` repositories, referenced rather than copied
 ([ADR-042](https://github.com/mlorentedev/dotfiles/blob/main/docs/adr/adr-042-shared-ci-is-referenced-not-copied.md)).
 
+## The standard
+
+One CI standard for every repository and every forge, with its decisions in
+`dotf` and thin forge adapters here
+([ADR-001](docs/adr/adr-001-one-ci-standard-for-every-forge.md)). The
+measurements behind it, and the catalog of blocks with their adoption, are in
+the [November 2026 baseline](docs/audits/2026-11-ci-baseline.md).
+
 ## What belongs here
 
 - **Reusable workflows** (`on: workflow_call`) in `.github/workflows/`.
