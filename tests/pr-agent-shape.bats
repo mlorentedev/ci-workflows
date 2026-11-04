@@ -42,14 +42,24 @@ steps_running() { # $1 = workflow, $2 = the command the step runs
   yq ".jobs[].steps[]? | select((.run // \"\") | test(\"$2\"))" "$1"
 }
 
-# A caller opts in, and a failed declaration does not stop the review after it.
+# A caller opts in, a comment must ask for a review (never /improve), and a
+# failed declaration does not stop the review after it.
 declare_is_opt_in() {
   local step
   step=$(steps_running "$1" 'dotf pr declare-unreviewed')
   [ -n "${step}" ] &&
     yq '.if' <<<"${step}" | grep -q 'inputs.declare_unreviewed' &&
     yq '.if' <<<"${step}" | grep -q "steps.reviewable.outcome == 'success'" &&
+    yq '.if' <<<"${step}" | grep -qF "contains(github.event.comment.body, '/review')" &&
     [ "$(yq '.["continue-on-error"]' <<<"${step}")" = "true" ]
+}
+
+# A PR nothing would review is skipped before a missing key can fail it.
+skips_before_the_credential_check() {
+  local order
+  order=$(yq '[.jobs.review.steps[].id] | (to_entries | map(select(.value == "reviewable" or .value == "credential")) | map(.value) | join(","))' "$1")
+  [ "${order}" = "reviewable,credential" ] &&
+    [ "$(yq '.jobs.review.steps[] | select(.id == "credential") | .if' "$1")" = "steps.reviewable.outputs.reviewable != 'false'" ]
 }
 
 # With no declared chain, the preflight reads it from the pool the draw reads.
@@ -89,5 +99,6 @@ assert_rule() {
 @test "no step runs an interpreter of its own" { assert_rule no_inline_interpreter; }
 @test "declare_unreviewed is opt-in and cannot stop the review" { assert_rule declare_is_opt_in; }
 @test "with no declared chain the preflight reads the pool" { assert_rule preflight_reads_the_pool; }
+@test "the skip runs before the credential check" { assert_rule skips_before_the_credential_check; }
 @test "the dotf install verifies a checksum" { assert_rule verifies_checksum; }
 @test "the push gate is the action, pinned by full SHA" { assert_rule uses_pinned_push_gate; }

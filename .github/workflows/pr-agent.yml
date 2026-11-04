@@ -21,11 +21,11 @@ on:
         type: string
         default: embedded
       declared_model:
-        description: The primary NaN model, openai/<id>. Set it with declared_fallback_models to override the pool's chain.
+        description: The primary NaN model, openai/<id>. Set both declared inputs to override the pool's chain, or neither; one alone fails the preflight's setup.
         type: string
         default: ""
       declared_fallback_models:
-        description: The other NaN models, a JSON array of openai/<id>. Empty with declared_model reads the chain from the pool.
+        description: The other NaN models, a JSON array of openai/<id> (`[]` for none). See declared_model.
         type: string
         default: ""
       skip_branch_prefixes:
@@ -79,21 +79,9 @@ jobs:
           path: ${{ runner.temp }}/pr-number
           if-no-files-found: error
           retention-days: 1
-      - name: Fail if the reviewer has no credential
-        id: credential
-        env:
-          HAS_NAN_API_KEY: ${{ secrets.NAN_API_KEY != '' }}
-        run: |
-          if [ "${HAS_NAN_API_KEY}" != "true" ]; then
-            echo "::error::NAN_API_KEY is not set in this repository's Actions secrets, so PR-Agent cannot review."
-            echo "::error::Remedy: add ci:${GITHUB_REPOSITORY} to NAN_API_KEY's consumers in" \
-              "dotfiles/secrets/registry.yaml, then run: dotf secrets sync ci --repo ${GITHUB_REPOSITORY} NAN_API_KEY"
-            exit 1
-          fi
       # Before the first decision, which is dotf's: a draft or a skipped branch
       # costs one download.
       - name: Install dotf
-        if: steps.credential.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           DOTF_VERSION: ${{ inputs.dotf_version }}
@@ -135,6 +123,19 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           DIFF: ${{ steps.reviewable.outputs.diff }}
         run: dotf pr declare-unreviewed --diff "${DIFF}"
+      # After the skip, so a PR nothing would review does not fail on a missing key.
+      - name: Fail if the reviewer has no credential
+        id: credential
+        if: steps.reviewable.outputs.reviewable != 'false'
+        env:
+          HAS_NAN_API_KEY: ${{ secrets.NAN_API_KEY != '' }}
+        run: |
+          if [ "${HAS_NAN_API_KEY}" != "true" ]; then
+            echo "::error::NAN_API_KEY is not set in this repository's Actions secrets, so PR-Agent cannot review."
+            echo "::error::Remedy: add ci:${GITHUB_REPOSITORY} to NAN_API_KEY's consumers in" \
+              "dotfiles/secrets/registry.yaml, then run: dotf secrets sync ci --repo ${GITHUB_REPOSITORY} NAN_API_KEY"
+            exit 1
+          fi
       - name: Check out the caller's pool
         if: steps.reviewable.outputs.reviewable != 'false' && inputs.pool != 'embedded'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

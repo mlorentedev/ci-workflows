@@ -55,6 +55,8 @@ assert_rule() {
 # Since v0.2.0 every input has a default, so a caller passes only what it changes.
 # A required input would break every caller pinned below it (AGENTS.md rule 5).
 @test "no input is required" { [ -z "$(required_of inputs)" ]; }
+# hive and kubelab omit pool, so they read the dotf pin's pool through this default.
+@test "pool defaults to embedded" { [ "$(yq '.on.workflow_call.inputs.pool.default' "${WORKFLOW}")" = "embedded" ]; }
 @test "secrets: is a map of declared secrets" { assert_rule passes_only_declared_secrets; }
 @test "secrets: passes every required secret" { assert_rule passes_every_required_secret; }
 @test "the workflow is pinned by full SHA" { assert_rule pins_by_full_sha; }

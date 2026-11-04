@@ -26,9 +26,14 @@ run_step() { PATH="${STUBS}:${PATH}" run bash -eo pipefail "${BATS_TEST_TMPDIR}/
 @test "with nothing declared the chain is the pool's" {
   POOL=harness/reviewer-pool.json run_step
   [ "${status}" -eq 0 ]
-  [ "$(head -3 "${DOTF_ARGS}" | paste -sd' ' -)" = "pr preflight --pool" ]
-  sed -n 4p "${DOTF_ARGS}" | grep -qx 'harness/reviewer-pool.json'
-  ! grep -q -- '--model' "${DOTF_ARGS}"
+  [ "$(paste -sd' ' "${DOTF_ARGS}")" = "pr preflight --pool harness/reviewer-pool.json --output ${GITHUB_OUTPUT}" ]
+}
+
+# One declared input alone is passed through, so dotf refuses it as a setup error
+# (exit 2), which the route reads as a broken setup, rather than a silent pool.
+@test "a half-declared chain reaches dotf as declared" {
+  DECLARED_MODEL=openai/a run_step
+  [ "$(paste -sd' ' "${DOTF_ARGS}")" = "pr preflight --model openai/a --fallbacks  --output ${GITHUB_OUTPUT}" ]
 }
 
 @test "a declared chain replaces the pool's" {
