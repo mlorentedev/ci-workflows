@@ -23,7 +23,7 @@ owner: manu
 
 ## Test status
 
-- Test suite: `bats tests/` reports 57 of 57 ok. `actionlint` reports no findings.
+- Test suite: `bats tests/` reports 59 of 59 ok. `actionlint` reports no findings.
 - The command of every entry in `features.json` exits 0.
 - Manual smoke test: none. A workflow runs neither composite yet. The first consumer is criterion 3 of
   issue #9, which this branch does not close.

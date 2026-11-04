@@ -26,7 +26,7 @@ owner: manu
 
 ## Closing
 
-- [x] Every acceptance criterion from `proposal.md` is covered by at least one test
+- [x] Criteria 1 to 4 are each covered by at least one bats test. Criterion 5, the README, is checked only by the grep in `features.json` entry f5
 - [x] Every acceptance criterion has a matching entry in `features.json`
 - [x] `bats tests/` passes
 - [x] `actionlint` passes

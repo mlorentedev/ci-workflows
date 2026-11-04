@@ -68,6 +68,20 @@ run_gate() {
   [[ "$output" == *"not a JSON object"* ]]
 }
 
+@test "fails when needs holds more than one JSON value" {
+  run_gate '[] {}'
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"not a JSON object"* ]]
+}
+
+@test "fails naming jq when the runner lacks it" {
+  mkdir -p "${BATS_TEST_TMPDIR}/bin"
+  ln -s "$(command -v bash)" "${BATS_TEST_TMPDIR}/bin/bash"
+  PATH="${BATS_TEST_TMPDIR}/bin" run_gate '{"test":{"result":"success"}}'
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"jq"* ]]
+}
+
 @test "fails when a need carries no result" {
   run_gate '{"test":{"outputs":{}}}'
   [ "$status" -ne 0 ]

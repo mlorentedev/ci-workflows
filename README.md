@@ -200,6 +200,9 @@ skipped, and it names each job that did not.
   merge red.
 - **A job skipped by `changes` passes the gate, and a cancelled job fails it.**
   So does an empty `needs`: a gate that guards nothing must not pass.
+- **`gate` sees only its direct needs.** Suppose a job that is listed is skipped
+  because a job that is not listed failed. The gate then passes. List every job
+  that must block the merge in the gate's own `needs`.
 - **Moving branch protection to `gate`.** Do it in two pull requests. The first
   adds the `gate` job next to the checks that are already required. Once `gate`
   has reported on the default branch, the second makes `gate` the only required

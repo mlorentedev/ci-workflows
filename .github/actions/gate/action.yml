@@ -18,7 +18,12 @@ runs:
       env:
         NEEDS: ${{ inputs.needs }}
       run: |
-        if ! jq -e 'type == "object"' >/dev/null 2>&1 <<<"${NEEDS:-null}"; then
+        if ! command -v jq >/dev/null; then
+          echo "::error::gate: reading needs takes jq, which this runner lacks"
+          exit 1
+        fi
+        # Slurped, so input holding several JSON values is rejected, not judged by its last one.
+        if ! jq -se 'length == 1 and (.[0] | type == "object")' >/dev/null 2>&1 <<<"${NEEDS:-null}"; then
           [ -z "${NEEDS}" ] && echo "::error::gate: no needs given" && exit 1
           echo "::error::gate: needs is not a JSON object"
           exit 1

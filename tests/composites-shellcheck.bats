@@ -7,7 +7,8 @@
 ACTIONS="${BATS_TEST_DIRNAME}/../.github/actions"
 
 @test "every composite's run steps pass shellcheck" {
-  command -v shellcheck >/dev/null || skip "shellcheck is not installed"
+  # A missing shellcheck fails rather than skips: nothing else checks this shell.
+  command -v shellcheck >/dev/null || { echo "shellcheck is not installed"; return 1; }
   local checked=0 action i n
   for action in "${ACTIONS}"/*/action.yml; do
     n=$(yq '.runs.steps | length' "${action}")
