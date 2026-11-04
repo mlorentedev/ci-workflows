@@ -4,7 +4,7 @@ armed_by: manu
 armed_at: 2026-11-04T15:45:33Z
 expires_at: 2026-11-05T01:45:33Z
 objective: "Open a draft ci-workflows PR adding the gate and changes composite actions with bats tests and README docs (refs #9), triaged and left for the owner."
-worktree: /Users/manu/Projects/worktrees/ci-workflows/issue-9-gate-changes
+worktree: /Users/manu/Projects/worktrees/ci-workflows/feat-issue-9-gate-changes
 branch: feat/issue-9-gate-changes
 scope:
   write_paths: [".github/actions/changes/**", ".github/actions/gate/**", "tests/**", "specs/**", "README.md", "docs/**", ".agent/runs/ciw-20261104T1545Z/**"]
