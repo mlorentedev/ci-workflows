@@ -40,6 +40,9 @@ None.
 | Shellcheck test ran in CI | run 41861989434 log | `ok 24 every composite's run steps pass shellcheck`, not skipped |
 | Mutation check | broke a gate `run:` line, ran `composites-shellcheck.bats` | failed as expected; file restored |
 | Triage | PR comment | https://github.com/mlorentedev/ci-workflows/pull/17#issuecomment-6636152493 |
+| Triage queue | `dotf pr triage-queue` | exit 1, but nothing is pending: the repository has no `harness/review-attestation.json` (HTTP 404), so there is no registry to read. #17's triage is posted by hand. |
+| LOC budget | `git diff origin/main --numstat -- .github` | 113 executable lines, counting the composites only. Tests, spec and docs are not counted. 11 files in total, under `max_files` 12. |
+| Debt found | missing `.github/dependabot.yml`, so this repository's own pins never move | filed as #18 |
 
 ## Budget spent
 
