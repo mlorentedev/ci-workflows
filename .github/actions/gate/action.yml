@@ -1,0 +1,38 @@
+# The one required check of a repository (ADR-001 decision 3). It passes when
+# every job the caller's gate job needs succeeded or was skipped, and names each
+# one that did not. The caller's job must run `if: always()`: without it a failed
+# need skips the gate, and GitHub counts a skipped required check as passing.
+name: gate
+description: Fail unless every need succeeded or was skipped.
+
+inputs:
+  needs:
+    description: The caller's `toJSON(needs)`.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - id: gate
+      shell: bash
+      env:
+        NEEDS: ${{ inputs.needs }}
+      run: |
+        if ! jq -e 'type == "object"' >/dev/null 2>&1 <<<"${NEEDS:-null}"; then
+          [ -z "${NEEDS}" ] && echo "::error::gate: no needs given" && exit 1
+          echo "::error::gate: needs is not a JSON object"
+          exit 1
+        fi
+        total=$(jq 'length' <<<"${NEEDS}")
+        if [ "${total}" -eq 0 ]; then
+          echo "::error::gate: no needs given, so there is nothing to gate"
+          exit 1
+        fi
+        bad=$(jq -r 'to_entries[]
+          | select(.value.result != "success" and .value.result != "skipped")
+          | "\(.key): \(.value.result // "missing")"' <<<"${NEEDS}")
+        if [ -n "${bad}" ]; then
+          while IFS= read -r line; do echo "::error::gate: ${line}"; done <<<"${bad}"
+          exit 1
+        fi
+        echo "gate: ${total} needs succeeded or were skipped"
