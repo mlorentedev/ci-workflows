@@ -66,17 +66,28 @@ jobs:
       issues: write
     uses: mlorentedev/ci-workflows/.github/workflows/pr-agent.yml@<40-hex-sha> # vX.Y.Z
     with:
-      dotf_version: 0.78.0
-      declared_model: openai/mimo-v2.6-flash
-      declared_fallback_models: '["openai/deepseek-v4-flash", "openai/glm5.3-flash"]'
+      skip_branch_prefixes: release-please--
     secrets:
       NAN_API_KEY: ${{ secrets.NAN_API_KEY }}
       PR_AGENT_ANTHROPIC_API_KEY: ${{ secrets.PR_AGENT_ANTHROPIC_API_KEY }}
 ```
 
-- **Inputs.** `dotf_version`, `declared_model` and `declared_fallback_models` are
-  required. `pool` defaults to `embedded`, which makes the dotf pin the pool pin;
-  a path reads the caller's own pool. Keep the declared chain equal to the pool.
+- **Inputs.** None is required, so bumping the workflow's pin brings the rest.
+
+  | Input | Default | Meaning |
+  |---|---|---|
+  | `dotf_version` | the release this tag was tested with | the dotf release installed, without the `v` |
+  | `pool` | `embedded` | the dotf pin's pool, or a path in the caller |
+  | `declared_model`, `declared_fallback_models` | empty | set both to probe a NaN chain other than the pool's |
+  | `skip_branch_prefixes` | empty | branch prefixes whose `pull_request` runs forfeit the review |
+  | `declare_unreviewed` | `false` | label and explain an ignored-only PR, and clear a stale label |
+
+- **Skipped branches.** A prefix forfeits the review, never grants one: the
+  job still enters the review lane, and `dotf pr reviewable` skips it. A
+  `/review` comment is not subject to it.
+- **Declaring unreviewed.** `declare_unreviewed: true` needs `escape.label` and
+  `escape.section` in the caller's `harness/review-attestation.json`. Without
+  them the step reports an error and the review goes on.
 - **Secrets.** `NAN_API_KEY` is required, `PR_AGENT_ANTHROPIC_API_KEY` optional.
   To grant one, add `ci:<owner>/<repo>` to its consumers in dotfiles'
   `secrets/registry.yaml` and run
@@ -85,6 +96,11 @@ jobs:
   both read from its default branch.
 - **Permissions.** The job asks for the three scopes above; a caller granting
   less fails the run before any step.
+
+**From v0.1.0 to v0.2.0.** The job no longer skips `release-please--` branches
+itself. A caller that uses release-please passes
+`skip_branch_prefixes: release-please--`, or its release PRs start being
+reviewed. `dotf_version` and the declared chain can be dropped.
 
 `tests/fixtures/callers/` holds one caller per consuming shape.
 `tests/callers.bats` checks each against the workflow's interface, so add a
