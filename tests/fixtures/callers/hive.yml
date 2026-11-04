@@ -20,10 +20,7 @@ jobs:
       issues: write
     uses: mlorentedev/ci-workflows/.github/workflows/pr-agent.yml@0000000000000000000000000000000000000000
     with:
-      dotf_version: 0.78.0
-      pool: embedded
-      declared_model: openai/mimo-v2.6-flash
-      declared_fallback_models: '["openai/deepseek-v4-flash", "openai/glm5.3-flash"]'
+      skip_branch_prefixes: release-please--
     secrets:
       NAN_API_KEY: ${{ secrets.NAN_API_KEY }}
       PR_AGENT_ANTHROPIC_API_KEY: ${{ secrets.PR_AGENT_ANTHROPIC_API_KEY }}

@@ -18,10 +18,6 @@ passes_only_declared_inputs() {
   [ -z "$(comm -23 <(keys_of "$1" '.jobs.review.with') <(keys_of "${WORKFLOW}" '.on.workflow_call.inputs'))" ]
 }
 
-passes_every_required_input() {
-  [ -z "$(comm -13 <(keys_of "$1" '.jobs.review.with') <(required_of inputs))" ]
-}
-
 passes_only_declared_secrets() {
   [ "$(yq '.jobs.review.secrets | tag' "$1")" = '!!map' ] &&
     [ -z "$(comm -23 <(keys_of "$1" '.jobs.review.secrets') <(keys_of "${WORKFLOW}" '.on.workflow_call.secrets'))" ]
@@ -56,7 +52,9 @@ assert_rule() {
 
 @test "there are callers to check" { compgen -G "${CALLERS}/*.yml"; }
 @test "with: passes only declared inputs" { assert_rule passes_only_declared_inputs; }
-@test "with: passes every required input" { assert_rule passes_every_required_input; }
+# Since v0.2.0 every input has a default, so a caller passes only what it changes.
+# A required input would break every caller pinned below it (AGENTS.md rule 5).
+@test "no input is required" { [ -z "$(required_of inputs)" ]; }
 @test "secrets: is a map of declared secrets" { assert_rule passes_only_declared_secrets; }
 @test "secrets: passes every required secret" { assert_rule passes_every_required_secret; }
 @test "the workflow is pinned by full SHA" { assert_rule pins_by_full_sha; }

@@ -24,8 +24,39 @@ no_caller_owned_keys() {
 
 no_github_workflow_sha() { ! grep -q 'github\.workflow_sha' "$1"; }
 
-requires_dotf_version() {
-  [ "$(yq '.on.workflow_call.inputs.dotf_version.required' "$1")" = "true" ]
+# A default pins dotf to the workflow's own tag, so a caller bumps one pin.
+dotf_version_defaults_to_a_release() {
+  [ "$(yq '.on.workflow_call.inputs.dotf_version.required' "$1")" != "true" ] &&
+    yq '.on.workflow_call.inputs.dotf_version.default' "$1" | grep -Eqx '[0-9]+\.[0-9]+\.[0-9]+'
+}
+
+# Branch prefixes are the caller's, passed as skip_branch_prefixes (rule 4).
+job_if_names_no_branch() { ! yq '.jobs[].if // ""' "$1" | grep -Eq 'head\.ref|head_ref'; }
+
+# Decisions are dotf's (rule 1), so no step carries an interpreter of its own.
+no_inline_interpreter() {
+  ! yq '.jobs[].steps[]?.run // ""' "$1" | grep -Ev '^[[:space:]]*#' | grep -Eqw 'python3?|node|ruby|perl'
+}
+
+steps_running() { # $1 = workflow, $2 = the command the step runs
+  yq ".jobs[].steps[]? | select((.run // \"\") | test(\"$2\"))" "$1"
+}
+
+# A caller opts in, and a failed declaration does not stop the review after it.
+declare_is_opt_in() {
+  local step
+  step=$(steps_running "$1" 'dotf pr declare-unreviewed')
+  [ -n "${step}" ] &&
+    yq '.if' <<<"${step}" | grep -q 'inputs.declare_unreviewed' &&
+    yq '.if' <<<"${step}" | grep -q "steps.reviewable.outcome == 'success'" &&
+    [ "$(yq '.["continue-on-error"]' <<<"${step}")" = "true" ]
+}
+
+# With no declared chain, the preflight reads it from the pool the draw reads.
+preflight_reads_the_pool() {
+  [ "$(yq '.on.workflow_call.inputs.declared_model.required' "$1")" != "true" ] &&
+    [ "$(yq '.on.workflow_call.inputs.declared_fallback_models.required' "$1")" != "true" ] &&
+    steps_running "$1" 'dotf pr preflight' | yq '.run' | grep -q -- '--pool'
 }
 
 # Reads the commands the steps run, so a comment naming them does not count.
@@ -53,6 +84,10 @@ assert_rule() {
 @test "no branch name is hard-coded" { assert_rule no_branch_literal; }
 @test "top-level permissions and concurrency stay with the caller" { assert_rule no_caller_owned_keys; }
 @test "github.workflow_sha is not read" { assert_rule no_github_workflow_sha; }
-@test "dotf_version is a required input" { assert_rule requires_dotf_version; }
+@test "dotf_version defaults to a release" { assert_rule dotf_version_defaults_to_a_release; }
+@test "the job if names no branch" { assert_rule job_if_names_no_branch; }
+@test "no step runs an interpreter of its own" { assert_rule no_inline_interpreter; }
+@test "declare_unreviewed is opt-in and cannot stop the review" { assert_rule declare_is_opt_in; }
+@test "with no declared chain the preflight reads the pool" { assert_rule preflight_reads_the_pool; }
 @test "the dotf install verifies a checksum" { assert_rule verifies_checksum; }
 @test "the push gate is the action, pinned by full SHA" { assert_rule uses_pinned_push_gate; }
