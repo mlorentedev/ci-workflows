@@ -32,4 +32,4 @@ owner: manu
 - [x] `actionlint` passes
 - [x] No unrelated changes in the diff
 - [x] `verification.md` filled in
-- [ ] PR opened referencing this spec folder
+- [x] PR opened referencing this spec folder (#17)
