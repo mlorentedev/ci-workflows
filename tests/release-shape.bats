@@ -113,7 +113,7 @@ token_step() { HAS_RELEASE_TOKEN="$1" GITHUB_REPOSITORY=o/r bash -c "$(yq '.jobs
 # release-please skips a release only when its notes are empty. GitHub's notes
 # never are, so `changelog-type: github` released every docs and ci push (#24).
 @test "the changelog is release-please's own, so empty notes skip a release" {
-  [ "$(jq 'has("changelog-type")' "${CONFIG}")" = "false" ]
+  [ "$(jq '[.. | objects | select(has("changelog-type"))] | length' "${CONFIG}")" = "0" ]
 }
 
 # What releases is declared, not inherited: a hidden type writes no notes, and
