@@ -276,9 +276,18 @@ jobs:
   job fails before release-please runs, and says so.
 - **Permissions.** The job asks `GITHUB_TOKEN` for nothing, so a caller's
   `permissions: {}` is enough. A publish job asks for its own.
-- **The changelog.** Use `"changelog-type": "github"`. The default changelog
-  renders a commit's `Refs owner/repo#N` as `closes`, and merging the release
-  pull request then closes those issues.
+- **The changelog is release-please's default, with the sections declared.**
+  Only `feat`, `fix`, `perf` and `revert` write notes. release-please opens no
+  release pull request when the notes are empty, so a `docs:`, `ci:` or
+  `chore:` merge does not cut a release. Do not set
+  `"changelog-type": "github"`: GitHub's notes are never empty, and every push
+  would open a patch release (#24).
+- **Squash with the PR title and no body.** release-please-action v5.0.0 ships
+  release-please 17.6.0, whose default changelog renders a commit body's
+  `Refs owner/repo#N` as `closes`. Merging the release pull request would then
+  close those issues. Run `dotf init github` on the caller: it sets
+  `squash_merge_commit_title=PR_TITLE` and `squash_merge_commit_message=BLANK`.
+  A merge commit or a rebase merge still carries each commit's body.
 
 `tests/fixtures/release-callers/` holds one caller that only releases and one
 that publishes; `tests/release-callers.bats` checks them, and this repository's
@@ -296,5 +305,6 @@ own caller, against the workflow's interface.
 3. Dependabot bumps the consumers' pins to the new tag's SHA.
 
 The version comes from the commit types since the last tag. While it is 0.x, a
-breaking change (`feat!:` or a `BREAKING CHANGE:` footer) bumps the minor, as
-v0.1.0 to v0.2.0 did. The tag is the version: there is no `version.txt`.
+breaking change bumps the minor, as v0.1.0 to v0.2.0 did. Mark it with `!` in
+the pull request title (`feat!:`): the squash body is blank, so a
+`BREAKING CHANGE:` footer never reaches release-please. The tag is the version: there is no `version.txt`.
