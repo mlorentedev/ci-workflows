@@ -1,0 +1,23 @@
+name: release-please
+
+# Releases this repository through its own reusable workflow, called by path so
+# a change to release.yml is exercised by the merge that ships it. Merging the
+# release pull request this opens creates the tag and the GitHub release.
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+# Two merges in a row must not race on the release pull request, and a run that
+# is tagging must finish.
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release:
+    uses: ./.github/workflows/release.yml
+    secrets:
+      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}

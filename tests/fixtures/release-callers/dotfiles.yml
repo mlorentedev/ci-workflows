@@ -1,0 +1,19 @@
+# Release only: the tag push starts the publish workflow (cli.yml), which works
+# because RELEASE_TOKEN, unlike GITHUB_TOKEN, starts workflows.
+name: release-please
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release:
+    uses: mlorentedev/ci-workflows/.github/workflows/release.yml@0000000000000000000000000000000000000000 # v0.3.0
+    secrets:
+      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}

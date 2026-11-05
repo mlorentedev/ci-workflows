@@ -7,8 +7,10 @@
 The fleet's shared CI, referenced by SHA from every consumer
 ([ADR-042](https://github.com/mlorentedev/dotfiles/blob/main/docs/adr/adr-042-shared-ci-is-referenced-not-copied.md)).
 It holds only reusable workflows (`on: workflow_call`) and composite actions,
-plus its own `lint.yml`. There is no application code, no build and no release
-automation yet. See `README.md` for the consumer contract.
+plus its own `lint.yml` and `release-please.yml`. There is no application code
+and no build. Releases are cut by release-please through this repository's own
+`release.yml`: merging the release pull request creates the tag, and only the
+owner merges it. See `README.md` for the consumer contract.
 
 ## Rules for every change
 
@@ -17,6 +19,8 @@ automation yet. See `README.md` for the consumer contract.
    longer than a few lines is a sign it belongs in `dotf`.
 2. **Pin every `uses:` by full 40-character SHA** with the tag as a trailing
    comment (`@<sha> # v7.0.1`). Docker images are pinned by digest.
+   A repository's call to its own reusable workflow by path (`./.github/workflows/…`)
+   is the one exception: no SHA can name the commit that adds it.
 3. **No `secrets: inherit`.** A reusable workflow declares each secret under
    `on.workflow_call.secrets`; the caller passes each one by name.
 4. **No hard-coded branch names, triggers, `permissions` ceilings or

@@ -1,0 +1,67 @@
+# release-please for any repository in the fleet (ADR-001 decision 6, #15). On
+# each push the caller routes here, release-please opens or updates the release
+# pull request; merging that pull request creates the tag and the GitHub release,
+# and a caller's publish job reads the outputs below.
+#
+# The caller owns triggers, the branch, permissions and concurrency, and holds
+# the config and manifest files. RELEASE_TOKEN, a PAT, makes every API call: a
+# release pull request opened with GITHUB_TOKEN starts no workflow, so its
+# required checks would never report.
+name: release
+
+on:
+  workflow_call:
+    inputs:
+      config_file:
+        description: The release-please config, as a path in the caller.
+        type: string
+        default: release-please-config.json
+      manifest_file:
+        description: The release-please manifest, as a path in the caller.
+        type: string
+        default: .release-please-manifest.json
+      target_branch:
+        description: The branch release-please opens the release pull request against and reads the config from. Empty means the repository's default branch; a caller releasing another branch passes its own.
+        type: string
+        default: ""
+    secrets:
+      RELEASE_TOKEN:
+        required: true
+    outputs:
+      release_created:
+        description: "`true` when this run created a release of the root package (`.`). Packages under a path are not forwarded."
+        value: ${{ jobs.release-please.outputs.release_created }}
+      tag_name:
+        description: The tag of the release this run created, e.g. v1.2.3.
+        value: ${{ jobs.release-please.outputs.tag_name }}
+      version:
+        description: The version of that release, without the v.
+        value: ${{ jobs.release-please.outputs.version }}
+
+jobs:
+  release-please:
+    permissions: {}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Fail if the release token is missing
+        id: token
+        env:
+          HAS_RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN != '' }}
+        run: |
+          if [ "${HAS_RELEASE_TOKEN}" != "true" ]; then
+            echo "::error::RELEASE_TOKEN is not set. Add ci:${GITHUB_REPOSITORY} to its consumers in dotfiles/secrets/registry.yaml, then run: dotf secrets sync ci --repo ${GITHUB_REPOSITORY} RELEASE_TOKEN"
+            exit 1
+          fi
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
+          config-file: ${{ inputs.config_file }}
+          manifest-file: ${{ inputs.manifest_file }}
+          target-branch: ${{ inputs.target_branch }}
