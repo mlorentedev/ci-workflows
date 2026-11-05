@@ -110,10 +110,17 @@ token_step() { HAS_RELEASE_TOKEN="$1" GITHUB_REPOSITORY=o/r bash -c "$(yq '.jobs
   [ "$(jq -r '.["include-component-in-tag"]' "${CONFIG}")" = "false" ]
 }
 
-# The default changelog renders `Refs owner/repo#N` as `closes`, and merging
-# the release PR would close those issues (dotfiles CI-005).
-@test "the changelog is GitHub's, so the release PR closes nothing" {
-  [ "$(jq -r '.["changelog-type"]' "${CONFIG}")" = "github" ]
+# release-please skips a release only when its notes are empty. GitHub's notes
+# never are, so `changelog-type: github` released every docs and ci push (#24).
+@test "the changelog is release-please's own, so empty notes skip a release" {
+  [ "$(jq 'has("changelog-type")' "${CONFIG}")" = "false" ]
+}
+
+# What releases is declared, not inherited: a hidden type writes no notes, and
+# notes are the only thing that opens a release pull request.
+@test "only feat, fix, perf and revert open a release" {
+  [ "$(jq -r '[.["changelog-sections"][] | select(.hidden != true) | .type] | join(",")' "${CONFIG}")" = "feat,fix,perf,revert" ]
+  [ "$(jq -r '[.["changelog-sections"][] | select(.hidden == true) | .type] | sort | join(",")' "${CONFIG}")" = "build,chore,ci,docs,refactor,style,test" ]
 }
 
 # simple updates version.txt only if it exists (createIfMissing: false); the tag
