@@ -15,7 +15,8 @@ owner: manu
       `fixtures/release-shape-bad.yml`, which must fail it.
 - [x] Criterion 2. `release-shape.bats` "a missing token fails first, naming the remedy".
 - [x] Criterion 3. `release-shape.bats` "the manifest holds one semver…", "one root package…", "the
-      changelog is GitHub's…", "the release writes no version file"; the manifest is `0.2.0`.
+      changelog is GitHub's…", "the release writes no version file"; the manifest was `0.2.0` at
+      merge (`29550e9`).
 - [x] Criterion 4. `release-callers.bats`, 9 tests over `fixtures/release-callers/{dotfiles,pollex}.yml`
       and `.github/workflows/release-please.yml`, each rule also failing on
       `fixtures/release-caller-shape-bad.yml`.

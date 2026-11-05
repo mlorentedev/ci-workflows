@@ -16,7 +16,7 @@
   {
     "id": "CI-002-release-f3",
     "behavior": "The config bootstraps from 0.2.0, uses changelog-type github, and writes no version file.",
-    "verification": "git merge-base --is-ancestor v0.2.0 v0.3.0 && bats tests/release-shape.bats --filter 'manifest|component|changelog|version file'",
+    "verification": "git show 29550e9:.release-please-manifest.json | jq -e '.[\".\"] == \"0.2.0\"' && git merge-base --is-ancestor v0.2.0 v0.3.0 && bats tests/release-shape.bats --filter 'manifest|component|changelog|version file'",
     "state": "passing",
     "evidence": "the manifest was 0.2.0 at merge (29550e9); v0.3.0 was cut on top of v0.2.0; four config tests ok"
   },
@@ -37,7 +37,7 @@
   {
     "id": "CI-002-release-f6",
     "behavior": "After merge, a feat: merge opens a release PR, and merging it creates the tag and the GitHub release.",
-    "verification": "gh release view v0.3.0 -R mlorentedev/ci-workflows --json tagName --jq .tagName | grep -qx v0.3.0",
+    "verification": "gh pr view 20 -R mlorentedev/ci-workflows --json labels --jq '[.labels[].name]' | grep -q 'autorelease: tagged' && gh release view v0.3.0 -R mlorentedev/ci-workflows --json tagName --jq .tagName | grep -qx v0.3.0",
     "state": "passing",
     "evidence": "#19 merged as 29550e9 and opened release PR #20; the owner merged #20 as 8bef3a8, which tagged v0.3.0 and published the release (Latest, no closing keywords)"
   }
