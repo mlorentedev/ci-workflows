@@ -29,7 +29,7 @@ owner: manu
 ## Closing
 
 - [x] Criteria 1 to 4 are each covered by at least one bats test; criterion 5 by the grep in `features.json` f5
-- [ ] Criterion 6 is verified on the first run after merge (f6)
+- [x] Criterion 6 is verified on the first run after merge (f6)
 - [x] `bats tests/` passes
 - [x] `actionlint` passes
 - [x] No unrelated changes in the diff

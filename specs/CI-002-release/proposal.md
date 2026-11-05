@@ -1,7 +1,7 @@
 ---
 id: "CI-002-release"
 type: spec
-status: implementing # draft | implementing | verifying | archived
+status: verifying # draft | implementing | verifying | archived
 created: "2026-11-04"
 issue: "mlorentedev/ci-workflows#15"   # repo#NNN — GitHub issue / Project item that tracks this spec
 tags: [spec, proposal, ci, release]
@@ -59,18 +59,18 @@ release-please and semver tags, and that one secret name is used for release tok
 
 ## Acceptance criteria
 
-1. [ ] `release.yml` is called only (`workflow_call`), requires `RELEASE_TOKEN`, defaults every input,
+1. [x] `release.yml` is called only (`workflow_call`), requires `RELEASE_TOKEN`, defaults every input,
       publishes `release_created`, `tag_name` and `version`, hard-codes no branch, `permissions` or
       `concurrency`, and pins release-please-action by full SHA. Each rule fails against a fixture that
       breaks it.
-2. [ ] A missing `RELEASE_TOKEN` fails the job before release-please runs, naming the remedy.
-3. [ ] The config bootstraps from 0.2.0, uses `changelog-type: github`, and writes no version file.
-4. [ ] Caller fixtures for dotfiles and pollex, plus this repository's own caller, pass only declared
+2. [x] A missing `RELEASE_TOKEN` fails the job before release-please runs, naming the remedy.
+3. [x] The config bootstraps from 0.2.0, uses `changelog-type: github`, and writes no version file.
+4. [x] Caller fixtures for dotfiles and pollex, plus this repository's own caller, pass only declared
       inputs and secrets and pass `RELEASE_TOKEN` by name. The pollex fixture gates its publish job on
       `release_created`.
-5. [ ] The README documents the secret name, the inputs and outputs, and how a release happens here.
+5. [x] The README documents the secret name, the inputs and outputs, and how a release happens here.
       AGENTS.md no longer says there is no release automation.
-6. [ ] After merge, merging a `feat:` commit opens a release pull request; the owner merging it creates
+6. [x] After merge, merging a `feat:` commit opens a release pull request; the owner merging it creates
       the tag and the GitHub release (issue #15 criterion 1, verified on the first run).
 
 ## References

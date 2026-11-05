@@ -20,8 +20,10 @@ owner: manu
       and `.github/workflows/release-please.yml`, each rule also failing on
       `fixtures/release-caller-shape-bad.yml`.
 - [x] Criterion 5. README `## release` and "How this repository is released"; AGENTS.md.
-- [ ] Criterion 6. Pending the first run after merge: a release PR labelled `autorelease: pending`, then
-      the tag and the release when the owner merges it.
+- [x] Criterion 6. Merging #19 (`29550e9`) opened release PR #20, `chore(main): release 0.3.0`. Its `lint`
+      and `test` checks ran, so the PAT starts workflows. #20 changed only the manifest and `CHANGELOG.md`.
+      The owner merged it (`8bef3a8`), and that run tagged `v0.3.0` and published the release. The
+      release notes contain no closing keywords.
 
 ## Test status
 
