@@ -210,9 +210,16 @@ skipped, and it names each job that did not.
   `review-attestation`. After that, the jobs behind `gate` can be renamed,
   skipped or moved into this repository without touching branch protection
   again.
-- **On Gitea**, whether the runner resolves these composites from this
-  repository, together with the action paths-filter uses inside them, has not
-  been verified yet. Issue #9 tracks the first Gitea consumer.
+- **On Gitea**, both composites work with `uses:` exactly as written above.
+  The runner resolves them from github.com, because `DEFAULT_ACTIONS_URL`
+  defaults to `github`. It also resolves the paths-filter action nested inside
+  `changes`, runs it on node24 and lists the pull request's files through
+  Gitea's API. The full-run path finds `yq` in `docker.gitea.com/runner-images`.
+  Verified on act_runner v4.1.0 (issue #9). Write the area map under
+  `.gitea/workflows/` the same way.
+- **This repository uses them too.** `lint.yml` runs `changes`, `lint`, `test`
+  and `gate`, pinned to a release rather than to this checkout, so a pull
+  request cannot weaken the gate that judges it.
 
 ## release
 
