@@ -2,8 +2,9 @@ name: lint
 
 # Lints every workflow in this repository with actionlint, which also runs
 # shellcheck over each `run:` block. The job id `lint` is the status check that
-# branch protection requires (dotfiles forge/branch-protection.json): renaming
-# it leaves `main` waiting on a context nothing reports.
+# branch protection requires today (dotfiles forge/branch-protection.json), so
+# renaming it leaves `main` waiting on a context nothing reports. Once `gate`
+# has reported on main, protection moves to `gate` alone (ADR-001 decision 3).
 
 on:
   pull_request:
@@ -20,7 +21,33 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Which areas a pull request touched (ADR-001 decision 4). A docs-only pull
+  # request skips lint and test; a push to main runs both. The blocks are
+  # pinned to a release rather than run from this checkout, so a pull request
+  # cannot weaken the gate that judges it.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      areas: ${{ steps.changes.outputs.areas }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: changes
+        uses: mlorentedev/ci-workflows/.github/actions/changes@8bef3a8be673bf1bb297a3cac5f8aecf84804584 # v0.3.0
+        with:
+          filters: |
+            code:
+              - ".github/**"
+              - "tests/**"
+
   lint:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.areas), 'code')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
@@ -45,6 +72,8 @@ jobs:
         run: ./actionlint -color -shellcheck=shellcheck
 
   test:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.areas), 'code')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
@@ -64,3 +93,16 @@ jobs:
       # ubuntu-latest ships yq, which the tests read the workflows with.
       - name: Run the workflow shape tests
         run: '"./bats-core-${BATS_VERSION}/bin/bats" tests/'
+
+  # The one check branch protection will require (ADR-001 decision 3), once it
+  # has reported on main. `if: always()` keeps a failed need from skipping it.
+  gate:
+    needs: [changes, lint, test]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - uses: mlorentedev/ci-workflows/.github/actions/gate@8bef3a8be673bf1bb297a3cac5f8aecf84804584 # v0.3.0
+        with:
+          needs: ${{ toJSON(needs) }}
