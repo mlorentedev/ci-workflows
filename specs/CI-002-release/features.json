@@ -4,7 +4,7 @@
     "behavior": "release.yml is called only, requires RELEASE_TOKEN, defaults every input, publishes release_created, tag_name and version, owns no branch, permissions or concurrency, and pins release-please-action by full SHA; each rule fails on a fixture that breaks it.",
     "verification": "bats tests/release-shape.bats --filter 'trigger|one secret|default|branch|caller|release-please|reach the caller|nothing|pinned|authenticates'",
     "state": "passing",
-    "evidence": "bats tests/release-shape.bats: 16 of 16 ok"
+    "evidence": "bats tests/release-shape.bats: 19 of 19 ok"
   },
   {
     "id": "CI-002-release-f2",

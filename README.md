@@ -252,10 +252,13 @@ jobs:
   |---|---|---|
   | `config_file` | `release-please-config.json` | the release-please config, a path in the caller |
   | `manifest_file` | `.release-please-manifest.json` | the manifest holding the current version |
+  | `target_branch` | empty: the default branch | the branch the release pull request targets; a caller releasing another branch passes `${{ github.ref_name }}` |
 
 - **Outputs.** `release_created` is `true` when the run created a release;
   `tag_name` (`v1.2.3`) and `version` (`1.2.3`) name it. A publish job gates
-  on `release_created`, as above.
+  on `release_created`, as above. They describe the root package (`"."` in the
+  config); a package under a path is released, but its outputs are not
+  forwarded, so a publish job for it would never run.
 - **The secret is `RELEASE_TOKEN`**, the one name for release tokens across the
   fleet. It is a fine-grained PAT with contents and pull-requests write on the
   caller. A release pull request opened with `GITHUB_TOKEN` starts no workflow,

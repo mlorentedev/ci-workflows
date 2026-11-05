@@ -80,6 +80,17 @@ assert_rule() {
 @test "release-please authenticates with RELEASE_TOKEN" { assert_rule release_uses_the_token; }
 @test "a missing token fails first, naming the remedy" { assert_rule token_checked_first; }
 
+# Runs the token step's script, so both branches of the guard execute.
+token_step() { HAS_RELEASE_TOKEN="$1" GITHUB_REPOSITORY=o/r bash -c "$(yq '.jobs.release-please.steps[0].run' "${WORKFLOW}")"; }
+@test "the token step passes when the token is set" { run token_step true; [ "${status}" -eq 0 ]; }
+@test "the token step exits 1 when the token is missing" { run token_step false; [ "${status}" -eq 1 ]; }
+
+# Empty is the default branch; a caller releasing another branch passes it.
+@test "target_branch reaches release-please and defaults to empty" {
+  [ "$(yq '.on.workflow_call.inputs.target_branch.default' "${WORKFLOW}")" = "" ]
+  [ "$(yq '.jobs.release-please.steps[] | select(.id == "release") | .with["target-branch"]' "${WORKFLOW}")" = '${{ inputs.target_branch }}' ]
+}
+
 # The config is this repository's own, so its rules are checked once.
 @test "the input defaults name this repository's config files" {
   [ "$(yq '.on.workflow_call.inputs.config_file.default' "${WORKFLOW}")" = "release-please-config.json" ]

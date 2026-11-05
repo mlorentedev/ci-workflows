@@ -25,7 +25,7 @@ owner: manu
 
 ## Test status
 
-- `bats tests/` reports 84 of 84 ok. `actionlint` reports no findings; it also resolves the local call in
+- `bats tests/` reports 87 of 87 ok. `actionlint` reports no findings; it also resolves the local call in
   `release-please.yml` and checks its `secrets:` against `release.yml`.
 - The command of every passing entry in `features.json` exits 0.
 - No regressions: the 59 tests that existed before all pass.
@@ -40,5 +40,7 @@ owner: manu
   path the merge that changes the workflow is the run that exercises it.
 - **No `bootstrap-sha`.** The tag `v0.2.0` is a precondition of the merge anyway: the GitHub changelog
   generates notes from the previous tag. A `bootstrap-sha` would be dead config after the first release.
+- **`target_branch`, empty by default** (review). Empty is the default branch, so rule 4 holds and a caller releasing another branch can say so.
+- **Root package only** (review, declined). The outputs are the root package's; path outputs can be added later without a breaking change.
 - **Three outputs.** `release_created`, `tag_name` and `version`. Adding one later is not breaking;
   removing one is.

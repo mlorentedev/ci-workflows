@@ -20,12 +20,16 @@ on:
         description: The release-please manifest, as a path in the caller.
         type: string
         default: .release-please-manifest.json
+      target_branch:
+        description: The branch release-please opens the release pull request against and reads the config from. Empty means the repository's default branch; a caller releasing another branch passes its own.
+        type: string
+        default: ""
     secrets:
       RELEASE_TOKEN:
         required: true
     outputs:
       release_created:
-        description: "`true` when this run created a release."
+        description: "`true` when this run created a release of the root package (`.`). Packages under a path are not forwarded."
         value: ${{ jobs.release-please.outputs.release_created }}
       tag_name:
         description: The tag of the release this run created, e.g. v1.2.3.
@@ -60,3 +64,4 @@ jobs:
           token: ${{ secrets.RELEASE_TOKEN }}
           config-file: ${{ inputs.config_file }}
           manifest-file: ${{ inputs.manifest_file }}
+          target-branch: ${{ inputs.target_branch }}
