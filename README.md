@@ -213,3 +213,78 @@ skipped, and it names each job that did not.
 - **On Gitea**, whether the runner resolves these composites from this
   repository, together with the action paths-filter uses inside them, has not
   been verified yet. Issue #9 tracks the first Gitea consumer.
+
+## release
+
+`.github/workflows/release.yml` runs
+[release-please](https://github.com/googleapis/release-please) in manifest
+mode (ADR-001 decision 6). On each push it opens or updates the release pull
+request. Merging that pull request creates the tag and the GitHub release.
+
+```yaml
+name: release-please
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release:
+    uses: mlorentedev/ci-workflows/.github/workflows/release.yml@<40-hex-sha> # vX.Y.Z
+    secrets:
+      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+
+  publish:
+    needs: release
+    if: needs.release.outputs.release_created == 'true'
+    # ... check out needs.release.outputs.tag_name and publish
+```
+
+- **Inputs.** None is required.
+
+  | Input | Default | Meaning |
+  |---|---|---|
+  | `config_file` | `release-please-config.json` | the release-please config, a path in the caller |
+  | `manifest_file` | `.release-please-manifest.json` | the manifest holding the current version |
+
+- **Outputs.** `release_created` is `true` when the run created a release;
+  `tag_name` (`v1.2.3`) and `version` (`1.2.3`) name it. A publish job gates
+  on `release_created`, as above.
+- **The secret is `RELEASE_TOKEN`**, the one name for release tokens across the
+  fleet. It is a fine-grained PAT with contents and pull-requests write on the
+  caller. A release pull request opened with `GITHUB_TOKEN` starts no workflow,
+  so its required checks never report, and its tag starts no publish workflow.
+  To grant it, add `ci:<owner>/<repo>` to its consumers in dotfiles'
+  `secrets/registry.yaml` and run
+  `dotf secrets sync ci --repo <owner>/<repo> RELEASE_TOKEN`. Without it the
+  job fails before release-please runs, and says so.
+- **Permissions.** The job asks `GITHUB_TOKEN` for nothing, so a caller's
+  `permissions: {}` is enough. A publish job asks for its own.
+- **The changelog.** Use `"changelog-type": "github"`. The default changelog
+  renders a commit's `Refs owner/repo#N` as `closes`, and merging the release
+  pull request then closes those issues.
+
+`tests/fixtures/release-callers/` holds one caller that only releases and one
+that publishes; `tests/release-callers.bats` checks them, and this repository's
+own caller, against the workflow's interface.
+
+### How this repository is released
+
+`release-please.yml` calls `release.yml` by path on every push to `main`.
+
+1. A merged `feat:` or `fix:` pull request opens or updates the release pull
+   request, `chore(main): release X.Y.Z`. Its CI runs because the token is a
+   PAT.
+2. The owner merges it. That pushes the tag `vX.Y.Z` and publishes the GitHub
+   release, with notes generated from the merged pull requests.
+3. Dependabot bumps the consumers' pins to the new tag's SHA.
+
+The version comes from the commit types since the last tag. While it is 0.x, a
+breaking change (`feat!:` or a `BREAKING CHANGE:` footer) bumps the minor, as
+v0.1.0 to v0.2.0 did. The tag is the version: there is no `version.txt`.

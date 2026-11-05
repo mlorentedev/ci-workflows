@@ -1,0 +1,39 @@
+# Breaks every workflow rule in tests/release-shape.bats, so each check is shown to fail.
+name: release
+
+on:
+  push:
+    branches: [main]
+  workflow_call:
+    inputs:
+      target:
+        type: string
+        required: true
+    secrets:
+      RELEASE_PLEASE_PAT:
+        required: false
+    outputs:
+      released:
+        value: ${{ jobs.release.outputs.release_created }}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - id: token
+        run: echo "no check"

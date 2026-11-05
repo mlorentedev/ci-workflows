@@ -7,8 +7,10 @@
 The fleet's shared CI, referenced by SHA from every consumer
 ([ADR-042](https://github.com/mlorentedev/dotfiles/blob/main/docs/adr/adr-042-shared-ci-is-referenced-not-copied.md)).
 It holds only reusable workflows (`on: workflow_call`) and composite actions,
-plus its own `lint.yml`. There is no application code, no build and no release
-automation yet. See `README.md` for the consumer contract.
+plus its own `lint.yml` and `release-please.yml`. There is no application code
+and no build. Releases are cut by release-please through this repository's own
+`release.yml`: merging the release pull request creates the tag, and only the
+owner merges it. See `README.md` for the consumer contract.
 
 ## Rules for every change
 

@@ -1,0 +1,18 @@
+# Breaks every rule in tests/release-callers.bats, so a rule that stopped matching fails there.
+name: release-please
+
+on: push
+
+jobs:
+  release:
+    uses: mlorentedev/ci-workflows/.github/workflows/release.yml@v0.3.0
+    with:
+      config: release-please-config.json
+    secrets:
+      RELEASE_PLEASE_PAT: ${{ secrets.RELEASE_PLEASE_PAT }}
+
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "${{ needs.release.outputs.released }}"

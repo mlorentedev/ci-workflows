@@ -1,0 +1,44 @@
+[
+  {
+    "id": "CI-002-release-f1",
+    "behavior": "release.yml is called only, requires RELEASE_TOKEN, defaults every input, publishes release_created, tag_name and version, owns no branch, permissions or concurrency, and pins release-please-action by full SHA; each rule fails on a fixture that breaks it.",
+    "verification": "bats tests/release-shape.bats --filter 'trigger|one secret|default|branch|caller|release-please|reach the caller|nothing|pinned|authenticates'",
+    "state": "passing",
+    "evidence": "bats tests/release-shape.bats: 16 of 16 ok"
+  },
+  {
+    "id": "CI-002-release-f2",
+    "behavior": "A missing RELEASE_TOKEN fails the job before release-please runs, naming the remedy.",
+    "verification": "bats tests/release-shape.bats --filter 'missing token'",
+    "state": "passing",
+    "evidence": "bats tests/release-shape.bats: 'a missing token fails first, naming the remedy' ok"
+  },
+  {
+    "id": "CI-002-release-f3",
+    "behavior": "The config bootstraps from 0.2.0, uses changelog-type github, and writes no version file.",
+    "verification": "jq -e '.[\".\"] == \"0.2.0\"' .release-please-manifest.json && bats tests/release-shape.bats --filter 'manifest|component|changelog|version file'",
+    "state": "passing",
+    "evidence": "manifest is 0.2.0; four config tests ok"
+  },
+  {
+    "id": "CI-002-release-f4",
+    "behavior": "The dotfiles and pollex fixtures and this repository's caller pass only declared inputs and outputs and pass RELEASE_TOKEN by name; pollex gates its publish job on release_created.",
+    "verification": "bats tests/release-callers.bats",
+    "state": "passing",
+    "evidence": "bats tests/release-callers.bats: 9 of 9 ok"
+  },
+  {
+    "id": "CI-002-release-f5",
+    "behavior": "The README documents the secret name, inputs, outputs and how a release happens; AGENTS.md no longer says there is no release automation.",
+    "verification": "grep -q '^## release' README.md && grep -q 'The secret is `RELEASE_TOKEN`' README.md && grep -q 'How this repository is released' README.md && ! grep -q 'no release' AGENTS.md",
+    "state": "passing",
+    "evidence": "grep checks exit 0"
+  },
+  {
+    "id": "CI-002-release-f6",
+    "behavior": "After merge, a feat: merge opens a release PR, and merging it creates the tag and the GitHub release.",
+    "verification": "gh pr list -R mlorentedev/ci-workflows --label 'autorelease: pending' --json number --jq 'length > 0' | grep -qx true",
+    "state": "pending",
+    "evidence": ""
+  }
+]
