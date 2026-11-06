@@ -114,6 +114,58 @@ reviewed. `dotf_version` and the declared chain can be dropped.
 `tests/callers.bats` checks each against the workflow's interface, so add a
 fixture with a new shape of consumer.
 
+## pages
+
+`.github/workflows/pages.yml` builds an npm site and deploys it to GitHub Pages
+(GitHub only). A pull request builds and runs the check, but neither uploads nor
+deploys.
+
+```yaml
+name: pages
+
+on:
+  push:
+    branches: [master]
+    paths: ['site/**']
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  pages:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: mlorentedev/ci-workflows/.github/workflows/pages.yml@<40-hex-sha> # vX.Y.Z
+```
+
+- **Inputs.** None is required. The defaults are what the five consumers share.
+
+  | Input | Default | Meaning |
+  |---|---|---|
+  | `working_directory` | `site` | holds `package.json` and `package-lock.json`; `npm ci` and the commands run here |
+  | `node_version` | `22` | the Node.js version |
+  | `build_command` | `npm run build` | the build |
+  | `check_command` | empty | run after the build, e.g. `npm run check:links`; empty skips it |
+  | `artifact_path` | `site/dist` | the built site, from the repository root |
+
+- **Output.** `page_url`, the deployed URL. Empty on a pull request.
+- **Permissions.** `build` asks for `contents: read`, and `deploy` for
+  `pages: write` and `id-token: write`. A caller granting less fails the run
+  before any step.
+- **The environment.** `deploy` runs in `github-pages`, so the repository's
+  Pages source must be "GitHub Actions".
+- **Checks.** A caller requiring status checks names `<caller job> / build`.
+
+`tests/fixtures/pages-callers/` holds the hive shape (pull request builds and a
+check) and the ts-bridge shape (defaults); `tests/pages-callers.bats` checks
+each against the workflow's interface.
+
 ## push-gate
 
 `.github/actions/push-gate` runs `dotf pr gate` and publishes `run`, `mode` and

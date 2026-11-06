@@ -1,0 +1,37 @@
+[
+  {
+    "id": "CI-005-pages-f1",
+    "behavior": "pages.yml is called only, defaults every input, declares no secret, hard-codes no branch, permissions or concurrency, and pins every action by full SHA; each rule fails on the bad fixture.",
+    "verification": "bats tests/pages-shape.bats --filter 'trigger|default|secret|branch|caller|jobs are|pinned'",
+    "state": "passing",
+    "evidence": "8 of 8 ok"
+  },
+  {
+    "id": "CI-005-pages-f2",
+    "behavior": "build reads contents only, deploy asks only for pages and id-token, every job has a timeout, and a pull request neither uploads nor deploys.",
+    "verification": "bats tests/pages-shape.bats --filter 'asks|timeout|pull request|credentials|check command|env|page_url'",
+    "state": "passing",
+    "evidence": "8 of 8 ok"
+  },
+  {
+    "id": "CI-005-pages-f3",
+    "behavior": "The hive and ts-bridge fixtures pass only declared inputs, no secret, pin by SHA and grant what each job asks for.",
+    "verification": "bats tests/pages-callers.bats",
+    "state": "passing",
+    "evidence": "5 of 5 ok"
+  },
+  {
+    "id": "CI-005-pages-f4",
+    "behavior": "The README documents the inputs, the output, the grant and a caller.",
+    "verification": "grep -q '^## pages' README.md && grep -q 'artifact_path' README.md && grep -q 'page_url' README.md && grep -q 'id-token: write' README.md",
+    "state": "passing",
+    "evidence": "grep checks exit 0"
+  },
+  {
+    "id": "CI-005-pages-f5",
+    "behavior": "After release, one of the five repositories calls the workflow and its deploy stays green.",
+    "verification": "echo 'verified in the first consumer migration PR' && exit 1",
+    "state": "pending",
+    "evidence": ""
+  }
+]
