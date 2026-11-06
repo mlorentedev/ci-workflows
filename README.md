@@ -110,6 +110,10 @@ itself. A caller that uses release-please passes
 `skip_branch_prefixes: release-please--`, or its release PRs start being
 reviewed. `dotf_version` and the declared chain can be dropped.
 
+This repository reviews its own pull requests the same way: `review.yml` calls
+`pr-agent.yml` by path with only `skip_branch_prefixes`, so the embedded pool
+draws, and a change to the reviewer is reviewed by itself.
+
 `tests/fixtures/callers/` holds one caller per consuming shape.
 `tests/callers.bats` checks each against the workflow's interface, so add a
 fixture with a new shape of consumer.
