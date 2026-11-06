@@ -5,7 +5,8 @@
 # and run the composite's own scripts the way a composite runs them.
 
 ACTION="${BATS_TEST_DIRNAME}/../.github/actions/setup-node/action.yml"
-LOCKS="${BATS_TEST_DIRNAME}/fixtures/setup-node"
+WORKFLOW="${BATS_TEST_DIRNAME}/../.github/workflows/lint.yml"
+FIXTURE="${BATS_TEST_DIRNAME}/fixtures/toolchains/node"
 
 step() { yq ".runs.steps[] | select(.id == \"$1\") | .$2" "${ACTION}"; }
 
@@ -21,6 +22,17 @@ setup() {
 run_step() { run bash --noprofile --norc -eo pipefail "${BATS_TEST_TMPDIR}/$1.sh"; }
 
 output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
+
+# A package-lock.json in the work directory holding the given packages.
+lock_with() {
+  local pkgs='{"": {"name": "fixture"}}' name version
+  while [ $# -gt 0 ]; do
+    name="$1" version="$2"
+    shift 2
+    pkgs=$(jq -c --arg k "node_modules/${name}" --arg v "${version}" '. + {($k): {version: $v}}' <<<"${pkgs}")
+  done
+  jq -n --argjson p "${pkgs}" '{name: "fixture", lockfileVersion: 3, packages: $p}' >"${WORK}/package-lock.json"
+}
 
 # Shape (AC1)
 
@@ -113,21 +125,21 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
 }
 
 @test "the Playwright version is read from @playwright/test in the lockfile" {
-  cp "${LOCKS}/playwright-test-lock.json" "${WORK}/package-lock.json"
+  lock_with @playwright/test 1.56.1 playwright 1.56.1
   WORKDIR="${WORK}" run_step playwright-version
   [ "$status" -eq 0 ]
   [ "$(output_of version)" = "1.56.1" ]
 }
 
 @test "the Playwright version falls back to the playwright package" {
-  cp "${LOCKS}/playwright-lock.json" "${WORK}/package-lock.json"
+  lock_with playwright 1.55.0
   WORKDIR="${WORK}" run_step playwright-version
   [ "$status" -eq 0 ]
   [ "$(output_of version)" = "1.55.0" ]
 }
 
 @test "a lockfile without Playwright fails rather than cache under an empty key" {
-  cp "${LOCKS}/no-playwright-lock.json" "${WORK}/package-lock.json"
+  lock_with left-pad 1.3.0
   WORKDIR="${WORK}" run_step playwright-version
   [ "$status" -ne 0 ]
   [[ "$output" == *"Playwright"* ]]
@@ -137,4 +149,38 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
   WORKDIR="${WORK}" run_step playwright-version
   [ "$status" -ne 0 ]
   [[ "$output" == *"${WORK}/package-lock.json"* ]]
+}
+
+# This repository's smoke (AC3). Branch protection requires `gate` alone, so a
+# job missing from gate's needs fails without blocking a merge (dotfiles lesson 356).
+
+@test "gate needs every other job of lint.yml" {
+  local jobs needs
+  jobs=$(yq '.jobs | keys | .[] | select(. != "gate")' "${WORKFLOW}" | sort)
+  needs=$(yq '.jobs.gate.needs[]' "${WORKFLOW}" | sort)
+  [ -n "${jobs}" ]
+  [ "${jobs}" = "${needs}" ]
+}
+
+@test "gate runs whatever its needs did" {
+  [ "$(yq '.jobs.gate.if' "${WORKFLOW}")" = "always()" ]
+}
+
+@test "the setup-node smoke runs this checkout's composite on the toolchains area" {
+  [ "$(yq '.jobs.smoke-setup-node.if' "${WORKFLOW}")" = "contains(fromJSON(needs.changes.outputs.areas), 'toolchains')" ]
+  [ "$(yq '.jobs.smoke-setup-node.steps[] | select(.id == "node") | .uses' "${WORKFLOW}")" = "./.github/actions/setup-node" ]
+  [ "$(yq '.jobs.smoke-setup-node.steps[] | select(.id == "node") | .with.working-directory' "${WORKFLOW}")" = "tests/fixtures/toolchains/node" ]
+}
+
+@test "the toolchains area covers every setup composite and its fixtures" {
+  local filters
+  filters=$(yq '.jobs.changes.steps[] | select(.id == "changes") | .with.filters' "${WORKFLOW}" | yq '.toolchains[]')
+  [[ "${filters}" == *".github/actions/setup-*/**"* ]]
+  [[ "${filters}" == *"tests/fixtures/toolchains/**"* ]]
+}
+
+@test "the smoke fixture pins its Node version and its dependencies" {
+  [ -s "${FIXTURE}/.nvmrc" ]
+  [ "$(jq -r '.lockfileVersion' "${FIXTURE}/package-lock.json")" = "3" ]
+  [ "$(jq -r '.packages | length' "${FIXTURE}/package-lock.json")" -ge 2 ]
 }

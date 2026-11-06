@@ -15,7 +15,7 @@ PR 1 (`setup-node`). Commits on `feat/issue-10-setup-node`.
 
 - [x] AC1 shape: `tests/setup-node.bats` (inputs, outputs, bash, pins, setup-node wiring) at `9daf0c7`. Pins checked against the tags over the API: `actions/setup-node` v7.1.0 = `949feb2`, `actions/cache` v6.1.0 = `55cc834`.
 - [x] AC2 version source: `tests/setup-node.bats` (version input, version file, neither fails naming both; Playwright version from the lockfile, failing without it) at `9daf0c7`.
-- [ ] AC3 cache proof: `smoke-setup-node` and its wiring (`tests/lint-workflow.bats`) at `1a9e15d`. The warm run on `main` and the hit on the next pull request are recorded after merge.
+- [ ] AC3 cache proof: `smoke-setup-node` and its wiring (the smoke tests in `tests/setup-node.bats`) at `1a9e15d`. The warm run on `main` and the hit on the next pull request are recorded after merge.
 - [ ] AC4 Gitea: after merge, the imagesensortool pilot.
 - [x] AC5 per-platform keys: the Playwright key test in `tests/setup-node.bats`; the smoke job fails when `cache-primary-key` does not start with `node-cache-<os>-<arch>-npm-` (`actions/setup-node` v7.1.0 builds it from `RUNNER_OS` and `os.arch()`, `src/cache-restore.ts`).
 
@@ -27,7 +27,7 @@ PR 1 (`setup-node`). Commits on `feat/issue-10-setup-node`.
 
 ## Decisions made during implementation
 
-- `tests/lint-workflow.bats` asserts that `gate` needs every other job of `lint.yml`. Nothing checked it, and a job outside gate's needs fails without blocking a merge (dotfiles lesson 356).
+- `tests/setup-node.bats` also asserts that `gate` needs every other job of `lint.yml`. Nothing checked it, and a job outside gate's needs fails without blocking a merge (dotfiles lesson 356).
 - The fixture lives under `tests/fixtures/`, which Renovate's `config:recommended` ignores, so its `is-number` pin raises no update pull requests.
 
 ## Promotion candidates

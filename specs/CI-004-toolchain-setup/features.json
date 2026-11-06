@@ -16,7 +16,7 @@
   {
     "id": "CI-004-toolchain-setup-f3",
     "behavior": "The smoke job runs setup-node from this checkout against its fixture, behind gate; its second run reports cache-hit true.",
-    "verification": "bats tests/lint-workflow.bats",
+    "verification": "bats tests/setup-node.bats --filter "gate needs|smoke|toolchains area|fixture"",
     "state": "pending",
     "evidence": ""
   },
