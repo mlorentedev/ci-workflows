@@ -17,8 +17,14 @@ owner: manu
       preset (no GitHub-only option, no automerge). The tag waits for the release PR.
 - [x] AC2 -> `tests/renovate-shape.bats` tests 1-6, each run against the workflow and against
       `tests/fixtures/renovate-shape-bad.yml`.
-- [ ] AC3 -> after merge: a dispatch updates the dashboards of this repository and kubelab.
-- [ ] AC4 -> after merge: the engine PR when `renovate/engine.json` is behind.
+- [ ] AC3 -> this repository done, kubelab pending. Dispatch run 42181838772 (2026-11-06, `repositories=mlorentedev/ci-workflows`)
+      finished with `"result": "done"` and opened the Dependency Dashboard, #44. It lists every pinned workflow
+      and composite, including `dorny/paths-filter` in `.github/actions/changes/action.yml`. Two earlier runs
+      (42177995767, 42178889438) aborted on the account's GraphQL rate limit and still finished green
+      (lesson-006, #43). kubelab is dispatched after its PR, so the run reads the preset, not its old config.
+- [ ] AC4 -> half done. The `renovate/engine.json` manager works: #44 lists `ghcr.io/renovatebot/renovate 44.199.2
+      -> 44.221.4` under Awaiting Schedule, grouped in `renovate/minor-and-patch-updates`. The PR itself opens in
+      the preset's window (Monday 00:00-06:59 Europe/Madrid). The preset-tag manager waits for the first tag.
 - [ ] AC5 -> the kubelab PR.
 - [ ] AC6 -> fleet adoption, per repository in tasks.md.
 - [x] AC7 -> ADR-001 decision 6 amended; README `## renovate`.
