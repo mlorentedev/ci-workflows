@@ -57,6 +57,25 @@ owner: manu
 - [x] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? no: it applies ADR-001 decisions 3 and 4 and adds no new structural decision
 - [x] New pattern candidate for `00_meta/patterns/`? no: one occurrence; it becomes a pattern if another repository's linter is found with the same blind spot
 
+## Adversarial review
+
+An independent review was run on 2026-11-05, at `3b6d1a6`. Its verdict was PASS-WITH-GAPS: no Blocker and no
+Major against the product. It re-ran the suite (88 of 88 ok), actionlint and every `features.json`
+command, and it mutated the actions on a scratch copy. There is no pool-signed `review.md`, because this
+repository has no reviewer pool (#28).
+
+| # | Finding | Disposition |
+|---|---|---|
+| 1 | Major (test gap). The full-run tests set `FULL_RUN_EVENTS` themselves, so dropping `schedule` from the default fails nothing. | Ticketed: #27 |
+| 2 | Minor. The f1 filter did not select "a code pull request reports its area". | Fixed in `aaec0b1` |
+| 3 | Minor. The f5 grep did not check the area map, the outputs or the protection procedure. | Fixed in `aaec0b1` |
+| 4 | Minor. Removing `token:` from the filter step fails no test. | Ticketed: #27 |
+| 5 | Minor. No GitHub docs-only pull request is cited for the skip path. | The pull request that archives this spec is docs-only; its run is cited on the pull request and on #9 |
+| 6 | Minor. Issue #9 stays open after archive. | The archiving pull request closes #9 |
+
+The Gitea claims were not re-checked by the reviewer, so this spec archives on them as owner-attested.
+The links above make them re-checkable.
+
 ## Archive checklist
 
 - [ ] `proposal.md` frontmatter set to `status: archived`
