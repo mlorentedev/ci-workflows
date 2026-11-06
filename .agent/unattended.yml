@@ -1,0 +1,27 @@
+version: 1
+run_id: "ciw-20261106T0657Z-pages"
+armed_by: manu
+armed_at: 2026-11-06T06:57:00Z
+expires_at: 2026-11-06T14:57:00Z
+objective: "Open the ci-workflows PR adding the reusable pages workflow of #32 (spec, workflow, caller fixtures, bats tests, README), green and triaged, and leave it for the owner; then, if time remains, open #31's spec-only PR."
+worktree: /Users/manu/Projects/worktrees/ci-workflows/feat-issue-32-pages
+branch: feat/issue-32-pages
+scope:
+  write_paths: [".github/workflows/pages.yml", "tests/pages*.bats", "tests/fixtures/pages*/**", "tests/fixtures/pages*.yml", "specs/CI-*-pages/**", "specs/CI-*-hygiene/**", "README.md", "docs/lessons/**", ".agent/runs/ciw-20261106T0657Z-pages/**"]
+  frozen_paths: [".github/merge-grant.yml", ".github/actions/**", ".github/workflows/release*.yml", ".github/workflows/lint.yml", ".github/workflows/pr-agent.yml", ".github/workflows/review.yml", "renovate.json", "harness/**", "**/AGENTS.md", ".agent/unattended.yml"]
+  max_files: 12
+  max_loc: 300
+allowed_commands: [dotf, gh, git, bats, actionlint, shellcheck, yq, jq, caffeinate]
+queue:
+  source: bitacora
+  filter: "ci-workflows#32 (pages reusable workflow), then ci-workflows#31 limited to its spec. Owner choice 2026-11-06. Avoid the paths of the peer run on #10 (setup-node, lint.yml)."
+  max_items: 2
+budget:
+  max_iterations: 6
+  max_minutes_per_iteration: 90
+  max_consecutive_failures: 2
+authority:
+  merge: standing-grant  # owner, 2026-11-06: only docs/tests-only PRs; anything under .github/, harness/ or release stays for the owner
+  push: true
+  open_pr: true
+  advisor_tier: top
