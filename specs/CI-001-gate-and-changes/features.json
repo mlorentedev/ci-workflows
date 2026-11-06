@@ -3,35 +3,35 @@
     "id": "CI-001-gate-and-changes-f1",
     "behavior": "A docs-only change reports only docs, a code change reports its area, and gate passes on success and skipped needs.",
     "verification": "bats tests/gate.bats tests/changes.bats --filter 'reports only|passes'",
-    "state": "pending",
-    "evidence": ""
+    "state": "passing",
+    "evidence": "gate.bats and changes.bats: the passes and reports-only tests ok (133d3c0)"
   },
   {
     "id": "CI-001-gate-and-changes-f2",
     "behavior": "gate fails, naming the cause, on a failed or cancelled need, an empty needs and invalid JSON.",
     "verification": "bats tests/gate.bats --filter 'fails'",
-    "state": "pending",
-    "evidence": ""
+    "state": "passing",
+    "evidence": "gate.bats: the four fails tests ok (133d3c0)"
   },
   {
     "id": "CI-001-gate-and-changes-f3",
     "behavior": "A push, a schedule and a dispatch report every area as changed, with full=true.",
     "verification": "bats tests/changes.bats --filter 'every area'",
-    "state": "pending",
-    "evidence": ""
+    "state": "passing",
+    "evidence": "changes.bats: push, schedule and dispatch report every area (133d3c0)"
   },
   {
     "id": "CI-001-gate-and-changes-f4",
     "behavior": "paths-filter is pinned by full SHA with its tag as a comment.",
     "verification": "bats tests/changes.bats --filter 'pinned'",
-    "state": "pending",
-    "evidence": ""
+    "state": "passing",
+    "evidence": "changes.bats: the pinned test ok (133d3c0)"
   },
   {
     "id": "CI-001-gate-and-changes-f5",
     "behavior": "The README documents the area map, outputs, the if: always() rule and moving branch protection to gate.",
     "verification": "grep -q 'if: always()' README.md && grep -q '## changes' README.md && grep -q '## gate' README.md",
-    "state": "pending",
-    "evidence": ""
+    "state": "passing",
+    "evidence": "README sections ## changes and ## gate, merged in #17"
   }
 ]

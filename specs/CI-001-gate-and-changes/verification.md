@@ -23,10 +23,19 @@ owner: manu
 
 ## Test status
 
-- Test suite: `bats tests/` reports 59 of 59 ok. `actionlint` reports no findings.
+- Test suite: `bats tests/` reported 59 of 59 ok at merge, and 88 of 88 at `133d3c0`. `actionlint` reports no findings.
 - The command of every entry in `features.json` exits 0.
-- Manual smoke test: none. A workflow runs neither composite yet. The first consumer is criterion 3 of
-  issue #9, which this branch does not close.
+- Manual smoke test: the consumers of issue #9 criterion 3, after merge.
+  - **GitHub.** This repository's `lint.yml` runs `changes`, `lint`, `test` and `gate` at v0.3.0 (#22,
+    merged as `df6cb19`). `gate` reported success on `main` at `df6cb19`.
+  - **Gitea, act_runner v4.1.0.** `personal/imagesensortool` PR 151 (merged as `ccdcc47`) gates
+    `image.yml`.
+    - Docs-only PR 153 (`96c3f8e`): `image` skipped and `gate` passed. PR 152 matched.
+    - Master run at `ccdcc47`: the full run, so `yq` was found; `image` built and pushed.
+    - Run 3009 (PR 151) first failed on a runner docker timeout. `gate` failed with `changes`, and the
+      rerun passed.
+  - The three Gitea questions in the proposal's Risks are answered yes: act_runner resolves the nested
+    `uses:` from github.com, it runs `node24`, and the job token lists the pull request's files.
 - No regressions in the existing suite: none. `push-gate.bats`, `callers.bats`, `pr-agent-shape.bats`
   and `preflight-step.bats` all pass.
 
