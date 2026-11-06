@@ -31,16 +31,15 @@ engine version and the GitHub workflow.
   while majors stay individual, a Dependency Dashboard, and no automerge. Repositories extend it with
   `github>mlorentedev/ci-workflows//renovate/default#<tag>`.
 - **The engine pin**, `renovate/engine.json` (`{"image": ..., "version": ...}`), sits at the same tag as the
-  preset. This repository's own Renovate bumps it, the reusable workflow reads it, and the Gitea run reads
+  preset. This repository's own Renovate bumps it, `renovate.yml` reads it, and the Gitea run reads
   it at the same tag.
-- **A reusable `renovate.yml`** (`workflow_call`). It reads the engine pin at its own ref, with an optional
-  override input. It takes the `RENOVATE_TOKEN` secret and runs `renovatebot/github-action` pinned by SHA,
-  with `RENOVATE_ONBOARDING=false` and `RENOVATE_REQUIRE_CONFIG=required`. The `repositories` input is either
-  a list or the autodiscover filter.
-- **One scheduled caller, here.** `renovate-fleet.yml` calls the reusable workflow weekly with autodiscover
-  over `mlorentedev/*`. Because a config is required, a repository is updated once it carries a
-  `renovate.json` and is ignored before that: adopting Renovate is adding that file. No repository needs a
-  caller of its own.
+- **One scheduled run, here** (`.github/workflows/renovate.yml`), weekly and on dispatch. It reads the
+  engine pin from `renovate/engine.json`, authenticates with `RENOVATE_TOKEN`, runs
+  `renovatebot/github-action` pinned by SHA, and autodiscovers `mlorentedev/*` with
+  `RENOVATE_ONBOARDING=false` and `RENOVATE_REQUIRE_CONFIG=required`. So a repository is updated once it
+  carries a `renovate.json`, and is ignored before that: adopting Renovate means adding that file, and no
+  repository needs a caller of its own. A dispatch can name repositories. There is no reusable workflow:
+  it would have one caller, and called from another repository it could not read `renovate/engine.json`.
 - **This repository adopts first.** Its `renovate.json` extends the preset, and adds a manager that bumps
   `renovate/engine.json` and the preset tag that consumers pin.
 - **kubelab moves over.** A kubelab PR deletes `renovate.yml`, `ci.renovate.image` and
@@ -60,7 +59,8 @@ engine version and the GitHub workflow.
 
 ## Risks / open questions
 
-- **The token.** The central run needs one token for every repository. It needs contents, pull requests and
+- **The token (decided 2026-11-06).** `RENOVATE_TOKEN`, created by the owner and registered in
+  dotfiles#3202. The central run needs one token for every repository. It needs contents, pull requests and
   issues (for the dashboard) write, and `workflows` write, because bumping action pins edits
   `.github/workflows`. A PR opened with `GITHUB_TOKEN` starts no checks, so a PAT is required. Proposal: a
   fine-grained PAT, `RENOVATE_TOKEN`, scoped to all repositories, registered in dotfiles' secret registry
@@ -80,10 +80,11 @@ engine version and the GitHub workflow.
 
 1. [ ] `renovate/default.json` and `renovate/engine.json` pass `renovate-config-validator`, and a tagged
       release carries both.
-2. [ ] The reusable `renovate.yml` is called only (`workflow_call`) and reads the engine pin at its own
-      ref; an override input replaces it. It requires `RENOVATE_TOKEN` and fails, naming the remedy, when the
-      token is missing. It pins every action by SHA. Each rule fails against a fixture that breaks it.
-3. [ ] `renovate-fleet.yml` runs weekly and on dispatch. A dispatch updates the Dependency Dashboard of this
+2. [ ] `renovate.yml` reads the engine pin from `renovate/engine.json`, fails first when
+      `RENOVATE_TOKEN` is missing (naming the remedy), requires a config, never onboards, gives
+      `GITHUB_TOKEN` only contents read, and pins every action by SHA. Each rule fails against a fixture
+      that breaks it.
+3. [ ] `renovate.yml` runs weekly and on dispatch. A dispatch updates the Dependency Dashboard of this
       repository and of kubelab.
 4. [ ] This repository's Renovate opens a PR when `renovate/engine.json` is behind the latest engine.
 5. [ ] After the kubelab PR merges, kubelab's dashboard and PRs come from the central run. kubelab has no

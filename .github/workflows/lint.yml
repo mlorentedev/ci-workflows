@@ -44,6 +44,8 @@ jobs:
             code:
               - ".github/**"
               - "tests/**"
+              - "renovate/**"
+              - "renovate.json"
 
   lint:
     needs: changes
@@ -94,10 +96,28 @@ jobs:
       - name: Run the workflow shape tests
         run: '"./bats-core-${BATS_VERSION}/bin/bats" tests/'
 
+  # The fleet preset and this repository's config, checked by the validator of
+  # the engine the run uses (renovate/engine.json), as repository config and
+  # strictly, so a deprecated option fails here before it reaches the fleet.
+  renovate-config:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.areas), 'code')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate the Renovate configs
+        run: |
+          engine="$(jq -er '.image + ":" + .version' renovate/engine.json)"
+          docker run --rm -v "${PWD}:/repo:ro" -w /repo --entrypoint renovate-config-validator \
+            "${engine}" --strict --no-global renovate.json renovate/default.json
+
   # The one check branch protection will require (ADR-001 decision 3), once it
   # has reported on main. `if: always()` keeps a failed need from skipping it.
   gate:
-    needs: [changes, lint, test]
+    needs: [changes, lint, test, renovate-config]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2

@@ -11,24 +11,29 @@ owner: manu
 
 ## Evidence
 
-Map every acceptance criterion from `proposal.md` to concrete proof (commit hash, test name, or observed behavior).
-
-- [ ] Criterion 1 -> commit `<hash>` / test `<name>`
-- [ ] Criterion 2 -> commit `<hash>` / test `<name>`
-- [ ] Criterion 3 -> commit `<hash>` / test `<name>`
+- [x] AC1 -> `lint / renovate-config` runs the engine's `renovate-config-validator --strict --no-global` over
+      `renovate.json` and `renovate/default.json`; locally it validated both and rejected a config with a
+      packageRule lacking a selector. Tests 7-9 of `tests/renovate-shape.bats` pin the engine file and the
+      preset (no GitHub-only option, no automerge). The tag waits for the release PR.
+- [x] AC2 -> `tests/renovate-shape.bats` tests 1-6, each run against the workflow and against
+      `tests/fixtures/renovate-shape-bad.yml`.
+- [ ] AC3 -> after merge: a dispatch updates the dashboards of this repository and kubelab.
+- [ ] AC4 -> after merge: the engine PR when `renovate/engine.json` is behind.
+- [ ] AC5 -> the kubelab PR.
+- [ ] AC6 -> fleet adoption, per repository in tasks.md.
+- [x] AC7 -> ADR-001 decision 6 amended; README `## renovate`.
 
 ## Test status
 
-- Test suite: `<command> -> <output / coverage %>`
-- Manual smoke test: what was exercised, what was observed
-- No regressions in existing test suite: yes / no (if no, document)
+- `bats tests/`: 97 tests, 0 failures.
+- `actionlint`: clean.
 
 ## Decisions made during implementation
 
-Brief log of non-obvious trade-offs or course corrections taken during the work. Routine choices belong in commit messages, not here.
-
--
--
+- No reusable workflow. With one central autodiscover run it would have a single caller, and a caller in
+  another repository could not read `renovate/engine.json` at the reusable workflow's ref.
+- Action bumps commit as `ci(deps):`, so they do not cut a fix release through release-please. Every other
+  update keeps kubelab's `fix(deps):`.
 
 ## Promotion candidates
 
