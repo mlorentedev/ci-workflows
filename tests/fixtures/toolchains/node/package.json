@@ -1,0 +1,8 @@
+{
+  "name": "setup-node-smoke",
+  "private": true,
+  "description": "The smallest project setup-node can cache: one dependency, so npm ci has something to store.",
+  "dependencies": {
+    "is-number": "7.0.0"
+  }
+}
