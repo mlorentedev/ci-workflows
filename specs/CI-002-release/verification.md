@@ -28,7 +28,7 @@ owner: manu
 
 ## Test status
 
-- `bats tests/` reports 87 of 87 ok. `actionlint` reports no findings; it also resolves the local call in
+- `bats tests/` reports 88 of 88 ok (87 before #25 added one). `actionlint` reports no findings; it also resolves the local call in
   `release-please.yml` and checks its `secrets:` against `release.yml`.
 - The command of every passing entry in `features.json` exits 0.
 - No regressions: the 59 tests that existed before all pass.
@@ -39,6 +39,17 @@ owner: manu
 notes are never empty and release-please skips only an empty changelog (#24, lesson 004). #25 replaced it
 with `changelog-sections`, and squash merges now carry the PR title and a blank body. Release PR #23,
 rewritten after the merge, lists only #25 and contains no closing keyword.
+
+Notes from the independent review (`review.md`):
+
+- `tasks.md` still lists `changelog-type: github` among the settled decisions. It records what was
+  settled before implementation and stays as written; this amendment supersedes it.
+- That a hidden-type push cuts no release is shown by the source rule (lesson 004) and by #23 omitting
+  #21 and #22. The first live case is the merge of #26, a `docs:` change: #23 must keep its head commit
+  and no other release PR may open.
+- No `closes` rests on the repository's squash defaults, which are not retroactive. Merge commits and
+  rebase merges are still allowed and still carry bodies (dotfiles#3169, dotfiles#3198).
+- The token step's two script tests run under `bats tests/`, not under a `features.json` command.
 
 ## Decisions made during implementation
 
