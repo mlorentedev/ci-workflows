@@ -113,6 +113,35 @@ jobs:
           engine="$(jq -er '.image + ":" + .version' renovate/engine.json)"
           docker run --rm -v "${PWD}:/repo:ro" -w /repo --entrypoint renovate-config-validator \
             "${engine}" --strict --no-global renovate.json renovate/default.json
+      # Dependabot's directory "/" never reads .github/actions/*, so a pin inside
+      # a composite went unbumped (#37). Extract with the preset alone, on a copy
+      # without renovate.json (the local platform cannot fetch local> presets),
+      # and fail when a workflow or a composite that pins an action by reference
+      # yields no extracted dependency. Files with only local `./` uses pin nothing.
+      - name: Check the preset reads every pinned workflow and composite
+        run: |
+          engine="$(jq -er '.image + ":" + .version' renovate/engine.json)"
+          work="$(mktemp -d)"
+          mkdir "${work}/repo"
+          cp -R .github "${work}/repo/"
+          cp renovate/default.json "${work}/preset.json"
+          chmod -R a+rwX "${work}"
+          docker run --rm -v "${work}:/w" -w /w/repo \
+            -e LOG_LEVEL=debug -e LOG_FORMAT=json -e RENOVATE_PLATFORM=local \
+            -e RENOVATE_DRY_RUN=extract -e RENOVATE_REQUIRE_CONFIG=ignored \
+            -e RENOVATE_CONFIG_FILE=/w/preset.json "${engine}" > "${work}/extract.log" 2>&1
+          grep -F '"msg":"Extracted dependencies"' "${work}/extract.log" | grep -oE '"packageFile":"[^"]*"' | cut -d'"' -f4 | sort -u > "${work}/found"
+          missing=0
+          checked=0
+          for f in .github/workflows/*.yml .github/actions/*/action.yml; do
+            grep -qE '^[[:space:]-]*uses:[[:space:]]*[^.[:space:]]' "${f}" || continue
+            checked=$((checked + 1))
+            grep -qxF "${f}" "${work}/found" || { echo "::error::Renovate does not read ${f}"; missing=1; }
+          done
+          # A broken pattern above would check nothing and pass.
+          [ "${checked}" -ge 3 ] || { echo "::error::only ${checked} pinned files found"; exit 1; }
+          echo "${checked} pinned files checked"
+          exit "${missing}"
 
   # The one check branch protection will require (ADR-001 decision 3), once it
   # has reported on main. `if: always()` keeps a failed need from skipping it.
