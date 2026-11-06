@@ -1,0 +1,68 @@
+version: 1
+run_id: "ciw-20261106T0700Z"
+armed_by: manu
+armed_at: 2026-11-06T07:00:00Z
+expires_at: 2026-11-06T15:00:00Z
+objective: "Carry ci-workflows#30 as far as it goes unattended (kubelab PR, fleet adoption PRs, live dispatch evidence), then open the #31 hygiene composite PR, green and triaged."
+worktree: /Users/manu/Projects/worktrees/ci-workflows/chore-autopilot-ciw-20261106t0700z
+branch: chore/autopilot-ciw-20261106t0700z
+# A peer run (ciw-20261106T0650Z, branch chore/autopilot-ciw-20261102t0550z) owns
+# CI-004 setup-node and .github/workflows/lint.yml tonight. This run does not write
+# lint.yml until that PR has merged; #31's smoke job waits for it.
+scope:
+  write_paths:
+    - "specs/CI-003-renovate/**"
+    - "specs/CI-005-hygiene/**"
+    - ".github/actions/hygiene/**"
+    - "tests/**"
+    - "README.md"
+    - "docs/lessons/**"
+    - "docs/adr/**"
+    - ".agent/runs/ciw-20261106T0700Z/**"
+    # Other repositories, on their own branches and worktrees, PRs left to the owner:
+    - "mlorentedev/kubelab: renovate.json, .github/workflows/renovate.yml, common.yaml (ci.renovate.image only), tests/test_renovate_engine_version.py, docs/lessons/**"
+    - "mlorentedev/<fleet repo>: renovate.json, .github/dependabot.yml (delete only)"
+  frozen_paths:
+    - ".github/merge-grant.yml"
+    - ".github/workflows/**"
+    - ".github/actions/gate/**"
+    - ".github/actions/changes/**"
+    - ".github/actions/push-gate/**"
+    - ".github/actions/setup-node/**"
+    - "specs/CI-004-toolchain-setup/**"
+    - "renovate.json"
+    - "renovate/**"
+    - "harness/**"
+    - "**/AGENTS.md"
+    - ".agent/unattended.yml"
+  max_files: 12
+  max_loc: 300
+allowed_commands: [dotf, gh, git, bats, actionlint, shellcheck, yq, jq, docker, caffeinate]
+queue:
+  source: bitacora
+  filter: >-
+    In order: (1) after the owner's v0.4.0 tag, dispatch renovate.yml with
+    repositories=mlorentedev/ci-workflows,mlorentedev/kubelab (owner approved 2026-11-06)
+    and record AC3/AC4 evidence in specs/CI-003-renovate/verification.md;
+    (2) the kubelab PR moving it to the preset;
+    (3) fleet adoption PRs for the GitHub repositories, in batches of 4 with a 15-minute
+    pause (NaN review capacity), each adding renovate.json pinned to the preset tag and
+    deleting dependabot.yml; (4) ci-workflows#31, spec and hygiene composite.
+    Gitea (owned by the IDP-036 session), #32 and #33 are out of scope.
+  max_items: 4
+budget:
+  max_iterations: 10
+  max_minutes_per_iteration: 60
+  max_consecutive_failures: 2
+authority:
+  # Verbal grant, owner, 2026-11-06: merge every ci-workflows PR this run opens once
+  # CI is green on its head, it has no conflicts and its review is triaged, including
+  # PRs that touch workflows. There is no .github/merge-grant.yml in this repository.
+  # Never: release PRs and tags, PRs touching .agent/unattended.yml, and any PR in
+  # another repository (kubelab and the fleet are merged by the owner).
+  merge: standing-grant
+  merge_scope: "mlorentedev/ci-workflows only"
+  push: true
+  open_pr: true
+  dispatch: "renovate.yml on mlorentedev/ci-workflows and mlorentedev/kubelab, once"
+  advisor_tier: top
