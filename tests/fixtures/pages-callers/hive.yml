@@ -1,0 +1,23 @@
+# hive: builds on pull requests and runs a link check.
+name: pages
+on:
+  push:
+    branches: [master]
+    paths: ['site/**', '.github/workflows/pages.yml']
+  pull_request:
+    branches: [master]
+    paths: ['site/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('pages-pr-{0}', github.event.pull_request.number) || 'pages' }}
+  cancel-in-progress: true
+jobs:
+  pages:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: mlorentedev/ci-workflows/.github/workflows/pages.yml@0000000000000000000000000000000000000000 # v0.0.0
+    with:
+      check_command: npm run check:links
