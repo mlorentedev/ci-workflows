@@ -55,34 +55,34 @@ The interface of `.github/actions/setup-node/action.yml`:
 
 Tasks:
 
-- [ ] [AC1] Write `tests/setup-node.bats` with failing tests:
+- [x] [AC1] Write `tests/setup-node.bats` with failing tests:
   - the input defaults read from `action.yml`;
   - the outputs map to the right steps;
   - the steps run under `bash`;
   - each third-party `uses:` is pinned by a 40-hex SHA with its tag as a comment.
 
   Run `bats tests/setup-node.bats`. Expected: FAIL, because `action.yml` is missing.
-- [ ] [AC1] Write `.github/actions/setup-node/action.yml` with the interface above. Expected: those tests pass.
-- [ ] [AC2] Add failing tests that run the `resolve` script the way `changes.bats` runs its steps:
+- [x] [AC1] Write `.github/actions/setup-node/action.yml` with the interface above. Expected: those tests pass.
+- [x] [AC2] Add failing tests that run the `resolve` script the way `changes.bats` runs its steps:
   - a version input publishes `version`;
   - a present version file publishes `file`;
   - an empty version and a missing file fail with a message naming both.
-- [ ] [AC2] Implement `resolve`. Expected: the tests pass.
-- [ ] [AC5] Add failing tests that the Playwright cache key contains `runner.os` and `runner.arch` and the Playwright version, and that the cache step runs only when `playwright == 'true'`. Then implement.
-- [ ] [AC2] Add tests that `playwright-version` reads the version from a fixture lockfile and fails when neither package is in it. Then implement.
-- [ ] [AC3] Add the fixture `tests/fixtures/toolchains/node/`, holding `.nvmrc`, a `package.json` with one tiny dependency, and its `package-lock.json`. The cache needs something to store.
-- [ ] [AC3] In `lint.yml`:
+- [x] [AC2] Implement `resolve`. Expected: the tests pass.
+- [x] [AC5] Add failing tests that the Playwright cache key contains `runner.os` and `runner.arch` and the Playwright version, and that the cache step runs only when `playwright == 'true'`. Then implement.
+- [x] [AC2] Add tests that `playwright-version` reads the version from a fixture lockfile and fails when neither package is in it. Then implement.
+- [x] [AC3] Add the fixture `tests/fixtures/toolchains/node/`, holding `.nvmrc`, a `package.json` with one tiny dependency, and its `package-lock.json`. The cache needs something to store.
+- [x] [AC3] In `lint.yml`:
   - a `toolchains` area in `changes` covering `.github/actions/setup-*/**` and `tests/fixtures/toolchains/**`;
   - a `smoke-setup-node` job behind it, which uses `./.github/actions/setup-node` (this checkout, on purpose), runs `npm ci` in the fixture, and prints `cache-hit` and `cache-primary-key`;
   - the job added to `gate`'s `needs`.
 
   Expected: actionlint clean, and the `callers`/shape tests pass.
-- [ ] [AC1] Extend `tests/composites-shellcheck.bats`'s minimum step count for the new `run:` steps. Expected: the suite passes.
+- [x] [AC1] Extend `tests/composites-shellcheck.bats`'s minimum step count for the new `run:` steps. Expected: the suite passes.
 - [ ] [AC3] After merge, record in `verification.md`:
   - the push run on `main` that warmed the cache (`cache-hit=false`);
   - the next run that read it (`cache-hit=true`, with a `cache-primary-key` holding the platform and arch).
 - [ ] [AC4] Gitea pilot: imagesensortool's CI uses `setup-node` at a pinned SHA. Record whether the cache hits there or degrades with the job still green. A missing cache server becomes a kubelab ticket.
-- [ ] README: a `## setup-node` section with the interface, the caller's `npm ci` and Playwright install, and the Gitea result.
+- [x] README: a `## setup-node` section with the interface, the caller's `npm ci` and Playwright install, and the Gitea result.
 
 ## Closing
 

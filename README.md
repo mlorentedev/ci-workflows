@@ -221,6 +221,49 @@ skipped, and it names each job that did not.
   and `gate`, pinned to a release rather than to this checkout, so a pull
   request cannot weaken the gate that judges it.
 
+## setup-node
+
+`.github/actions/setup-node` installs Node with a cached npm store, and can also
+cache the Playwright browsers (spec CI-004). It installs nothing else: the
+caller runs `npm ci`, and the Playwright install when the cache missed.
+
+```yaml
+    steps:
+      - uses: actions/checkout@<40-hex-sha> # vX.Y.Z
+        with:
+          persist-credentials: false
+      - id: node
+        uses: mlorentedev/ci-workflows/.github/actions/setup-node@<40-hex-sha> # vX.Y.Z
+        with:
+          playwright: "true"
+      - run: npm ci
+      - if: steps.node.outputs.playwright-cache-hit != 'true'
+        run: npx playwright install --with-deps
+      - if: steps.node.outputs.playwright-cache-hit == 'true'
+        run: npx playwright install-deps
+```
+
+- **The version.** `version` wins when it is set. Otherwise the composite reads
+  `version-file` (default `.nvmrc`) in `working-directory` (default `.`). With
+  neither, the step fails and names both: no version is hard-coded.
+- **The npm cache** is `actions/setup-node`'s, keyed on the platform, the arch
+  and `<working-directory>/package-lock.json`. So the lockfile must exist.
+  `cache-hit` and `cache-primary-key` come from it.
+- **Playwright** (`playwright: "true"`, off by default) caches
+  `~/.cache/ms-playwright` under
+  `playwright-<os>-<arch>-<version>`. The version is read from
+  `@playwright/test`, or else `playwright`, in the lockfile. A lockfile with
+  neither fails the step rather than cache under an empty key.
+  `playwright-cache-hit` reports the restore. The cache holds the browsers
+  only, so on a hit the caller still installs their system packages with
+  `npx playwright install-deps`.
+- **A cache that cannot be reached** is a warning in `actions/cache`, not a
+  failure, so the install still runs. Gitea's behaviour is recorded once the
+  pilot in imagesensortool has run (CI-004).
+- **This repository smokes it.** The `smoke-setup-node` job in `lint.yml` runs
+  the composite from this checkout against `tests/fixtures/toolchains/node/`,
+  and checks that the cache key names the runner's platform and arch.
+
 ## release
 
 `.github/workflows/release.yml` runs
