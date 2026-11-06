@@ -1,9 +1,9 @@
 # Node with a cached npm store, and optionally cached Playwright browsers (spec
 # CI-004). The version comes from the `version` input or the version file; with
 # neither, the step fails rather than install a default. The caller checks the
-# repository out first, then runs `npm ci`, and `npx playwright install
-# --with-deps` when `playwright-cache-hit` is not 'true'. A missing cache server
-# only warns: the install still runs.
+# repository out first, then runs `npm ci` and `npx playwright install
+# --with-deps`, which on a cache hit downloads only what the cache lacks. A
+# cache that cannot be reached only warns: the install still runs.
 name: setup-node
 description: Install Node from the caller's version source, with the npm cache keyed on its lockfile.
 

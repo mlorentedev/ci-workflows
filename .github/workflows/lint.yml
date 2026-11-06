@@ -177,7 +177,7 @@ jobs:
           echo "cache-primary-key=${KEY}"
           case "${KEY,,}" in
             "node-cache-${RUNNER_OS,,}-${RUNNER_ARCH,,}-npm-"*) ;;
-            *) echo "::error::the npm cache key does not name ${RUNNER_OS}/${RUNNER_ARCH}"; exit 1 ;;
+            *) echo "::error::the npm cache key '${KEY}' does not start with node-cache-${RUNNER_OS}-${RUNNER_ARCH}-npm-: either it lost the platform, or actions/setup-node changed its key format"; exit 1 ;;
           esac
 
   # The one check branch protection will require (ADR-001 decision 3), once it

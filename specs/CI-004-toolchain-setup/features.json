@@ -16,14 +16,14 @@
   {
     "id": "CI-004-toolchain-setup-f3",
     "behavior": "The smoke job runs setup-node from this checkout against its fixture, behind gate; its second run reports cache-hit true.",
-    "verification": "bats tests/setup-node.bats --filter "gate needs|smoke|toolchains area|fixture"",
+    "verification": "grep -qE '^- \\[x\\] AC3 .*cache-hit=true' specs/CI-004-toolchain-setup/verification.md && bats tests/setup-node.bats --filter 'gate needs|smoke|toolchains area|fixture'",
     "state": "pending",
     "evidence": ""
   },
   {
     "id": "CI-004-toolchain-setup-f4",
     "behavior": "setup-node runs on the Gitea runner in imagesensortool, and the cache hits there or degrades with the job green.",
-    "verification": "echo 'recorded in verification.md after the imagesensortool pilot' && exit 1",
+    "verification": "grep -qE '^- \\[x\\] AC4 .*imagesensortool.*(cache-hit=true|degraded)' specs/CI-004-toolchain-setup/verification.md",
     "state": "pending",
     "evidence": ""
   },

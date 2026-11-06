@@ -225,7 +225,7 @@ skipped, and it names each job that did not.
 
 `.github/actions/setup-node` installs Node with a cached npm store, and can also
 cache the Playwright browsers (spec CI-004). It installs nothing else: the
-caller runs `npm ci`, and the Playwright install when the cache missed.
+caller runs `npm ci` and the Playwright install.
 
 ```yaml
     steps:
@@ -237,10 +237,7 @@ caller runs `npm ci`, and the Playwright install when the cache missed.
         with:
           playwright: "true"
       - run: npm ci
-      - if: steps.node.outputs.playwright-cache-hit != 'true'
-        run: npx playwright install --with-deps
-      - if: steps.node.outputs.playwright-cache-hit == 'true'
-        run: npx playwright install-deps
+      - run: npx playwright install --with-deps
 ```
 
 - **The version.** `version` wins when it is set. Otherwise the composite reads
@@ -254,9 +251,10 @@ caller runs `npm ci`, and the Playwright install when the cache missed.
   `playwright-<os>-<arch>-<version>`. The version is read from
   `@playwright/test`, or else `playwright`, in the lockfile. A lockfile with
   neither fails the step rather than cache under an empty key.
-  `playwright-cache-hit` reports the restore. The cache holds the browsers
-  only, so on a hit the caller still installs their system packages with
-  `npx playwright install-deps`.
+  `playwright-cache-hit` reports the restore. Run
+  `npx playwright install --with-deps` on a hit too: it downloads only the
+  browsers the cache lacks, so a cache saved from a partial install heals, and
+  it installs the system packages the cache never holds.
 - **A cache that cannot be reached** is a warning in `actions/cache`, not a
   failure, so the install still runs. Gitea's behaviour is recorded once the
   pilot in imagesensortool has run (CI-004).

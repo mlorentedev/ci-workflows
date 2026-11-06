@@ -184,3 +184,13 @@ lock_with() {
   [ "$(jq -r '.lockfileVersion' "${FIXTURE}/package-lock.json")" = "3" ]
   [ "$(jq -r '.packages | length' "${FIXTURE}/package-lock.json")" -ge 2 ]
 }
+
+@test "the fixture's lockfile matches its package.json" {
+  [ "$(jq -cS '.dependencies' "${FIXTURE}/package.json")" = "$(jq -cS '.packages[""].dependencies' "${FIXTURE}/package-lock.json")" ]
+}
+
+@test "the spec's feature list parses and gives every feature a verification" {
+  run jq -e 'all(.[]; (.verification | type) == "string" and (.verification | length) > 0)' \
+    "${BATS_TEST_DIRNAME}/../specs/CI-004-toolchain-setup/features.json"
+  [ "$status" -eq 0 ]
+}
