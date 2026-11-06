@@ -1,0 +1,37 @@
+[
+  {
+    "id": "CI-004-toolchain-setup-f1",
+    "behavior": "setup-node's inputs, defaults and outputs (cache-hit included) read from action.yml, and every third-party action is pinned by a 40-hex SHA with its tag.",
+    "verification": "bats tests/setup-node.bats --filter 'inputs and their defaults|outputs map|pinned by full SHA'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f2",
+    "behavior": "The Node version comes from the version input or the version file, and with neither the step fails naming both.",
+    "verification": "bats tests/setup-node.bats --filter 'version input|version file|neither a version'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f3",
+    "behavior": "The smoke job runs setup-node from this checkout against its fixture, behind gate; its second run reports cache-hit true.",
+    "verification": "grep -qE '^- \\[x\\] AC3 .*cache-hit=true' specs/CI-004-toolchain-setup/verification.md && bats tests/setup-node.bats --filter 'gate needs|smoke|toolchains area|fixture'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f4",
+    "behavior": "setup-node runs on the Gitea runner in imagesensortool, and the cache hits there or degrades with the job green.",
+    "verification": "grep -qE '^- \\[x\\] AC4 .*imagesensortool.*(cache-hit=true|degraded)' specs/CI-004-toolchain-setup/verification.md",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f5",
+    "behavior": "Every cache key names runner.os and runner.arch.",
+    "verification": "bats tests/setup-node.bats --filter 'platform, the arch' && grep -F 'node-cache-${RUNNER_OS,,}-${RUNNER_ARCH,,}-npm-' .github/workflows/lint.yml",
+    "state": "pending",
+    "evidence": ""
+  }
+]

@@ -1,0 +1,11 @@
+# Breaks every rule in tests/pages-callers.bats. Never called.
+name: pages-bad
+on: push
+jobs:
+  pages:
+    permissions:
+      contents: read
+    uses: mlorentedev/ci-workflows/.github/workflows/pages.yml@v1
+    with:
+      output_dir: dist
+    secrets: inherit

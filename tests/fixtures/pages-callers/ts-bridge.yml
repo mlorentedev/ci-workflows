@@ -1,0 +1,18 @@
+# ts-bridge: deploys on push, with every default.
+name: pages
+on:
+  push:
+    branches: [master]
+    paths: ['site/**']
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  pages:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: mlorentedev/ci-workflows/.github/workflows/pages.yml@0000000000000000000000000000000000000000 # v0.0.0

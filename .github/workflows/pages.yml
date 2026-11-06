@@ -1,0 +1,86 @@
+# The GitHub Pages deploy for any repository in the fleet (CI-006, #32). It builds
+# an npm site and deploys it; a pull request builds only. The caller owns the
+# triggers, the concurrency group and the permissions ceiling (AGENTS.md rule 4),
+# and grants `contents: read`, `pages: write` and `id-token: write`.
+name: pages
+
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        description: The directory holding the site's package.json and package-lock.json.
+        type: string
+        default: site
+      node_version:
+        description: The Node.js version to build with.
+        type: string
+        default: "22"
+      build_command:
+        description: The build command, run in working_directory.
+        type: string
+        default: npm run build
+      check_command:
+        description: A command run after the build, in working_directory (e.g. a link check). Empty skips it.
+        type: string
+        default: ""
+      artifact_path:
+        description: The built site, relative to the repository root.
+        type: string
+        default: site/dist
+    outputs:
+      page_url:
+        description: The URL the site was deployed to. Empty on a pull request.
+        value: ${{ jobs.deploy.outputs.page_url }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.working_directory }}/package-lock.json
+      - name: Install
+        working-directory: ${{ inputs.working_directory }}
+        run: npm ci
+      - name: Build
+        working-directory: ${{ inputs.working_directory }}
+        env:
+          BUILD_COMMAND: ${{ inputs.build_command }}
+        run: bash -c "$BUILD_COMMAND"
+      - name: Check
+        if: inputs.check_command != ''
+        working-directory: ${{ inputs.working_directory }}
+        env:
+          CHECK_COMMAND: ${{ inputs.check_command }}
+        run: bash -c "$CHECK_COMMAND"
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ inputs.artifact_path }}
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    # Mechanism, not caller policy: the environment records the deployment and
+    # applies its protection rules, and a caller that forgot it would lose both.
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

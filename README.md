@@ -114,6 +114,58 @@ reviewed. `dotf_version` and the declared chain can be dropped.
 `tests/callers.bats` checks each against the workflow's interface, so add a
 fixture with a new shape of consumer.
 
+## pages
+
+`.github/workflows/pages.yml` builds an npm site and deploys it to GitHub Pages
+(GitHub only). A pull request builds and runs the check, but neither uploads nor
+deploys.
+
+```yaml
+name: pages
+
+on:
+  push:
+    branches: [master]
+    paths: ['site/**']
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  pages:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: mlorentedev/ci-workflows/.github/workflows/pages.yml@<40-hex-sha> # vX.Y.Z
+```
+
+- **Inputs.** None is required. The defaults are what the five consumers share.
+
+  | Input | Default | Meaning |
+  |---|---|---|
+  | `working_directory` | `site` | holds `package.json` and `package-lock.json`; `npm ci` and the commands run here |
+  | `node_version` | `22` | the Node.js version |
+  | `build_command` | `npm run build` | the build |
+  | `check_command` | empty | run after the build, e.g. `npm run check:links`; empty skips it |
+  | `artifact_path` | `site/dist` | the built site, from the repository root |
+
+- **Output.** `page_url`, the deployed URL. Empty on a pull request.
+- **Permissions.** `build` asks for `contents: read`, and `deploy` for
+  `pages: write` and `id-token: write`. A caller granting less fails the run
+  before any step.
+- **The environment.** `deploy` runs in `github-pages`, so the repository's
+  Pages source must be "GitHub Actions".
+- **Checks.** A caller requiring status checks names `<caller job> / build`.
+
+`tests/fixtures/pages-callers/` holds the hive shape (pull request builds and a
+check) and the ts-bridge shape (defaults); `tests/pages-callers.bats` checks
+each against the workflow's interface.
+
 ## push-gate
 
 `.github/actions/push-gate` runs `dotf pr gate` and publishes `run`, `mode` and
@@ -220,6 +272,47 @@ skipped, and it names each job that did not.
 - **This repository uses them too.** `lint.yml` runs `changes`, `lint`, `test`
   and `gate`, pinned to a release rather than to this checkout, so a pull
   request cannot weaken the gate that judges it.
+
+## setup-node
+
+`.github/actions/setup-node` installs Node with a cached npm store, and can also
+cache the Playwright browsers (spec CI-004). It installs nothing else: the
+caller runs `npm ci` and the Playwright install.
+
+```yaml
+    steps:
+      - uses: actions/checkout@<40-hex-sha> # vX.Y.Z
+        with:
+          persist-credentials: false
+      - id: node
+        uses: mlorentedev/ci-workflows/.github/actions/setup-node@<40-hex-sha> # vX.Y.Z
+        with:
+          playwright: "true"
+      - run: npm ci
+      - run: npx playwright install --with-deps
+```
+
+- **The version.** `version` wins when it is set. Otherwise the composite reads
+  `version-file` (default `.nvmrc`) in `working-directory` (default `.`). With
+  neither, the step fails and names both: no version is hard-coded.
+- **The npm cache** is `actions/setup-node`'s, keyed on the platform, the arch
+  and `<working-directory>/package-lock.json`. So the lockfile must exist.
+  `cache-hit` and `cache-primary-key` come from it.
+- **Playwright** (`playwright: "true"`, off by default) caches
+  `~/.cache/ms-playwright` under
+  `playwright-<os>-<arch>-<version>`. The version is read from
+  `@playwright/test`, or else `playwright`, in the lockfile. A lockfile with
+  neither fails the step rather than cache under an empty key.
+  `playwright-cache-hit` reports the restore. Run
+  `npx playwright install --with-deps` on a hit too: it downloads only the
+  browsers the cache lacks, so a cache saved from a partial install heals, and
+  it installs the system packages the cache never holds.
+- **A cache that cannot be reached** is a warning in `actions/cache`, not a
+  failure, so the install still runs. Gitea's behaviour is recorded once the
+  pilot in imagesensortool has run (CI-004).
+- **This repository smokes it.** The `smoke-setup-node` job in `lint.yml` runs
+  the composite from this checkout against `tests/fixtures/toolchains/node/`,
+  and checks that the cache key names the runner's platform and arch.
 
 ## release
 
