@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 #
-# The shape of the reusable pages workflow (CI-005, #32). Each rule runs against
+# The shape of the reusable pages workflow (CI-006, #32). Each rule runs against
 # the workflow and against a fixture that breaks it, so a check that stopped
 # matching fails here.
 

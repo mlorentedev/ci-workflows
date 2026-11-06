@@ -1,13 +1,13 @@
 ---
 tags: [spec, verification]
 created: "2026-11-05"
-id: "CI-005-pages"
+id: "CI-006-pages"
 type: spec-verification
 status: active
 owner: manu
 ---
 
-# Verification - CI-005-pages
+# Verification - CI-006-pages
 
 ## Evidence
 

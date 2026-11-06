@@ -1,5 +1,5 @@
 ---
-id: "CI-005-pages"
+id: "CI-006-pages"
 type: spec
 status: verifying # draft | implementing | verifying | archived
 created: "2026-11-05"
@@ -9,7 +9,7 @@ template_version: "1.0"
 owner: manu
 ---
 
-# CI-005-pages
+# CI-006-pages
 
 ## Why
 

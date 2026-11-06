@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 #
-# The repositories calling pages.yml, as fixtures (CI-005, #32). Each rule runs
+# The repositories calling pages.yml, as fixtures (CI-006, #32). Each rule runs
 # against every caller and against a fixture that breaks it.
 
 WORKFLOW="${BATS_TEST_DIRNAME}/../.github/workflows/pages.yml"

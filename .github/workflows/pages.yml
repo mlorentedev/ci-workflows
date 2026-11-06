@@ -1,4 +1,4 @@
-# The GitHub Pages deploy for any repository in the fleet (CI-005, #32). It builds
+# The GitHub Pages deploy for any repository in the fleet (CI-006, #32). It builds
 # an npm site and deploys it; a pull request builds only. The caller owns the
 # triggers, the concurrency group and the permissions ceiling (AGENTS.md rule 4),
 # and grants `contents: read`, `pages: write` and `id-token: write`.

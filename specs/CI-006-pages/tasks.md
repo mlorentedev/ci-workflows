@@ -1,13 +1,13 @@
 ---
 tags: [spec, tasks, templates]
 created: "2026-11-05"
-id: "CI-005-pages"
+id: "CI-006-pages"
 type: spec-tasks
 status: active
 owner: manu
 ---
 
-# Tasks - CI-005-pages
+# Tasks - CI-006-pages
 
 ## Setup
 
