@@ -1,0 +1,15 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["local>mlorentedev/ci-workflows//renovate/default"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "The fleet's Renovate engine pin, read by renovate.yml here and by the Gitea run at the same tag.",
+      "managerFilePatterns": ["/^renovate/engine\\.json$/"],
+      "matchStrings": [
+        "\"image\":\\s*\"(?<depName>[^\"]+)\",\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ]
+}

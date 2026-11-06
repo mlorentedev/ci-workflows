@@ -23,7 +23,7 @@ the [November 2026 baseline](docs/audits/2026-11-ci-baseline.md).
   cover, lives in [`dotf`](https://github.com/mlorentedev/dotfiles) and is
   invoked from here. A workflow in this repository is glue around `dotf`
   calls; it does not grow scripts of its own.
-- **Files a platform needs in each repository** (`dependabot.yml`,
+- **Files a platform needs in each repository** (`renovate.json`,
   `CODEOWNERS`, `.coderabbit.yaml`). Those stay per-repository copies, declared
   in the fleet canon and checked for drift.
 
@@ -303,9 +303,43 @@ own caller, against the workflow's interface.
 2. The owner merges it. That pushes the tag `vX.Y.Z` and publishes the GitHub
    release, with notes from release-please's changelog entry: the `feat`,
    `fix`, `perf` and `revert` merges since the last tag.
-3. Dependabot bumps the consumers' pins to the new tag's SHA.
+3. Renovate bumps the consumers' pins to the new tag's SHA.
 
 The version comes from the commit types since the last tag. While it is 0.x, a
 breaking change bumps the minor, as v0.1.0 to v0.2.0 did. Mark it with `!` in
 the pull request title (`feat!:`): the squash body is blank, so a
 `BREAKING CHANGE:` footer never reaches release-please. The tag is the version: there is no `version.txt`.
+
+## renovate
+
+One weekly run here updates every repository of the owner on GitHub
+(`.github/workflows/renovate.yml`). It autodiscovers `mlorentedev/*` and skips
+any repository without a `renovate.json`, so adopting Renovate is adding that
+file. Dependabot is not used: it does not exist on Gitea.
+
+- **The preset**, `renovate/default.json`, holds the fleet defaults: the
+  schedule (Monday night, Europe/Madrid), labels, one grouped PR for minor and
+  patch updates, majors on their own, actions pinned by digest, a Dependency
+  Dashboard, and no automerge. It is plain JSON with no GitHub-only option, so
+  the Gitea run extends it too.
+- **The engine pin**, `renovate/engine.json`, is the Renovate image and version.
+  The run here and the Gitea run both read it, and this repository's own
+  Renovate bumps it.
+- **The token** is `RENOVATE_TOKEN`, a fine-grained PAT on every repository
+  with Contents, Pull requests, Issues and Workflows write, plus Dependabot
+  alerts and checks read. It is registered in dotfiles' `secrets/registry.yaml`
+  and probed weekly by its `pat-expiry.yml`.
+
+A repository adopts it with a `renovate.json` that pins the preset by tag and
+adds only its own managers:
+
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>mlorentedev/ci-workflows//renovate/default#v0.4.0"]
+}
+```
+
+On Gitea the same line works when the run has `GITHUB_COM_TOKEN` to fetch the
+preset from github.com. To run on some repositories now, dispatch the workflow
+with `repositories` set, e.g. `mlorentedev/kubelab`.

@@ -1,0 +1,84 @@
+# Breaks every rule in tests/renovate-shape.bats. Not a workflow: it lives outside
+# .github/workflows, so nothing runs it.
+# Renovate for every repository of the owner on GitHub (CI-003, #30). One run
+# here replaces a caller per repository: autodiscover walks mlorentedev/*, and
+# RENOVATE_REQUIRE_CONFIG=required skips any repository without a renovate.json,
+# so adopting Renovate means adding that file and nothing else. Each repository's
+# renovate.json extends renovate/default.json, the fleet preset; the Gitea run
+# extends the same preset at a pinned tag.
+#
+# The engine pin is renovate/engine.json, shared with the Gitea run, and this
+# repository's own Renovate bumps it.
+#
+# RENOVATE_TOKEN, not GITHUB_TOKEN: the run writes to every repository, and a
+# PR opened with GITHUB_TOKEN starts no workflow, so its checks would never run.
+# renovate/default.json's schedule decides when updates open; this cron only
+# has to fall inside it, and a dispatch outside it refreshes the dashboards.
+name: renovate
+
+on:
+  schedule:
+    - cron: "17 1 * * 1"
+  workflow_dispatch:
+    inputs:
+      repositories:
+        description: Repositories to run on, comma separated (e.g. mlorentedev/kubelab). Empty runs every repository with a renovate.json.
+        type: string
+        default: ""
+
+permissions: {}
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - name: Fail if the Renovate token is missing
+        env:
+          HAS_RENOVATE_TOKEN: ${{ secrets.OTHER_TOKEN != '' }}
+        run: |
+          if [ "${HAS_RENOVATE_TOKEN}" != "true" ]; then
+            echo "::error::RENOVATE_TOKEN is not set. Run: dotf secrets sync ci --repo ${GITHUB_REPOSITORY} RENOVATE_TOKEN"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Read the engine pin
+        id: engine
+        run: |
+          echo "image=$(jq -er .image renovate/engine.json)" >> "$GITHUB_OUTPUT"
+          echo "version=$(jq -er .version renovate/engine.json)" >> "$GITHUB_OUTPUT"
+
+      # A dispatch naming repositories runs on those alone; otherwise autodiscover.
+      - name: Choose the repositories
+        id: scope
+        env:
+          REPOSITORIES: ${{ inputs.repositories }}
+        run: |
+          if [ -n "${REPOSITORIES}" ]; then
+            echo "autodiscover=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "autodiscover=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: renovatebot/github-action@1c0cf989c02653fba0efe7ca5772338860ca71dc # v46.3.12
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          renovate-image: ${{ steps.engine.outputs.image }}
+          renovate-version: 44.0.0
+        env:
+          RENOVATE_AUTODISCOVER: ${{ steps.scope.outputs.autodiscover }}
+          RENOVATE_AUTODISCOVER_FILTER: ${{ github.repository_owner }}/*
+          RENOVATE_REPOSITORIES: ${{ inputs.repositories }}
+          RENOVATE_ONBOARDING: "true"
+          RENOVATE_REQUIRE_CONFIG: required
+          LOG_LEVEL: info
