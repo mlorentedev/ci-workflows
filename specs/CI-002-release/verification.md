@@ -50,6 +50,9 @@ Notes from the independent review (`review.md`):
 - No `closes` rests on the repository's squash defaults, which are not retroactive. Merge commits and
   rebase merges are still allowed and still carry bodies (dotfiles#3169, dotfiles#3198).
 - The token step's two script tests run under `bats tests/`, not under a `features.json` command.
+- A breaking change opens a release whatever its type: `docs!:` is hidden as `docs` but release-please
+  still writes its breaking-change note, so the changelog is not empty. That is intended (README, "Mark it
+  with `!`"), and it is why criterion 3 reads "visible", not "releasable".
 
 ## Decisions made during implementation
 
