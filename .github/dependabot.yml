@@ -1,0 +1,20 @@
+# Dependabot: weekly, grouped bumps of the actions this repository pins, for
+# human review (ADR-001 decision 6). Auto-merge is not enabled.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    # "/" alone reads only .github/workflows and a root action.yml, so the
+    # composites under .github/actions/ need their own entry. Only `directories`
+    # takes a glob. tests/dependabot.bats checks that every composite is covered.
+    directories:
+      - "/"
+      - "/.github/actions/*"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      actions-minor-patch:
+        update-types: ["minor", "patch"]
