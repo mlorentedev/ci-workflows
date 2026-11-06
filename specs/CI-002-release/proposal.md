@@ -29,7 +29,8 @@ release-please and semver tags, and that one secret name is used for release tok
   `feat:` or `fix:` merge opens or updates a release pull request; the owner merges it, and that creates
   the tag and the GitHub release.
 - **The config** bootstraps from `v0.2.0` (manifest `{".": "0.2.0"}`), uses `release-type: simple` with no
-  version file, and `changelog-type: github`.
+  version file, and release-please's own changelog with `changelog-sections` that make only `feat`, `fix`,
+  `perf` and `revert` releasable (amended by #25; the first config used `changelog-type: github`).
 - **Two caller fixtures**: dotfiles (release only; its tag push starts the publish workflow) and pollex (a
   publish job gated on `release_created`).
 
@@ -37,7 +38,8 @@ release-please and semver tags, and that one secret name is used for release tok
 
 - Migrating any consumer to the reusable workflow. Each migration lands in the consumer's own pull request.
 - A `dotf` verb for release logic. The workflow carries no logic beyond a missing-token check.
-- Porting dotfiles' release-PR-body sanitizer (rule 1). `changelog-type: github` makes it unnecessary here.
+- Porting dotfiles' release-PR-body sanitizer (rule 1). Squash commits here carry the PR title and a blank
+  body, so the changelog has no reference to render as `closes` (#25; dotfiles#3198 removes the sanitizer).
 - Making `RELEASE_TOKEN` available: dotfiles#3156 registers it and the owner syncs it.
 
 ## Risks / open questions
@@ -47,11 +49,12 @@ release-please and semver tags, and that one secret name is used for release tok
   first run after merge goes red, so the secret must exist before this PR merges.
 - **The bootstrap tag.** release-please finds the last release by the manifest version: the GitHub release
   list holds only v0.1.0, so it falls back to the tag `v0.2.0`. The owner creates that tag at `892309f`
-  before merging. Without it release-please would walk the whole history, and `changelog-type: github`
-  would have no previous tag to generate notes from.
+  before merging. Without it release-please would walk the whole history.
 - **Closing references.** The default changelog renders a squash body's `Refs mlorentedev/dotfiles#N` as
   `closes ...`, so merging a release PR would close issues in dotfiles (dotfiles CI-005). The GitHub
-  changelog lists pull request titles instead, which carry no references.
+  changelog avoided that but is never empty, so every push opened a release (#24, lesson 004). #25 went
+  back to the default changelog: squash commits carry the PR title and a blank body, so there is no
+  reference to render. A merge commit or a rebase merge still carries a body.
 - **Pre-1.0 breaking changes.** `bump-minor-pre-major: true` makes a breaking change a minor bump while the
   version is 0.x, as v0.1.0 to v0.2.0 already was. ADR-001 decision 6 calls a breaking change "a major
   release": below 1.0.0 the minor is that slot under semver. Removing the key moves the next breaking
@@ -64,7 +67,8 @@ release-please and semver tags, and that one secret name is used for release tok
       `concurrency`, and pins release-please-action by full SHA. Each rule fails against a fixture that
       breaks it.
 2. [x] A missing `RELEASE_TOKEN` fails the job before release-please runs, naming the remedy.
-3. [x] The config bootstraps from 0.2.0, uses `changelog-type: github`, and writes no version file.
+3. [x] The config bootstraps from 0.2.0, uses release-please's own changelog with only `feat`, `fix`,
+      `perf` and `revert` visible, and writes no version file.
 4. [x] Caller fixtures for dotfiles and pollex, plus this repository's own caller, pass only declared
       inputs and secrets and pass `RELEASE_TOKEN` by name. The pollex fixture gates its publish job on
       `release_created`.
