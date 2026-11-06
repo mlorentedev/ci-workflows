@@ -34,6 +34,9 @@ owner: manu
     - Master run at `ccdcc47`: the full run, so `yq` was found; `image` built and pushed.
     - Run 3009 (PR 151) first failed on a runner docker timeout. `gate` failed with `changes`, and the
       rerun passed.
+    - To re-check: <https://gitea.kubelab.live/personal/imagesensortool/pulls/151>, `/pulls/153`,
+      `/actions/runs/3009`, and the commit statuses of `96c3f8e171069c2828d301256ed8d29d3c8e39f5`
+      (`GET /api/v1/repos/personal/imagesensortool/commits/<sha>/statuses`).
   - The three Gitea questions in the proposal's Risks are answered yes: act_runner resolves the nested
     `uses:` from github.com, it runs `node24`, and the job token lists the pull request's files.
 - No regressions in the existing suite: none. `push-gate.bats`, `callers.bats`, `pr-agent-shape.bats`

@@ -2,9 +2,9 @@
   {
     "id": "CI-001-gate-and-changes-f1",
     "behavior": "A docs-only change reports only docs, a code change reports its area, and gate passes on success and skipped needs.",
-    "verification": "bats tests/gate.bats tests/changes.bats --filter 'reports only|passes'",
+    "verification": "bats tests/gate.bats tests/changes.bats --filter \"reports only|reports its area|passes\"",
     "state": "passing",
-    "evidence": "gate.bats and changes.bats: the passes and reports-only tests ok (133d3c0)"
+    "evidence": "four tests ok at 133d3c0: two gate.bats passes tests, changes.bats reports only docs and reports its area"
   },
   {
     "id": "CI-001-gate-and-changes-f2",
@@ -30,7 +30,7 @@
   {
     "id": "CI-001-gate-and-changes-f5",
     "behavior": "The README documents the area map, outputs, the if: always() rule and moving branch protection to gate.",
-    "verification": "grep -q 'if: always()' README.md && grep -q '## changes' README.md && grep -q '## gate' README.md",
+    "verification": "grep -q \"if: always()\" README.md && grep -q \"## changes\" README.md && grep -q \"## gate\" README.md && grep -q \"filters\" README.md && grep -q \"is a JSON array of the areas\" README.md && grep -q \"Moving branch protection to\" README.md",
     "state": "passing",
     "evidence": "README sections ## changes and ## gate, merged in #17"
   }
