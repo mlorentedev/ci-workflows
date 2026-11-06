@@ -78,7 +78,7 @@ The links above make them re-checkable.
 
 ## Archive checklist
 
-- [ ] `proposal.md` frontmatter set to `status: archived`
-- [ ] Folder moved: `specs/CI-001-gate-and-changes/` -> `specs/archive/CI-001-gate-and-changes/`
-- [ ] Bitácora board ticket for this spec moved to Done / closed with PR link (ADR-018)
-- [ ] Promotions above executed (if any)
+- [x] `proposal.md` frontmatter set to `status: archived`
+- [x] Folder moved: `specs/CI-001-gate-and-changes/` -> `specs/archive/CI-001-gate-and-changes/`
+- [ ] Bitácora board ticket for this spec moved to Done / closed with PR link (ADR-018): #9 closes with this pull request
+- [x] Promotions above executed (if any)
