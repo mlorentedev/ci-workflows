@@ -15,8 +15,8 @@
   },
   {
     "id": "CI-002-release-f3",
-    "behavior": "The config bootstraps from 0.2.0, uses changelog-type github, and writes no version file.",
-    "verification": "git show 29550e9:.release-please-manifest.json | jq -e '.[\".\"] == \"0.2.0\"' && git merge-base --is-ancestor v0.2.0 v0.3.0 && bats tests/release-shape.bats --filter 'manifest|component|changelog|version file'",
+    "behavior": "The config bootstraps from 0.2.0, uses release-please's own changelog with only feat, fix, perf and revert visible, and writes no version file.",
+    "verification": "git show 29550e9:.release-please-manifest.json | jq -e '.[\".\"] == \"0.2.0\"' && git merge-base --is-ancestor v0.2.0 v0.3.0 && bats tests/release-shape.bats --filter 'manifest|component|changelog|open a release|version file'",
     "state": "passing",
     "evidence": "the manifest was 0.2.0 at merge (29550e9); v0.3.0 was cut on top of v0.2.0; four config tests ok"
   },
