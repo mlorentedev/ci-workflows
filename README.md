@@ -301,7 +301,8 @@ own caller, against the workflow's interface.
    request, `chore(main): release X.Y.Z`. Its CI runs because the token is a
    PAT.
 2. The owner merges it. That pushes the tag `vX.Y.Z` and publishes the GitHub
-   release, with notes generated from the merged pull requests.
+   release, with notes from release-please's changelog entry: the `feat`,
+   `fix`, `perf` and `revert` merges since the last tag.
 3. Dependabot bumps the consumers' pins to the new tag's SHA.
 
 The version comes from the commit types since the last tag. While it is 0.x, a
