@@ -45,8 +45,10 @@ Notes from the independent review (`review.md`):
 - `tasks.md` still lists `changelog-type: github` among the settled decisions. It records what was
   settled before implementation and stays as written; this amendment supersedes it.
 - That a hidden-type push cuts no release is shown by the source rule (lesson 004) and by #23 omitting
-  #21 and #22. The first live case is the merge of #26, a `docs:` change: #23 must keep its head commit
-  and no other release PR may open.
+  #21 and #22. Observed live on the merge of #26 (`7c58267`), a `docs:` change: the release-please run
+  succeeded, #23 still lists only #25 and changes only the manifest and `CHANGELOG.md`, and no other
+  release PR opened. #23's head moved (`fcd5c94` to `7ef113b`) because release-please rebuilds the
+  release branch on the new `main` at every push; its content, not its head, is the signal.
 - No `closes` rests on the repository's squash defaults, which are not retroactive. Merge commits and
   rebase merges are still allowed and still carry bodies (dotfiles#3169, dotfiles#3198).
 - The token step's two script tests run under `bats tests/`, not under a `features.json` command.
