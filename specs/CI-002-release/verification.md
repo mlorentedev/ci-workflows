@@ -70,3 +70,10 @@ Notes from the independent review (`review.md`):
 - **Root package only** (review, declined). The outputs are the root package's; path outputs can be added later without a breaking change.
 - **Three outputs.** `release_created`, `tag_name` and `version`. Adding one later is not breaking;
   removing one is.
+
+## Promotion candidates
+
+- [x] Lesson for the repo's `docs/lessons/` (the version file)? yes: docs/lessons/lesson-003-release-please-simple-writes-no-version-file-it-does-not-find.md
+- [x] Lesson for the repo's `docs/lessons/` (release noise)? yes: docs/lessons/lesson-004-github-release-notes-are-never-empty.md
+- [x] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? no: it implements ADR-001 decision 6 and adds no new structural decision
+- [x] New pattern candidate for `00_meta/patterns/`? no: blank squash bodies as the fix for release-please closing references is being applied to dotfiles (dotfiles#3169, dotfiles#3198); it becomes a pattern once a second repository confirms it
