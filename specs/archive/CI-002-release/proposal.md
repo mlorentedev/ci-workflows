@@ -1,12 +1,13 @@
 ---
 id: "CI-002-release"
 type: spec
-status: verifying # draft | implementing | verifying | archived
+status: archived # draft | implementing | verifying | archived
 created: "2026-11-04"
 issue: "mlorentedev/ci-workflows#15"   # repo#NNN — GitHub issue / Project item that tracks this spec
 tags: [spec, proposal, ci, release]
 template_version: "1.0"
 owner: manu
+review_bypass: "force-without-review; overrode: no review-request.json beside review.md: the archive cannot verify which reviewer was launched or against which commit; reason: independent adversarial review 2026-11-05 at 97ef3f7, PASS-WITH-GAPS, in review.md; no reviewer pool in this repo (#28); date: 2026-11-05"
 ---
 
 # CI-002-release
@@ -82,3 +83,5 @@ release-please and semver tags, and that one secret name is used for release tok
 - ADR: [`docs/adr/adr-001-one-ci-standard-for-every-forge.md`](../../docs/adr/adr-001-one-ci-standard-for-every-forge.md), decision 6
 - Epic: mlorentedev/ci-workflows#8
 - Token grant: mlorentedev/dotfiles#3156
+
+<!-- archived 2026-11-05 — PR: https://github.com/mlorentedev/ci-workflows/pull/34 -->

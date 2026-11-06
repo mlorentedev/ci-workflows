@@ -45,8 +45,10 @@ Notes from the independent review (`review.md`):
 - `tasks.md` still lists `changelog-type: github` among the settled decisions. It records what was
   settled before implementation and stays as written; this amendment supersedes it.
 - That a hidden-type push cuts no release is shown by the source rule (lesson 004) and by #23 omitting
-  #21 and #22. The first live case is the merge of #26, a `docs:` change: #23 must keep its head commit
-  and no other release PR may open.
+  #21 and #22. Observed live on the merge of #26 (`7c58267`), a `docs:` change: the release-please run
+  succeeded, #23 still lists only #25 and changes only the manifest and `CHANGELOG.md`, and no other
+  release PR opened. #23's head moved (`fcd5c94` to `7ef113b`) because release-please rebuilds the
+  release branch on the new `main` at every push; its content, not its head, is the signal.
 - No `closes` rests on the repository's squash defaults, which are not retroactive. Merge commits and
   rebase merges are still allowed and still carry bodies (dotfiles#3169, dotfiles#3198).
 - The token step's two script tests run under `bats tests/`, not under a `features.json` command.
@@ -68,3 +70,10 @@ Notes from the independent review (`review.md`):
 - **Root package only** (review, declined). The outputs are the root package's; path outputs can be added later without a breaking change.
 - **Three outputs.** `release_created`, `tag_name` and `version`. Adding one later is not breaking;
   removing one is.
+
+## Promotion candidates
+
+- [x] Lesson for the repo's `docs/lessons/` (the version file)? yes: docs/lessons/lesson-003-release-please-simple-writes-no-version-file-it-does-not-find.md
+- [x] Lesson for the repo's `docs/lessons/` (release noise)? yes: docs/lessons/lesson-004-github-release-notes-are-never-empty.md
+- [x] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? no: it implements ADR-001 decision 6 and adds no new structural decision
+- [x] New pattern candidate for `00_meta/patterns/`? no: blank squash bodies as the fix for release-please closing references is being applied to dotfiles (dotfiles#3169, dotfiles#3198); it becomes a pattern once a second repository confirms it

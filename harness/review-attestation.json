@@ -1,0 +1,56 @@
+{
+  "$comment": [
+    "Reviewer registry for dotf pr triage-queue (#28): did a review actually happen on a PR?",
+    "Adapted from mlorentedev/dotfiles harness/review-attestation.json, where each rule is reasoned.",
+    "Registry only: no workflow here turns it into a required status (owner decision 2026-11-05)."
+  ],
+  "reviewers": [
+    {
+      "login": "coderabbitai",
+      "declined_markers": [
+        "rate limited by coderabbit.ai"
+      ],
+      "why": "ADVISORY (2026-08-22): its review still attests, but its DECLINE no longer refuses.",
+      "review_markers": [
+        "No actionable comments were generated in the recent review"
+      ],
+      "advisory": true
+    },
+    {
+      "login": "github-actions",
+      "declined_markers": [],
+      "review_markers": [
+        "## PR Reviewer Guide",
+        "## Incremental PR Reviewer Guide"
+      ],
+      "why": "PR-Agent (TOOL-013, #786/#1032) posts as github-actions via GITHUB_TOKEN and publishes through the comments API, not the reviews API — so reviews[] is empty on a PR it genuinely reviewed."
+    }
+  ],
+  "escape": {
+    "label": "merged-unreviewed",
+    "section": "## Unreviewed merge rationale",
+    "why": "Proceeding on an unreviewed PR is allowed; proceeding silently is not."
+  },
+  "exempt": {
+    "signatures": [
+      {
+        "name": "release-please",
+        "files": [
+          ".release-please-manifest.json",
+          "CHANGELOG.md"
+        ],
+        "why": "The release PR restates commits already on main, each reviewed when it merged. Release PRs #20 and #23 changed exactly these two paths."
+      }
+    ]
+  },
+  "triage": {
+    "marker": "## Review triage",
+    "standing": [
+      "OWNER",
+      "MEMBER",
+      "COLLABORATOR"
+    ],
+    "standing_why": "Who may write the triage record, so a marker from any commenter cannot clear the queue.",
+    "why": "A disposition recorded on the PR is durable and machine-readable; one in a chat message is not."
+  }
+}
