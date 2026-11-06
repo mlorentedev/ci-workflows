@@ -46,6 +46,9 @@ jobs:
               - "tests/**"
               - "renovate/**"
               - "renovate.json"
+            toolchains:
+              - ".github/actions/setup-*/**"
+              - "tests/fixtures/toolchains/**"
 
   lint:
     needs: changes
@@ -143,10 +146,44 @@ jobs:
           echo "${checked} pinned files checked"
           exit "${missing}"
 
+  # The toolchain composites run from this checkout against a fixture, so a
+  # pull request proves the composite it changes (spec CI-004). A push to main
+  # saves the cache and the next run restores it; the cache-hit line in the log
+  # is the evidence verification.md cites.
+  smoke-setup-node:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.areas), 'toolchains')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: node
+        uses: ./.github/actions/setup-node
+        with:
+          working-directory: tests/fixtures/toolchains/node
+      - name: Install the fixture
+        working-directory: tests/fixtures/toolchains/node
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      # A key without the platform and the arch would let one runner restore
+      # another's binaries (CI-004 AC5).
+      - name: Report the cache
+        env:
+          HIT: ${{ steps.node.outputs.cache-hit }}
+          KEY: ${{ steps.node.outputs.cache-primary-key }}
+        run: |
+          echo "cache-hit=${HIT}"
+          echo "cache-primary-key=${KEY}"
+          case "${KEY,,}" in
+            "node-cache-${RUNNER_OS,,}-${RUNNER_ARCH,,}-npm-"*) ;;
+            *) echo "::error::the npm cache key does not name ${RUNNER_OS}/${RUNNER_ARCH}"; exit 1 ;;
+          esac
+
   # The one check branch protection will require (ADR-001 decision 3), once it
   # has reported on main. `if: always()` keeps a failed need from skipping it.
   gate:
-    needs: [changes, lint, test, renovate-config]
+    needs: [changes, lint, test, renovate-config, smoke-setup-node]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
