@@ -1,23 +1,23 @@
 version: 1
-run_id: "ciw-20261104T1545Z"
+run_id: "ciw-20261106T0650Z"
 armed_by: manu
-armed_at: 2026-11-04T15:45:33Z
-expires_at: 2026-11-05T01:45:33Z
-objective: "Open a draft ci-workflows PR adding the gate and changes composite actions with bats tests and README docs (refs #9), triaged and left for the owner."
-worktree: /Users/manu/Projects/worktrees/ci-workflows/feat-issue-9-gate-changes
-branch: feat/issue-9-gate-changes
+armed_at: 2026-11-06T06:50:00Z
+expires_at: 2026-11-06T14:50:00Z
+objective: "Open the ci-workflows PR adding the setup-node composite of spec CI-004 (refs #10), with bats tests, a fixture and a smoke job in gate's needs, green and triaged, and leave it for the owner."
+worktree: /Users/manu/Projects/worktrees/ci-workflows/feat-issue-10-setup-node
+branch: feat/issue-10-setup-node
 scope:
-  write_paths: [".github/actions/changes/**", ".github/actions/gate/**", "tests/**", "specs/**", "README.md", "docs/**", ".agent/runs/ciw-20261104T1545Z/**"]
-  frozen_paths: [".github/workflows/**", ".github/actions/push-gate/**", "**/AGENTS.md", ".agent/unattended.yml"]
+  write_paths: [".github/actions/setup-node/**", ".github/workflows/lint.yml", "tests/**", "specs/CI-004-toolchain-setup/**", "README.md", "docs/lessons/**", ".agent/runs/ciw-20261106T0650Z/**"]
+  frozen_paths: [".github/merge-grant.yml", ".github/actions/gate/**", ".github/actions/changes/**", ".github/actions/push-gate/**", ".github/workflows/release*.yml", "renovate.json", "harness/**", "**/AGENTS.md", ".agent/unattended.yml"]
   max_files: 12
   max_loc: 300
 allowed_commands: [dotf, gh, git, bats, actionlint, shellcheck, yq, jq, caffeinate]
 queue:
   source: bitacora
-  filter: "One item: ci-workflows#9, limited to what this repository can satisfy (composites, tests, README). Consumer adoption in other repositories and on Gitea is out of scope."
+  filter: "One item: ci-workflows#10, limited to CI-004 PR 1 (setup-node). The other three composites, the Gitea pilot in imagesensortool and fleet adoption are out of scope for this run."
   max_items: 1
 budget:
-  max_iterations: 4
+  max_iterations: 5
   max_minutes_per_iteration: 90
   max_consecutive_failures: 2
 authority:
