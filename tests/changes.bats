@@ -21,7 +21,9 @@ setup() {
   : >"${GITHUB_OUTPUT}"
   step mode run >"${BATS_TEST_TMPDIR}/mode.sh"
   step areas run >"${BATS_TEST_TMPDIR}/areas.sh"
-  export FULL_RUN_EVENTS="push schedule workflow_dispatch"
+  # The action's own default, so the full-run tests below fail if it drops an event.
+  FULL_RUN_EVENTS=$(yq '.inputs.full_run_events.default' "${ACTION}")
+  export FULL_RUN_EVENTS
 }
 
 # Runs both scripts in order for one event, with CHANGED as paths-filter's output.
@@ -54,6 +56,8 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
 @test "paths-filter runs only when the event is not a full run, with the caller's map" {
   [ "$(step filter if)" = "steps.mode.outputs.full != 'true'" ]
   [ "$(step filter with.filters)" = '${{ inputs.filters }}' ]
+  [ "$(step filter with.token)" = '${{ inputs.token }}' ]
+  [ "$(yq '.inputs.token.default' "${ACTION}")" = '${{ github.token }}' ]
 }
 
 @test "the action publishes areas and full from the areas step" {
