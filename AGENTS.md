@@ -57,7 +57,10 @@ When the user asks to **create, fill, or archive a spec**, follow this workflow.
 |---|---|
 | "create a spec for X", "scaffold spec X", "start working on X" | `dotf spec init <feature-id> --issue <N>` |
 | "fill in the proposal for X", "help me write the proposal" | edit `specs/<feature-id>/proposal.md` — the Why + acceptance criteria — before writing implementation code |
+| "review spec X", "red-team X" | `dotf spec review <feature-id>`: a reviewer drawn from `harness/reviewer-pool.json` signs `review.md`, which the archive requires |
 | "archive spec X", "close spec X" | `dotf spec archive <feature-id> --pr <url>` |
+
+The pool follows dotfiles' `harness/reviewer-pool.json`: no Anthropic model signs first, Haiku signs only as a fallback and Sonnet only as the second signature of a `risk: high` spec. `harness/review-attestation.json` tells `dotf pr triage-queue` which comments are reviews; it is not a required status here.
 
 Per-feature specs live at `specs/<feature-id>/` in this repo; archived at `specs/archive/<feature-id>/` (never deleted — audit trail).
 
