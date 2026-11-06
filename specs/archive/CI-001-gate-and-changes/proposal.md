@@ -1,12 +1,13 @@
 ---
 id: "CI-001-gate-and-changes"
 type: spec
-status: implementing # draft | implementing | verifying | archived
+status: archived # draft | implementing | verifying | archived
 created: "2026-11-04"
 issue: "mlorentedev/ci-workflows#9"   # repo#NNN — GitHub issue / Project item that tracks this spec
 tags: [spec, proposal, ci, composite]
 template_version: "1.0"
 owner: manu
+review_bypass: "force-without-review; overrode: no review.md in the spec folder — run /adversarial-review before archiving; reason: an independent adversarial review ran on 2026-11-05, verdict PASS-WITH-GAPS; its findings are in verification.md and #27; this repository has no reviewer pool (#28); date: 2026-11-05"
 ---
 
 # CI-001-gate-and-changes
