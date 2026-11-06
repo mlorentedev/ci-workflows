@@ -51,7 +51,8 @@ composite actions and only a limited form of reusable workflow, which holds a ru
    lint finding; `dotf fleet apply` turns it into a pull request in that repository. Nobody hand-edits a fleet
    of copies again.
 6. **Versioning.** This repository releases with release-please and semver tags. Consumers pin by full SHA
-   with the tag as a comment, and Dependabot bumps the pins. Removing or renaming an input, an output, a
+   with the tag as a comment, and Renovate bumps the pins (amended 2026-11-06, CI-003: Renovate replaces
+   Dependabot on both forges, since Gitea has no Dependabot). Removing or renaming an input, an output, a
    secret or a job id is a major release. One secret name is used for release tokens across the fleet.
 7. **Specs and ADRs for a block live here.** A block of this repository gets its spec under `specs/` and its
    decisions under `docs/adr/`. A `dotf` verb keeps its spec in dotfiles, and the two link to each other.
