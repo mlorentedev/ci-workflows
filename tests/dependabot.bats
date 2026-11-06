@@ -22,7 +22,7 @@ action_dirs() {
   local dirs uncovered="" dir rel pattern hit checked=0
   dirs=$(action_dirs)
   for dir in "${ROOT}"/.github/actions/*/; do
-    [ -f "${dir}action.yml" ] || continue
+    [ -f "${dir}action.yml" ] || [ -f "${dir}action.yaml" ] || continue
     checked=$((checked + 1))
     rel="/${dir#"${ROOT}/"}"
     rel="${rel%/}"
