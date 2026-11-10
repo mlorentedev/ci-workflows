@@ -29,7 +29,7 @@ Four pull requests, one per composite, in this order:
 3. `setup-python-uv`;
 4. `setup-go-lint`.
 
-The tasks below are PR 1. PRs 2–4 get their tasks once PR 1 has merged, reusing its harness.
+PRs 2–4 each get their tasks when they start, reusing PR 1's harness.
 
 ### PR 1: `setup-node`
 
@@ -80,9 +80,85 @@ Tasks:
 - [x] [AC1] Extend `tests/composites-shellcheck.bats`'s minimum step count for the new `run:` steps. Expected: the suite passes.
 - [ ] [AC3] After merge, record in `verification.md`:
   - the push run on `main` that warmed the cache (`cache-hit=false`);
-  - the next run that read it (`cache-hit=true`, with a `cache-primary-key` holding the platform and arch).
-- [ ] [AC4] Gitea pilot: imagesensortool's CI uses `setup-node` at a pinned SHA. Record whether the cache hits there or degrades with the job still green. A missing cache server becomes a kubelab ticket.
+  - the next run that read it (`cache-hit=true`, with a `cache-primary-key` holding the platform and arch);
+  - a pull request reading `main`'s cache as its base branch. PR 2 records it from its own `smoke-setup-node` run.
+- [x] [AC4] Gitea pilot: imagesensortool's CI uses `setup-node` at a pinned SHA. Record whether the cache hits there or degrades with the job still green. A missing cache server becomes a kubelab ticket.
 - [x] README: a `## setup-node` section with the interface, the caller's `npm ci` and Playwright install, and the Gitea result.
+
+### PR 2: `setup-python-poetry`
+
+Pins:
+- `actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0`
+- `actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0`, as in `setup-node`
+
+The fleet installs Poetry three ways today: `snok/install-poetry` at `latest`, `pip install "poetry>=1.8,<2.0"`, and `pipx install poetry`. The self-hosted runner has no `pipx`. So the composite installs Poetry with `pip` into a venv of its own, at an exact version.
+
+The interface of `.github/actions/setup-python-poetry/action.yml`, for Linux and macOS runners:
+- **Inputs.**
+  - `version`, default empty.
+  - `version-file`, default `.python-version`.
+  - `poetry-version`, default empty. It is required, and must be an exact version such as `2.5.1`, because it names a cache key.
+  - `working-directory`, default `.`.
+- **Outputs.**
+  - `cache-hit`, from the project venv's cache.
+  - `cache-primary-key`, the project venv's key.
+  - `poetry-cache-hit`, from Poetry's own cache.
+  - `python-version`, the exact version installed.
+- **Steps.**
+  - `resolve` (bash) publishes either `version` or `file`, as in `setup-node`. It also fails when:
+    - `poetry-version` is not an exact version;
+    - `<working-directory>/poetry.lock` is missing.
+
+    It publishes the lockfile's sha256 as `lock-hash`. It does not use `hashFiles`, which returns an empty string for a missing file, so every project would share one key.
+  - `setup` (`actions/setup-python`) installs the resolved version, with no cache of its own.
+  - `keys` (bash) builds both cache keys from `RUNNER_OS`, `RUNNER_ARCH` and the exact Python version that `setup` installed. A venv points at its interpreter by path, so a venv restored onto another patch release would break.
+    - Poetry's key is `poetry-<os>-<arch>-py<python>-<poetry-version>`.
+    - The venv's key is `poetry-venv-<os>-<arch>-py<python>-<lock-hash>`.
+  - `poetry-cache` (`actions/cache`) caches Poetry's venv.
+  - `install-poetry` (bash) creates that venv and runs `pip install poetry==<version>` into it, unless the cache already restored it. It then puts the venv's `bin` on `PATH`, and sets `POETRY_VIRTUALENVS_IN_PROJECT=true`.
+  - `venv` (`actions/cache`) caches `<working-directory>/.venv`.
+- **What stays with the caller.** The composite installs no project dependencies: the caller runs `poetry install`.
+
+Tasks:
+
+- [ ] [AC1] Write `tests/setup-python-poetry.bats` with failing tests:
+  - the input defaults;
+  - the outputs map to the right steps;
+  - the scripts run under bash;
+  - the pins;
+  - the `setup` wiring.
+
+  Expected: FAIL, because `action.yml` is missing.
+- [ ] [AC1] Write `.github/actions/setup-python-poetry/action.yml`. Expected: those tests pass.
+- [ ] [AC2] Add failing tests for `resolve`, then implement it. The tests cover:
+  - the version input;
+  - the version file;
+  - neither, which fails naming both;
+  - an empty or non-exact `poetry-version`, which fails;
+  - a missing `poetry.lock`, which fails naming its path;
+  - `lock-hash` is the lockfile's sha256.
+- [ ] [AC5] Add failing tests for `keys`, then implement it:
+  - both keys hold the OS, the arch and the exact Python version;
+  - Poetry's key holds the Poetry version;
+  - the venv's key holds the lock hash.
+- [ ] [AC2] Add failing tests for `install-poetry`, then implement it. They run it against a stub `python` and assert:
+  - it installs only when the venv has no `poetry`;
+  - it always writes `PATH` and `POETRY_VIRTUALENVS_IN_PROJECT`.
+- [ ] [AC3] Add the fixture `tests/fixtures/toolchains/poetry/`, generated with Poetry 2.5.1. It holds:
+  - `.python-version`;
+  - a `pyproject.toml` with `package-mode = false` and one tiny dependency;
+  - its `poetry.lock`.
+- [ ] [AC3] Add a `smoke-setup-python-poetry` job to `lint.yml`. It:
+  - runs behind the `toolchains` area;
+  - runs `poetry check --lock`, then `poetry install`;
+  - asserts that the venv is in the fixture;
+  - prints `cache-hit` and `cache-primary-key`;
+  - is listed in `gate`'s `needs`.
+- [ ] [AC1] Raise `tests/composites-shellcheck.bats`'s minimum for the three new `run:` steps.
+- [ ] [AC3] Record in `verification.md`:
+  - `setup-node`'s pull-request hit, from this PR's `smoke-setup-node` run;
+  - this composite's warm run and its hit, with the cache scope each one read.
+- [ ] README: a `## setup-python-poetry` section, saying that a caller on a version range or on `latest` must pick an exact Poetry version.
 
 ## Closing
 
