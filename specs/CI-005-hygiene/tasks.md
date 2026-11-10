@@ -17,21 +17,34 @@ owner: manu
 
 ## Setup
 
-- [ ] Branch created from main: `feat/CI-005-hygiene`
-- [ ] `proposal.md` is complete and acceptance criteria are testable
-- [ ] No open questions left in `proposal.md` "Risks / open questions"
+- [x] Branch created from main: `feat/issue-31-hygiene-composite`
+- [x] `proposal.md` is complete and acceptance criteria are testable
+- [x] No open question blocks the code: option A chosen 2026-11-09; the pinned-actions check waits for dotfiles#3147
 
 ## Implementation
 
-> Replace these with the actual steps for this feature. Keep them small (one commit each) and in TDD order.
-> The `[P]` / `[AC<n>]` markers are optional — see the legend above. Behaviors 1 and 2 below are independent, so their *first* test task carries `[P]`.
+PR 1, the composite (this branch):
 
-- [ ] [P] [AC1] Write failing test for <behavior 1>
-- [ ] [AC1] Implement <module/function> to make it pass
-- [ ] Refactor for clarity (extract, rename, dedupe)
-- [ ] [P] [AC2] Write failing test for <behavior 2>
-- [ ] [AC2] Implement to make it pass
-- [ ] ...
+- [x] [AC1] Write `tests/hygiene.bats` with failing tests: the inputs (`dotf-version`, `lessons`, `lessons-dir`) and no input for an absent check; only bash `run:` steps, no `gh` and no token; `install` fetches `dotf_<v>_linux_<arch>.tar.gz` with a stub `curl`, fails on a tampered archive, on a `checksums.txt` that does not list it, on a missing release, and on a non-Linux runner, naming it.
+- [x] [AC1] Write `.github/actions/hygiene/action.yml`. Expected: those tests pass.
+- [x] [AC2] Add failing tests that the `lessons` step runs `dotf lessons fmt --check --dir <workspace>/<lessons-dir>`, only when `lessons == 'true'`, and fails when dotf does. Then implement.
+- [x] [AC2] Add the fixtures `tests/fixtures/lessons/clean/` and `tests/fixtures/lessons/duplicate-number/`, both in dotf's canonical form.
+- [x] [AC2] In `lint.yml`: a `hygiene` area in `changes` (the composite, the fixtures, `docs/lessons/**`), a `smoke-hygiene` job that runs the composite on this repository and on the duplicate fixture, and fails unless the fixture fails naming `lesson-001-same-number.md`; `gate` needs it.
+- [x] [AC1] Raise `tests/composites-shellcheck.bats`'s minimum step count for the two new `run:` steps.
+- [x] README: a `## hygiene` section.
+- [ ] [AC2] After merge, record the `smoke-hygiene` run on main in `verification.md`.
+
+Adoption, one PR per repository, in batches of 4 (dotfiles#3188), after a tag carries the composite:
+
+- [ ] Before each PR, grep the repository for readers of `docs/lessons/_index.md` (hive's code, kubelab's tests) and for pointer stubs that link it, and change them in the same PR.
+- [ ] [AC5] Each PR runs `dotf lessons fmt`, deletes `_index.md` and `check-lessons.sh`, and replaces the lessons step of `repo-hygiene.yml` with the composite at a pinned SHA. `check-actions-pinned.sh` stays until dotfiles#3147.
+- [ ] [AC4] Gitea: one Gitea repository runs the composite (owned by the IDP-036 session); record the run here.
+
+After dotfiles#3147:
+
+- [ ] [AC3] Add a `pinned-actions` input running the `dotf lint` SHA-pin rule, with a fixture pinned by tag that fails naming the line.
+- [ ] [AC5] Adopters delete `check-actions-pinned.sh`.
+- [ ] [AC6] `dotf lint` reports a repository that still carries a vendored script (dotfiles side).
 
 ## Closing
 

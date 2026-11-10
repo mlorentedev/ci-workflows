@@ -1,8 +1,43 @@
 [
   {
     "id": "CI-005-hygiene-f1",
-    "behavior": "Outcome 1",
-    "verification": "echo 'not implemented' && exit 1",
+    "behavior": "hygiene is a composite of bash run steps with no action and no token, installs dotf at a pinned version from the public release checked against checksums.txt, and runs the lessons check behind an input.",
+    "verification": "bats tests/hygiene.bats --filter 'inputs and their defaults|no input names|bash run step|only when lessons|install'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-005-hygiene-f2",
+    "behavior": "On a repository whose lessons pass the lessons check is green; a lesson number used twice makes it red, naming the file.",
+    "verification": "dotf lessons fmt --check --dir tests/fixtures/lessons/clean && dotf lessons fmt --check --dir tests/fixtures/lessons/duplicate-number 2>&1 | grep -q 'lesson-001-same-number.md' && bats tests/hygiene.bats --filter 'lessons step|smoke-hygiene'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-005-hygiene-f3",
+    "behavior": "On a repository with an action pinned by tag the pinned-actions check is red, naming the line. Blocked on dotfiles#3147.",
+    "verification": "echo 'blocked on dotfiles#3147: dotf lint has no SHA-pin rule' && exit 1",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-005-hygiene-f4",
+    "behavior": "The composite runs on one GitHub and one Gitea repository.",
+    "verification": "gh run list -R mlorentedev/ci-workflows -w lint.yml -b main -s success -L 1 --json databaseId -q '.[0].databaseId' | grep -q .",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-005-hygiene-f5",
+    "behavior": "Every repository that adopted the composite carries no vendored check-lessons.sh or check-actions-pinned.sh.",
+    "verification": "echo 'recorded per adopter PR in verification.md' && exit 1",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-005-hygiene-f6",
+    "behavior": "dotf lint reports a repository that still carries the vendored scripts. Blocked on dotfiles#3147.",
+    "verification": "echo 'blocked on dotfiles#3147' && exit 1",
     "state": "pending",
     "evidence": ""
   }

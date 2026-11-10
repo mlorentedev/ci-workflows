@@ -1,0 +1,61 @@
+# Repository hygiene checks run by dotf (spec CI-005). It installs dotf from its
+# public release with curl and checks the archive against the release's
+# checksums.txt, so it needs no GitHub-only tool or token and runs on Gitea too.
+# The caller checks the repository out first. The pinned-actions check joins as
+# an input once `dotf lint` has the rule (dotfiles#3147); until then adopters
+# keep their vendored check-actions-pinned.sh.
+name: hygiene
+description: Install a pinned dotf and run the repository hygiene checks.
+
+inputs:
+  dotf-version:
+    description: The dotf release to install, without the leading v.
+    default: "0.79.0"
+  lessons:
+    description: When 'true', run `dotf lessons fmt --check` on lessons-dir.
+    default: "true"
+  lessons-dir:
+    description: The lessons directory, relative to the workspace.
+    default: docs/lessons
+
+runs:
+  using: composite
+  steps:
+    - id: install
+      shell: bash
+      env:
+        DOTF_VERSION: ${{ inputs.dotf-version }}
+        DOTF_BASE_URL: https://github.com/mlorentedev/dotfiles/releases/download
+      run: |
+        case "${RUNNER_OS:-$(uname -s)}/${RUNNER_ARCH:-$(uname -m)}" in
+          Linux/X64 | Linux/x86_64) platform=linux_amd64 ;;
+          Linux/ARM64 | Linux/aarch64) platform=linux_arm64 ;;
+          *)
+            echo "::error::hygiene: no dotf build for ${RUNNER_OS:-$(uname -s)}/${RUNNER_ARCH:-$(uname -m)}: run it on a Linux runner"
+            exit 1
+            ;;
+        esac
+        dir="${RUNNER_TEMP:-$(mktemp -d)}/dotf-${DOTF_VERSION}"
+        mkdir -p "${dir}/bin"
+        cd "${dir}" || exit 1
+        tarball="dotf_${DOTF_VERSION}_${platform}.tar.gz"
+        curl -fsSL --retry 3 -o "${tarball}" "${DOTF_BASE_URL}/v${DOTF_VERSION}/${tarball}"
+        curl -fsSL --retry 3 -o checksums.txt "${DOTF_BASE_URL}/v${DOTF_VERSION}/checksums.txt"
+        grep " ${tarball}$" checksums.txt >expected.txt || {
+          echo "::error::hygiene: checksums.txt of dotf v${DOTF_VERSION} lists no ${tarball}"
+          exit 1
+        }
+        sha256sum -c expected.txt
+        tar -xzf "${tarball}" -C bin dotf
+        echo "${dir}/bin" >>"${GITHUB_PATH}"
+
+    - id: lessons
+      if: inputs.lessons == 'true'
+      shell: bash
+      env:
+        LESSONS_DIR: ${{ inputs.lessons-dir }}
+      # The report is also kept in RUNNER_TEMP, so a later step can tell which
+      # check failed. bash runs this step with pipefail, so tee keeps the status.
+      run: |
+        dotf lessons fmt --check --dir "${GITHUB_WORKSPACE:-.}/${LESSONS_DIR}" 2>&1 |
+          tee "${RUNNER_TEMP:-/tmp}/hygiene-lessons.txt"

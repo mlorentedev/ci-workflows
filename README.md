@@ -318,6 +318,40 @@ caller runs `npm ci` and the Playwright install.
   the composite from this checkout against `tests/fixtures/toolchains/node/`,
   and checks that the cache key names the runner's platform and arch.
 
+## hygiene
+
+`.github/actions/hygiene` installs a pinned `dotf` and runs the repository
+hygiene checks in it (spec CI-005). It replaces the vendored
+`check-lessons.sh`.
+
+```yaml
+    steps:
+      - uses: actions/checkout@<40-hex-sha> # vX.Y.Z
+        with:
+          persist-credentials: false
+      - uses: mlorentedev/ci-workflows/.github/actions/hygiene@<40-hex-sha> # vX.Y.Z
+```
+
+- **The install** downloads `dotf_<version>_linux_<arch>.tar.gz` and
+  `checksums.txt` from the public dotfiles release with `curl`, and checks the
+  archive against the list. It uses no action and no token, so it runs on
+  GitHub and on Gitea. Linux runners only: any other platform fails and names
+  itself. `dotf-version` defaults to the release each tag was tested with.
+- **lessons** (`lessons: "true"`, on by default) runs
+  `dotf lessons fmt --check` on `lessons-dir` (default `docs/lessons`). It fails
+  on a lesson out of its canonical form, a lesson number used twice, a wikilink
+  to no lesson, and a committed `_index.md`: the index is rendered by
+  `dotf lessons index`, never committed. The report is also written to
+  `$RUNNER_TEMP/hygiene-lessons.txt` for a later step. An adopter runs `dotf lessons fmt`
+  and deletes `_index.md` in the PR that adopts the composite.
+- **Pinned actions** are not checked yet. That rule arrives with
+  `dotf lint` (dotfiles#3147); until then an adopter keeps its vendored
+  `check-actions-pinned.sh`.
+- **This repository smokes it.** The `smoke-hygiene` job in `lint.yml` runs
+  the composite on this repository's lessons, then on
+  `tests/fixtures/lessons/duplicate-number/`, and fails unless that run's own
+  report names the duplicate file.
+
 ## release
 
 `.github/workflows/release.yml` runs
