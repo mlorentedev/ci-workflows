@@ -60,3 +60,32 @@ broken() { jq "$1" "$2" >"${BATS_TEST_TMPDIR}/broken.json" && echo "${BATS_TEST_
   triage_marker_is_review_triage "$ATTESTATION"
   run ! triage_marker_is_review_triage "$(broken '.triage.marker = "## Triage"' "$ATTESTATION")"
 }
+
+TOML="${ROOT}/.pr_agent.toml"
+
+# Every class the registry declares is asked for, spelled as prefix + class (#59).
+instructions_ask_for_every_class() {
+  local registry="$1" toml="$2" prefix class
+  prefix="$(jq -r '.classification.prefix // ""' "${registry}")"
+  [ -n "${prefix// /}" ] || return 1
+  [ "$(jq '.classification.classes | length' "${registry}")" -gt 0 ] || return 1
+  while IFS= read -r class; do
+    grep -qF "\"${prefix}${class}\"" "${toml}" || return 1
+  done < <(jq -r '.classification.classes[]' "${registry}")
+}
+
+# PR-Agent is asked for the line; CodeRabbit writes its own severity format.
+classifies_pr_agent_only() { jq -e '.classification.reviewers == ["github-actions"]' "$1" >/dev/null; }
+
+@test "the instructions ask for every class the registry reads" {
+  instructions_ask_for_every_class "${ATTESTATION}" "${TOML}"
+  run ! instructions_ask_for_every_class "$(broken '.classification.classes += ["MINOR"]' "${ATTESTATION}")" "${TOML}"
+  run ! instructions_ask_for_every_class "$(broken 'del(.classification)' "${ATTESTATION}")" "${TOML}"
+  sed 's/"Class: THEORETICAL"/"Class: THEORETIC"/' "${TOML}" >"${BATS_TEST_TMPDIR}/pr_agent.toml"
+  run ! instructions_ask_for_every_class "${ATTESTATION}" "${BATS_TEST_TMPDIR}/pr_agent.toml"
+}
+
+@test "only PR-Agent is held to the class line" {
+  classifies_pr_agent_only "${ATTESTATION}"
+  run ! classifies_pr_agent_only "$(broken '.classification.reviewers += ["coderabbitai"]' "${ATTESTATION}")"
+}
