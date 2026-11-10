@@ -253,10 +253,48 @@ jobs:
           echo "cache-primary-key=${KEY}"
           echo "poetry-cache-hit=${POETRY_HIT}"
 
+  smoke-setup-python-uv:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.areas), 'toolchains')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: uv
+        uses: ./.github/actions/setup-python-uv
+        with:
+          working-directory: tests/fixtures/toolchains/uv
+      # --locked fails when the fixture's lock no longer matches its
+      # pyproject.toml, which a restored cache would otherwise hide.
+      - name: Install the fixture
+        working-directory: tests/fixtures/toolchains/uv
+        run: |
+          uv sync --locked
+          uv run --locked python -c 'import six'
+      # setup-uv builds its key from process.arch and process.platform; a key
+      # without them would let one runner restore another's wheels (CI-004 AC5).
+      - name: Report the cache
+        env:
+          HIT: ${{ steps.uv.outputs.cache-hit }}
+          KEY: ${{ steps.uv.outputs.cache-primary-key }}
+          PYTHON_HIT: ${{ steps.uv.outputs.python-cache-hit }}
+        run: |
+          echo "cache-hit=${HIT}"
+          echo "cache-primary-key=${KEY}"
+          echo "python-cache-hit=${PYTHON_HIT}"
+          case "${RUNNER_ARCH}" in X64) arch=x86_64 ;; ARM64) arch=aarch64 ;; *) arch="${RUNNER_ARCH}" ;; esac
+          case "${RUNNER_OS}" in Linux) platform=unknown-linux-gnu ;; macOS) platform=apple-darwin ;; *) platform="${RUNNER_OS}" ;; esac
+          case "${KEY}" in
+            "setup-uv-2-${arch}-${platform}-"*) ;;
+            *) echo "::error::the uv cache key '${KEY}' does not start with setup-uv-2-${arch}-${platform}-: either it lost the platform, or astral-sh/setup-uv changed its key format"; exit 1 ;;
+          esac
+
   # The one check branch protection will require (ADR-001 decision 3), once it
   # has reported on main. `if: always()` keeps a failed need from skipping it.
   gate:
-    needs: [changes, lint, test, renovate-config, smoke-setup-node, smoke-hygiene, smoke-setup-python-poetry]
+    needs: [changes, lint, test, renovate-config, smoke-setup-node, smoke-hygiene, smoke-setup-python-poetry, smoke-setup-python-uv]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2

@@ -29,6 +29,13 @@ PR 2 (`setup-python-poetry`). Commits on `feat/issue-10-setup-python-poetry`.
   - The scope is the pull request's own branch, both runs being on #55. A pull request reading `main`'s Poetry cache comes after this merges, from the next CI-004 pull request.
 - [x] AC5 setup-python-poetry per-platform keys: the `keys` tests in `tests/setup-python-poetry.bats`. Both keys hold `runner.os`, `runner.arch` and the exact Python version, and an empty part fails the step.
 
+PR 3 (`setup-python-uv`). Commits on `feat/issue-10-setup-python-uv`.
+
+- [x] AC1 setup-python-uv shape: `tests/setup-python-uv.bats` (inputs, outputs, bash, pin, the setup-uv wiring). Pin checked against the tag over the API: `astral-sh/setup-uv` v10.3.3 = `68559e9`.
+- [x] AC2 setup-python-uv version source: `tests/setup-python-uv.bats` (version input, first line of the version file, neither or an empty file fails naming both; a missing `uv.lock` fails naming it).
+- [ ] AC3 setup-python-uv cache proof: `smoke-setup-python-uv`. Pending its runs.
+- [x] AC5 setup-python-uv per-platform keys: the smoke job fails when `cache-primary-key` does not start with `setup-uv-2-<arch>-<platform>-` (`astral-sh/setup-uv` v10.3.3 builds it from `process.arch` and `process.platform`, `src/cache/restore-cache.ts`).
+
 ## Test status
 
 - Test suite: `bats tests/` -> every test ok; `actionlint` clean.

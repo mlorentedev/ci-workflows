@@ -49,11 +49,11 @@ runs:
       run: |
         file="${WORKDIR}/${VERSION_FILE}"
         lock="${WORKDIR}/uv.lock"
-        version="${VERSION}"
-        if [ -z "${version}" ] && [ -f "${file}" ]; then
-          read -r version <"${file}" || true
+        python="${VERSION}"
+        if [ -z "${python}" ] && [ -f "${file}" ]; then
+          read -r python <"${file}" || true
         fi
-        if [ -z "${version}" ]; then
+        if [ -z "${python}" ]; then
           echo "::error::setup-python-uv: no Python version: set the version input or add a version to ${file}"
           exit 1
         fi
@@ -61,7 +61,7 @@ runs:
           echo "::error::setup-python-uv: no ${lock}: the cache is keyed on it"
           exit 1
         fi
-        echo "python-version=${version}" >>"${GITHUB_OUTPUT}"
+        echo "python-version=${python}" >>"${GITHUB_OUTPUT}"
 
     - id: setup
       uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
