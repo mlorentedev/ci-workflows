@@ -37,6 +37,8 @@ stub_python() {
 #!/usr/bin/env bash
 echo "python $*" >>"${STUB_LOG}"
 if [ "$1 $2" = "-m venv" ]; then
+  set -- "$1" "$2" "${@: -1}"
+  rm -rf "$3"
   mkdir -p "$3/bin"
   cat >"$3/bin/python" <<'PY'
 #!/usr/bin/env bash
@@ -214,7 +216,7 @@ EOF
   stub_python
   POETRY_DIR="${WORK}/poetry" POETRY_VERSION=2.5.1 run_step install-poetry
   [ "$status" -eq 0 ]
-  grep -qx "python -m venv ${WORK}/poetry" "${STUB_LOG}"
+  grep -qx "python -m venv --clear ${WORK}/poetry" "${STUB_LOG}"
   grep -q "venv-python -m pip install .*poetry==2.5.1" "${STUB_LOG}"
   [[ "$output" == *"Poetry (version 2.5.1)"* ]]
 }
@@ -227,6 +229,17 @@ EOF
   POETRY_DIR="${WORK}/poetry" POETRY_VERSION=2.5.1 run_step install-poetry
   [ "$status" -eq 0 ]
   [ ! -s "${STUB_LOG}" ]
+}
+
+@test "a restored Poetry that no longer runs is reinstalled rather than fail the job" {
+  stub_python
+  mkdir -p "${WORK}/poetry/bin"
+  printf '#!/usr/bin/env bash\nexit 127\n' >"${WORK}/poetry/bin/poetry"
+  chmod +x "${WORK}/poetry/bin/poetry"
+  POETRY_DIR="${WORK}/poetry" POETRY_VERSION=2.5.1 run_step install-poetry
+  [ "$status" -eq 0 ]
+  grep -qx "python -m venv --clear ${WORK}/poetry" "${STUB_LOG}"
+  [[ "$output" == *"Poetry (version 2.5.1)"* ]]
 }
 
 @test "Poetry goes on PATH and puts the project venv in the project" {

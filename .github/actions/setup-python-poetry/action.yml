@@ -121,8 +121,10 @@ runs:
         POETRY_DIR: ${{ steps.keys.outputs.poetry-dir }}
         POETRY_VERSION: ${{ steps.resolve.outputs.poetry-version }}
       run: |
-        if [ ! -x "${POETRY_DIR}/bin/poetry" ]; then
-          "${PYTHON}" -m venv "${POETRY_DIR}"
+        # A restored venv whose interpreter path no longer exists (a runner
+        # with another tool cache under the same key) is rebuilt, not fatal.
+        if ! "${POETRY_DIR}/bin/poetry" --version >/dev/null 2>&1; then
+          "${PYTHON}" -m venv --clear "${POETRY_DIR}"
           "${POETRY_DIR}/bin/python" -m pip install --disable-pip-version-check --no-input "poetry==${POETRY_VERSION}"
         fi
         "${POETRY_DIR}/bin/poetry" --version
