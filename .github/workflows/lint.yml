@@ -46,6 +46,8 @@ jobs:
               - "tests/**"
               - "renovate/**"
               - "renovate.json"
+              # tests/specs.bats parses every feature list (#46).
+              - "specs/**/features.json"
             toolchains:
               - ".github/actions/setup-*/**"
               - "tests/fixtures/toolchains/**"
