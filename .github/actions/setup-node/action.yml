@@ -1,0 +1,88 @@
+# Node with a cached npm store, and optionally cached Playwright browsers (spec
+# CI-004). The version comes from the `version` input or the version file; with
+# neither, the step fails rather than install a default. The caller checks the
+# repository out first, then runs `npm ci` and `npx playwright install
+# --with-deps`, which on a cache hit downloads only what the cache lacks. A
+# cache that cannot be reached only warns: the install still runs.
+name: setup-node
+description: Install Node from the caller's version source, with the npm cache keyed on its lockfile.
+
+inputs:
+  version:
+    description: The Node version to install. Wins over version-file.
+    default: ""
+  version-file:
+    description: The version file, relative to working-directory, read when version is empty.
+    default: .nvmrc
+  working-directory:
+    description: The directory holding package-lock.json and the version file.
+    default: .
+  playwright:
+    description: When 'true', also cache the Playwright browsers, keyed on the Playwright version in the lockfile.
+    default: "false"
+
+outputs:
+  cache-hit:
+    description: Whether the npm cache was restored on its primary key.
+    value: ${{ steps.setup.outputs.cache-hit }}
+  cache-primary-key:
+    description: The npm cache key, which names the platform and the arch.
+    value: ${{ steps.setup.outputs.cache-primary-key }}
+  playwright-cache-hit:
+    description: Whether the Playwright browsers were restored; empty when playwright is not 'true'.
+    value: ${{ steps.playwright.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - id: resolve
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_FILE: ${{ inputs.version-file }}
+        WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        file="${WORKDIR}/${VERSION_FILE}"
+        if [ -n "${VERSION}" ]; then
+          echo "version=${VERSION}" >>"${GITHUB_OUTPUT}"
+          echo "file=" >>"${GITHUB_OUTPUT}"
+        elif [ -f "${file}" ]; then
+          echo "version=" >>"${GITHUB_OUTPUT}"
+          echo "file=${file}" >>"${GITHUB_OUTPUT}"
+        else
+          echo "::error::setup-node: no Node version: set the version input or add ${file}"
+          exit 1
+        fi
+
+    - id: setup
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: ${{ steps.resolve.outputs.version }}
+        node-version-file: ${{ steps.resolve.outputs.file }}
+        cache: npm
+        cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+    - id: playwright-version
+      if: inputs.playwright == 'true'
+      shell: bash
+      env:
+        WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        lock="${WORKDIR}/package-lock.json"
+        if [ ! -f "${lock}" ]; then
+          echo "::error::setup-node: playwright needs ${lock}"
+          exit 1
+        fi
+        version=$(jq -r '.packages["node_modules/@playwright/test"].version // .packages["node_modules/playwright"].version // empty' "${lock}")
+        if [ -z "${version}" ]; then
+          echo "::error::setup-node: no Playwright package in ${lock}"
+          exit 1
+        fi
+        echo "version=${version}" >>"${GITHUB_OUTPUT}"
+
+    - id: playwright
+      if: inputs.playwright == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright-version.outputs.version }}
