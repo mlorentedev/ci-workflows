@@ -220,10 +220,43 @@ jobs:
             exit 1
           }
 
+  smoke-setup-python-poetry:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.areas), 'toolchains')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: poetry
+        uses: ./.github/actions/setup-python-poetry
+        with:
+          poetry-version: "2.5.1"
+          working-directory: tests/fixtures/toolchains/poetry
+      # `check --lock` fails when the fixture's lock no longer matches its
+      # pyproject.toml, which a restored venv would otherwise hide.
+      - name: Install the fixture
+        working-directory: tests/fixtures/toolchains/poetry
+        run: |
+          poetry check --lock
+          poetry install --no-interaction
+          test -x .venv/bin/python
+          .venv/bin/python -c 'import six'
+      - name: Report the cache
+        env:
+          HIT: ${{ steps.poetry.outputs.cache-hit }}
+          KEY: ${{ steps.poetry.outputs.cache-primary-key }}
+          POETRY_HIT: ${{ steps.poetry.outputs.poetry-cache-hit }}
+        run: |
+          echo "cache-hit=${HIT}"
+          echo "cache-primary-key=${KEY}"
+          echo "poetry-cache-hit=${POETRY_HIT}"
+
   # The one check branch protection will require (ADR-001 decision 3), once it
   # has reported on main. `if: always()` keeps a failed need from skipping it.
   gate:
-    needs: [changes, lint, test, renovate-config, smoke-setup-node, smoke-hygiene]
+    needs: [changes, lint, test, renovate-config, smoke-setup-node, smoke-hygiene, smoke-setup-python-poetry]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
