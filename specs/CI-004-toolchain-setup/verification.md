@@ -19,6 +19,13 @@ PR 1 (`setup-node`). Commits on `feat/issue-10-setup-node`.
 - [x] AC4 Gitea: personal/imagesensortool#159 runs `setup-node` at v0.4.0 (`d601782`) on act_runner. Its first run, [run 3113 job 8103](https://gitea.kubelab.live/personal/imagesensortool/actions/runs/3113/jobs/8103), logged `cache-hit=true` with `cache-primary-key=node-cache-Linux-x64-npm-afd62013…`, and the job passed. The hit is the store that `master` had saved with `actions/setup-node` v6.4.0: the composite keeps that action's key format, so a repository adopting it keeps its warm cache. The cache server on the Gitea runner works, so no kubelab ticket is needed.
 - [x] AC5 per-platform keys: the Playwright key test in `tests/setup-node.bats`; the smoke job fails when `cache-primary-key` does not start with `node-cache-<os>-<arch>-npm-` (`actions/setup-node` v7.1.0 builds it from `RUNNER_OS` and `os.arch()`, `src/cache-restore.ts`).
 
+PR 2 (`setup-python-poetry`). Commits on `feat/issue-10-setup-python-poetry`.
+
+- [x] AC1 setup-python-poetry shape: `tests/setup-python-poetry.bats` (inputs, outputs, bash, pins, the setup-python, cache and install wiring). Pins checked against the tags over the API: `actions/setup-python` v7.1.0 = `6d4fd22`, `actions/cache` v6.1.0 = `55cc834`.
+- [x] AC2 setup-python-poetry version source: `tests/setup-python-poetry.bats` (version input, version file, neither fails naming both; an empty or inexact `poetry-version` fails; a missing `poetry.lock` fails naming it; Poetry is installed only when its cached venv lacks it).
+- [ ] AC3 setup-python-poetry cache proof: `smoke-setup-python-poetry`. Pending its runs.
+- [x] AC5 setup-python-poetry per-platform keys: the `keys` tests in `tests/setup-python-poetry.bats`. Both keys hold `runner.os`, `runner.arch` and the exact Python version, and an empty part fails the step.
+
 ## Test status
 
 - Test suite: `bats tests/` -> every test ok; `actionlint` clean.

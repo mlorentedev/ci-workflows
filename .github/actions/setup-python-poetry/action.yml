@@ -76,8 +76,10 @@ runs:
         else
           hash=$(shasum -a 256 "${lock}" | cut -d' ' -f1)
         fi
-        echo "poetry-version=${POETRY_VERSION}" >>"${GITHUB_OUTPUT}"
-        echo "lock-hash=${hash}" >>"${GITHUB_OUTPUT}"
+        {
+          echo "poetry-version=${POETRY_VERSION}"
+          echo "lock-hash=${hash}"
+        } >>"${GITHUB_OUTPUT}"
 
     - id: setup
       uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
@@ -100,9 +102,11 @@ runs:
             exit 1
           fi
         done
-        echo "poetry-key=poetry-${OS}-${ARCH}-py${PYTHON_VERSION}-${POETRY_VERSION}" >>"${GITHUB_OUTPUT}"
-        echo "venv-key=poetry-venv-${OS}-${ARCH}-py${PYTHON_VERSION}-${LOCK_HASH}" >>"${GITHUB_OUTPUT}"
-        echo "poetry-dir=${HOME}/.cache/setup-python-poetry/${POETRY_VERSION}-py${PYTHON_VERSION}" >>"${GITHUB_OUTPUT}"
+        {
+          echo "poetry-key=poetry-${OS}-${ARCH}-py${PYTHON_VERSION}-${POETRY_VERSION}"
+          echo "venv-key=poetry-venv-${OS}-${ARCH}-py${PYTHON_VERSION}-${LOCK_HASH}"
+          echo "poetry-dir=${HOME}/.cache/setup-python-poetry/${POETRY_VERSION}-py${PYTHON_VERSION}"
+        } >>"${GITHUB_OUTPUT}"
 
     - id: poetry-cache
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

@@ -312,8 +312,9 @@ caller runs `npm ci` and the Playwright install.
   browsers the cache lacks, so a cache saved from a partial install heals, and
   it installs the system packages the cache never holds.
 - **A cache that cannot be reached** is a warning in `actions/cache`, not a
-  failure, so the install still runs. Gitea's behaviour is recorded once the
-  pilot in imagesensortool has run (CI-004).
+  failure, so the install still runs. On the Gitea runner the cache works: the
+  imagesensortool pilot restored the store that `actions/setup-node` had saved,
+  because the composite keeps that action's key format (CI-004 AC4).
 - **This repository smokes it.** The `smoke-setup-node` job in `lint.yml` runs
   the composite from this checkout against `tests/fixtures/toolchains/node/`,
   and checks that the cache key names the runner's platform and arch.
@@ -351,6 +352,51 @@ hygiene checks in it (spec CI-005). It replaces the vendored
   the composite on this repository's lessons, then on
   `tests/fixtures/lessons/duplicate-number/`, and fails unless that run's own
   report names the duplicate file.
+
+## setup-python-poetry
+
+`.github/actions/setup-python-poetry` installs Python and an exact Poetry, and
+caches both Poetry and the project's venv (spec CI-004). It installs no project
+dependencies: the caller runs `poetry install`. It runs on Linux and macOS
+runners only, since a Windows venv keeps its scripts in `Scripts/`.
+
+```yaml
+    steps:
+      - uses: actions/checkout@<40-hex-sha> # vX.Y.Z
+        with:
+          persist-credentials: false
+      - id: python
+        uses: mlorentedev/ci-workflows/.github/actions/setup-python-poetry@<40-hex-sha> # vX.Y.Z
+        with:
+          poetry-version: "2.5.1"
+      - run: poetry install --no-interaction
+```
+
+- **The Python version.** `version` wins when it is set. Otherwise the composite
+  reads `version-file` (default `.python-version`) in `working-directory`
+  (default `.`). With neither, the step fails and names both.
+- **The Poetry version** is required, and must be exact, such as `2.5.1`: it
+  names a cache key, so a range or `latest` would install a drifting Poetry
+  under a fixed key. A caller that installs `latest` or `>=1.8,<2.0` today picks
+  the exact version when it adopts the composite.
+- **Poetry** is installed with `pip` into a venv of its own, since the
+  self-hosted runner has no `pipx`. That venv is cached under
+  `poetry-<os>-<arch>-py<python>-<poetry-version>`. `poetry-cache-hit` reports
+  the restore.
+- **The project venv** is created in the project, as
+  `<working-directory>/.venv`, because the composite sets
+  `POETRY_VIRTUALENVS_IN_PROJECT=true`. It is cached under
+  `poetry-venv-<os>-<arch>-py<python>-<sha256 of poetry.lock>`. `cache-hit` and
+  `cache-primary-key` come from it.
+  - `poetry.lock` must exist, or the step fails naming it.
+  - Both keys hold the exact Python version, such as `3.13.9`, not the one the
+    caller asked for. A venv points at its interpreter by path, so a venv
+    restored onto another patch release would break. `python-version` reports
+    the exact version.
+- **This repository smokes it.** The `smoke-setup-python-poetry` job in
+  `lint.yml` runs the composite from this checkout against
+  `tests/fixtures/toolchains/poetry/`. It runs `poetry check --lock` and
+  `poetry install`, then imports the fixture's dependency from the venv.
 
 ## release
 
