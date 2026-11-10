@@ -1,15 +1,33 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["local>mlorentedev/ci-workflows//renovate/default"],
+  "extends": [
+    "local>mlorentedev/ci-workflows//renovate/default"
+  ],
   "customManagers": [
     {
       "customType": "regex",
       "description": "The fleet's Renovate engine pin, read by renovate.yml here and by the Gitea run at the same tag.",
-      "managerFilePatterns": ["/^renovate/engine\\.json$/"],
+      "managerFilePatterns": [
+        "/^renovate/engine\\.json$/"
+      ],
       "matchStrings": [
         "\"image\":\\s*\"(?<depName>[^\"]+)\",\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\""
       ],
       "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "The dotf release the pr-agent workflow and the hygiene composite install by default (#53). One dependency, so one PR bumps both.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/pr-agent\\.yml$/",
+        "/^\\.github/actions/hygiene/action\\.yml$/"
+      ],
+      "matchStrings": [
+        "dotf[_-]version:\\n(?:[ ]+[a-z]+:.*\\n)*?[ ]+default:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "depNameTemplate": "mlorentedev/dotfiles",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ]
 }

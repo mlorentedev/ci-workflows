@@ -133,7 +133,9 @@ jobs:
           work="$(mktemp -d)"
           mkdir "${work}/repo"
           cp -R .github "${work}/repo/"
-          cp renovate/default.json "${work}/preset.json"
+          # The preset plus this repository's own managers (#53). The local
+          # platform cannot resolve renovate.json's local> preset, so merge them.
+          jq -s '.[0] * {customManagers: .[1].customManagers}' renovate/default.json renovate.json > "${work}/preset.json"
           chmod -R a+rwX "${work}"
           docker run --rm -v "${work}:/w" -w /w/repo \
             -e LOG_LEVEL=debug -e LOG_FORMAT=json -e RENOVATE_PLATFORM=local \
@@ -150,6 +152,13 @@ jobs:
           # A broken pattern above would check nothing and pass.
           [ "${checked}" -ge 3 ] || { echo "::error::only ${checked} pinned files found"; exit 1; }
           echo "${checked} pinned files checked"
+          # Each dotf version default is one dependency, so one PR bumps them all (#53).
+          for f in .github/workflows/pr-agent.yml .github/actions/hygiene/action.yml; do
+            jq -rR --arg f "${f}" 'fromjson? | select(.msg == "Extracted dependencies")
+              | .. | objects | select(.packageFile? == $f) | .deps[]?.depName' "${work}/extract.log" |
+              grep -qx mlorentedev/dotfiles ||
+              { echo "::error::Renovate does not read the dotf version default in ${f}"; missing=1; }
+          done
           exit "${missing}"
 
   # The toolchain composites run from this checkout against a fixture, so a
