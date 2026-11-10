@@ -38,7 +38,7 @@ PR 3 (`setup-python-uv`). Commits on `feat/issue-10-setup-python-uv`.
   - Hit: the rerun of that job, [job 129667859606](https://github.com/mlorentedev/ci-workflows/actions/runs/42767427099/job/129667859606), restored both caches and logged `cache-hit=true` and `python-cache-hit=true`.
   - The scope is the pull request's own branch. A pull request reading `main`'s uv cache comes after this merges.
 - [x] AC3 setup-python-poetry, read from `main`: the push of #55 to `main` saved both Poetry keys ([job 129664538608](https://github.com/mlorentedev/ci-workflows/actions/runs/42766617019/job/129664538608)). On #58, `smoke-setup-python-poetry` ([job 129667140896](https://github.com/mlorentedev/ci-workflows/actions/runs/42767427099/job/129667140896)) restored them as its base branch's. It logged `cache-hit=true` and `poetry-cache-hit=true`, and `poetry install` had nothing to do.
-- [x] AC5 setup-python-uv per-platform keys: the smoke job fails when `cache-primary-key` does not start with `setup-uv-2-<arch>-<platform>-` (`astral-sh/setup-uv` v10.3.3 builds it from `process.arch` and `process.platform`, `src/cache/restore-cache.ts`).
+- [x] AC5 setup-python-uv per-platform keys: the smoke job fails when `cache-primary-key` does not start with `setup-uv-2-<arch>-<platform>-` (`astral-sh/setup-uv` v10.3.3 builds it in `src/cache/restore-cache.ts` from `process.arch` and `process.platform`, renamed in `src/utils/platforms.ts`). `tests/setup-python-uv.bats` runs that check against keys that do and do not name them.
 
 ## Test status
 

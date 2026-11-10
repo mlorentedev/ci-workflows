@@ -86,7 +86,7 @@
   {
     "id": "CI-004-toolchain-setup-f13",
     "behavior": "setup-python-uv's cache key names the runner arch and platform.",
-    "verification": "bats tests/setup-python-uv.bats --filter 'platform and the arch'",
+    "verification": "bats tests/setup-python-uv.bats --filter 'platform and the arch|platform and arch'",
     "state": "pending",
     "evidence": ""
   }

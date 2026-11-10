@@ -126,8 +126,30 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
   yq ".jobs.${job}.steps[].run" "${WORKFLOW}" | grep -q 'uv sync --locked'
 }
 
-@test "the uv smoke fails a cache key without the platform and the arch" {
-  yq '.jobs.smoke-setup-python-uv.steps[].run' "${WORKFLOW}" | grep -qF 'setup-uv-2-${arch}-${platform}-'
+# The smoke's key check, run with the runner's variables. The expected names are
+# setup-uv's own (src/utils/platforms.ts maps x64 to x86_64, linux to
+# unknown-linux-gnu, arm64 to aarch64, darwin to apple-darwin).
+key_check() {
+  yq '.jobs.smoke-setup-python-uv.steps[] | select(.name == "Report the cache") | .run' "${WORKFLOW}" >"${BATS_TEST_TMPDIR}/key.sh"
+  RUNNER_ARCH="$1" RUNNER_OS="$2" KEY="$3" HIT=true PYTHON_HIT=true \
+    run bash --noprofile --norc -eo pipefail "${BATS_TEST_TMPDIR}/key.sh"
+}
+
+@test "the uv smoke accepts a key naming the runner's platform and arch" {
+  key_check X64 Linux setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.13-py-abc
+  [ "$status" -eq 0 ]
+  key_check ARM64 macOS setup-uv-2-aarch64-apple-darwin-macos-15-3.13-py-abc
+  [ "$status" -eq 0 ]
+}
+
+@test "the uv smoke fails a key without the platform and the arch" {
+  key_check X64 Linux setup-uv-2-unknown-linux-gnu-ubuntu-24.04-3.13-py-abc
+  [ "$status" -ne 0 ]
+  key_check X64 Linux setup-uv-2-aarch64-unknown-linux-gnu-ubuntu-24.04-3.13-py-abc
+  [ "$status" -ne 0 ]
+  key_check X64 Linux setup-uv-2-x86_64-apple-darwin-macos-15-3.13-py-abc
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"does not start with setup-uv-2-x86_64-unknown-linux-gnu-"* ]]
 }
 
 @test "the uv fixture pins its Python version and has a lock" {

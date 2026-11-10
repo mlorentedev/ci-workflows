@@ -273,8 +273,10 @@ jobs:
         run: |
           uv sync --locked
           uv run --locked python -c 'import six'
-      # setup-uv builds its key from process.arch and process.platform; a key
-      # without them would let one runner restore another's wheels (CI-004 AC5).
+      # setup-uv builds its key from process.arch and process.platform, renamed
+      # in its src/utils/platforms.ts (x64 is x86_64, linux is
+      # unknown-linux-gnu). A key without them would let one runner restore
+      # another's wheels (CI-004 AC5).
       - name: Report the cache
         env:
           HIT: ${{ steps.uv.outputs.cache-hit }}
