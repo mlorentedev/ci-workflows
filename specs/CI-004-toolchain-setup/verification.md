@@ -15,7 +15,7 @@ PR 1 (`setup-node`). Commits on `feat/issue-10-setup-node`.
 
 - [x] AC1 shape: `tests/setup-node.bats` (inputs, outputs, bash, pins, setup-node wiring) at `9daf0c7`. Pins checked against the tags over the API: `actions/setup-node` v7.1.0 = `949feb2`, `actions/cache` v6.1.0 = `55cc834`.
 - [x] AC2 version source: `tests/setup-node.bats` (version input, version file, neither fails naming both; Playwright version from the lockfile, failing without it) at `9daf0c7`.
-- [ ] AC3 cache proof: `smoke-setup-node` and its wiring (the smoke tests in `tests/setup-node.bats`) at `1a9e15d`. The warm run on `main` and the hit on the next pull request are recorded after merge.
+- [x] AC3 cache proof: `smoke-setup-node` and its wiring (the smoke tests in `tests/setup-node.bats`), merged in #42. Warm: the push of `a249f67` to `main`, [run 42251446049](https://github.com/mlorentedev/ci-workflows/actions/runs/42251446049), logged `cache-hit=false`. Hit: the next push, `0264c74`, [run 42251942005](https://github.com/mlorentedev/ci-workflows/actions/runs/42251942005), logged `cache-hit=true` under the same `cache-primary-key=node-cache-Linux-x64-npm-806b948b7139806c95e68d1853f9f49393c1efade825a5e7b7fa544e30200faa`. The pushes of `d8ca1d6` and `d601782` hit too. The proposal expected the hit on a pull request; a push after the warm run proves the same restore.
 - [ ] AC4 Gitea: after merge, the imagesensortool pilot.
 - [x] AC5 per-platform keys: the Playwright key test in `tests/setup-node.bats`; the smoke job fails when `cache-primary-key` does not start with `node-cache-<os>-<arch>-npm-` (`actions/setup-node` v7.1.0 builds it from `RUNNER_OS` and `os.arch()`, `src/cache-restore.ts`).
 
