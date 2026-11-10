@@ -49,6 +49,10 @@ jobs:
             toolchains:
               - ".github/actions/setup-*/**"
               - "tests/fixtures/toolchains/**"
+            hygiene:
+              - ".github/actions/hygiene/**"
+              - "tests/fixtures/lessons/**"
+              - "docs/lessons/**"
 
   lint:
     needs: changes
@@ -180,10 +184,42 @@ jobs:
             *) echo "::error::the npm cache key '${KEY}' does not start with node-cache-${RUNNER_OS}-${RUNNER_ARCH}-npm-: either it lost the platform, or actions/setup-node changed its key format"; exit 1 ;;
           esac
 
+  # The hygiene composite with the real dotf (spec CI-005): this repository's
+  # lessons pass, and a fixture with a lesson number used twice fails, naming it.
+  smoke-hygiene:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.areas), 'hygiene')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/hygiene
+      - id: duplicate
+        continue-on-error: true
+        uses: ./.github/actions/hygiene
+        with:
+          lessons-dir: tests/fixtures/lessons/duplicate-number
+      - name: The duplicate number fails and is named
+        env:
+          OUTCOME: ${{ steps.duplicate.outcome }}
+        run: |
+          if [ "${OUTCOME}" != "failure" ]; then
+            echo "::error::the duplicate-number fixture passed the lessons check (outcome ${OUTCOME})"
+            exit 1
+          fi
+          if dotf lessons fmt --check --dir tests/fixtures/lessons/duplicate-number >report.txt 2>&1; then
+            echo "::error::dotf passed the duplicate-number fixture"
+            exit 1
+          fi
+          cat report.txt
+          grep -q "lesson-001-same-number.md" report.txt
+
   # The one check branch protection will require (ADR-001 decision 3), once it
   # has reported on main. `if: always()` keeps a failed need from skipping it.
   gate:
-    needs: [changes, lint, test, renovate-config, smoke-setup-node]
+    needs: [changes, lint, test, renovate-config, smoke-setup-node, smoke-hygiene]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2

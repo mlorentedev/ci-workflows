@@ -1,7 +1,7 @@
 ---
 id: "CI-005-hygiene"
 type: spec
-status: draft # draft | implementing | verifying | archived
+status: implementing # draft | implementing | verifying | archived
 created: "2026-11-06"
 issue: "mlorentedev/ci-workflows#31"   # repo#NNN — GitHub issue / Project item that tracks this spec
 tags: [spec, proposal, ci, hygiene, lessons]
@@ -53,12 +53,16 @@ the vendored scripts.
   - **B.** Give `dotf lessons` a `check` mode with the vendored script's semantics (unique numbers, every
     lesson indexed) and migrate repositories to the dotf format later, one at a time. Needs a dotfiles
     change before the composite.
-  The owner picks one before tasks.md is written.
+  **Decided 2026-11-09: A** (#31, comment 6757339616). The index is derived data, and a formatter that
+  converges is the cheaper regime to keep: one migration per repository, then nothing to maintain. B would
+  keep a second lesson regime alive in dotf.
 - **The pinned-actions rule does not exist yet.** `dotf lint` has only `powershell` in dotf 0.79.0. Until
-  dotfiles#3147 lands, the composite can ship with the lessons check alone, and adopters keep
-  `check-actions-pinned.sh`. Or the composite waits for #3147.
+  dotfiles#3147 lands, the composite ships with the lessons check alone, and adopters keep
+  `check-actions-pinned.sh`. The composite declares no input for a check it does not run; the
+  pinned-actions input arrives with the rule. AC3 and AC6 wait for #3147.
 - **Installing dotf on Gitea runners.** The composite needs a dotf release binary on both forges. The
-  install step must not depend on a GitHub-only action.
+  install step must not depend on a GitHub-only action. Resolved: dotfiles is public, so the step fetches
+  the release archive and `checksums.txt` with `curl` and checks one against the other, with no token.
 
 ## Acceptance criteria
 
