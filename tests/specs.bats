@@ -5,6 +5,8 @@
 # list that stops parsing would otherwise surface months late. Each rule also
 # runs against a list that breaks it.
 
+bats_require_minimum_version 1.5.0
+
 ROOT="${BATS_TEST_DIRNAME}/.."
 
 feature_lists() { compgen -G "${ROOT}/specs/*/features.json"; compgen -G "${ROOT}/specs/archive/*/features.json"; }
@@ -37,11 +39,11 @@ broken() { printf '%s' "$1" >"${BATS_TEST_TMPDIR}/features.json" && echo "${BATS
 }
 
 @test "the rule rejects invalid JSON, an empty file, two documents, an empty list and a missing or empty verification" {
-  ! valid_feature_list "$(broken '[{"id": "x", "verification": "bats tests/x.bats"')"
-  ! valid_feature_list "$(broken '')"
-  ! valid_feature_list "$(broken '[] [{"id": "x", "verification": "bats tests/x.bats"}]')"
-  ! valid_feature_list "$(broken '[]')"
-  ! valid_feature_list "$(broken '[{"id": "x"}]')"
-  ! valid_feature_list "$(broken '[{"id": "x", "verification": ""}]')"
+  run ! valid_feature_list "$(broken '[{"id": "x", "verification": "bats tests/x.bats"')"
+  run ! valid_feature_list "$(broken '')"
+  run ! valid_feature_list "$(broken '[] [{"id": "x", "verification": "bats tests/x.bats"}]')"
+  run ! valid_feature_list "$(broken '[]')"
+  run ! valid_feature_list "$(broken '[{"id": "x"}]')"
+  run ! valid_feature_list "$(broken '[{"id": "x", "verification": ""}]')"
   valid_feature_list "$(broken '[{"id": "x", "verification": "bats tests/x.bats"}]')"
 }
