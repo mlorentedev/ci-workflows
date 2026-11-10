@@ -61,3 +61,29 @@ assert_rule() {
 @test "secrets: passes every required secret" { assert_rule passes_every_required_secret; }
 @test "the workflow is pinned by full SHA" { assert_rule pins_by_full_sha; }
 @test "the caller grants what the job asks for" { assert_rule grants_the_job_permissions; }
+
+# This repository's own caller (#33) calls by path, so it is checked apart from
+# the fixtures: the same contract, minus the SHA pin.
+SELF="${BATS_TEST_DIRNAME}/../.github/workflows/review.yml"
+
+calls_by_path_with_the_pool() {
+  [ "$(yq '.jobs.review.uses' "$1")" = "./.github/workflows/pr-agent.yml" ] &&
+    [ "$(yq '.jobs.review.with | has("dotf_version") or has("pool") or has("declared_model") or has("declared_fallback_models")' "$1")" = "false" ]
+}
+
+skips_release_branches() { [ "$(yq '.jobs.review.with.skip_branch_prefixes' "$1")" = "release-please--" ]; }
+
+@test "this repository's caller keeps the contract" {
+  local rule
+  for rule in passes_only_declared_inputs passes_only_declared_secrets passes_every_required_secret grants_the_job_permissions; do
+    "${rule}" "${SELF}"
+  done
+}
+@test "this repository's caller uses the embedded pool by path" {
+  calls_by_path_with_the_pool "${SELF}"
+  ! calls_by_path_with_the_pool "${CALLERS}/hive.yml"
+}
+@test "this repository's caller skips release-please branches" {
+  skips_release_branches "${SELF}"
+  ! skips_release_branches "${BAD}"
+}

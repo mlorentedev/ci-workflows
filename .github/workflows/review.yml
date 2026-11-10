@@ -1,0 +1,29 @@
+# This repository's own PR-Agent review (#33): it calls pr-agent.yml by path, so
+# the change to the reviewer is the run that reviews it (AGENTS.md rule 2). No
+# dotf_version and no declared chain: the embedded pool draws, Haiku included.
+name: review
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.issue.number }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  review:
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    uses: ./.github/workflows/pr-agent.yml
+    with:
+      skip_branch_prefixes: release-please--
+    secrets:
+      NAN_API_KEY: ${{ secrets.NAN_API_KEY }}
+      PR_AGENT_ANTHROPIC_API_KEY: ${{ secrets.PR_AGENT_ANTHROPIC_API_KEY }}
