@@ -160,6 +160,57 @@ Tasks:
   - this composite's warm run and its hit, with the cache scope each one read.
 - [x] README: a `## setup-python-poetry` section, saying that a caller on a version range or on `latest` must pick an exact Poetry version.
 
+### PR 3: `setup-python-uv`
+
+Pin: `astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3`, which hive and leaving-denver already use.
+
+`setup-uv` already caches uv's cache, and it can also cache uv-managed Pythons (`cache-python`). Its key (`src/cache/restore-cache.ts`) is `setup-uv-2-<arch>-<platform>-<os>-<python>[-py]-<hash of the glob>`. A glob that matches nothing only warns, and every project then shares the key `…-no-dependency-glob`. So the composite adds three things:
+- the version source;
+- a required `uv.lock`;
+- the cache settings, in one place.
+
+uv builds the venv from its cache by linking, so the venv is not cached.
+
+The interface of `.github/actions/setup-python-uv/action.yml`:
+- **Inputs.**
+  - `version`, default empty.
+  - `version-file`, default `.python-version`.
+  - `uv-version`, default empty. When it is empty, `setup-uv` reads `required-version` from `pyproject.toml`, or else installs the latest. It names no cache key, so unlike `poetry-version` it can be left empty.
+  - `working-directory`, default `.`.
+- **Outputs.**
+  - `cache-hit` and `cache-primary-key`, from `setup-uv`'s `cache-hit` and `cache-key`.
+  - `python-cache-hit`.
+  - `uv-version`.
+- **Steps.**
+  - `resolve` (bash) publishes `python-version`: either the input, or the first line of the version file. It fails, naming both, when it has neither. It also fails, naming the path, when `<working-directory>/uv.lock` is missing.
+  - `setup` (`astral-sh/setup-uv`) runs with:
+    - `python-version` from `resolve`, and `uv-version` as `version`;
+    - `working-directory`;
+    - `enable-cache: "true"`, `cache-dependency-glob: uv.lock`, which `setup-uv` resolves relative to the working directory, and `cache-python: "true"`.
+- **What stays with the caller.** The caller runs `uv sync --locked`.
+
+Tasks:
+
+- [ ] [AC1] Write `tests/setup-python-uv.bats` with failing tests for the defaults, the outputs, bash, the pin, and the `setup` wiring. Expected: FAIL, because `action.yml` is missing.
+- [ ] [AC1] Write `.github/actions/setup-python-uv/action.yml`. Expected: those tests pass.
+- [ ] [AC2] Add failing tests for `resolve`, then implement it. The tests cover:
+  - the version input;
+  - the version file, first line, trimmed;
+  - neither, which fails naming both;
+  - a missing `uv.lock`, which fails naming its path.
+- [ ] [AC3] Add the fixture `tests/fixtures/toolchains/uv/`. It holds `.python-version`, a `pyproject.toml` with one tiny dependency, and its `uv.lock`.
+- [ ] [AC3, AC5] Add a `smoke-setup-python-uv` job to `lint.yml`. It:
+  - runs behind the `toolchains` area;
+  - runs `uv sync --locked` and imports the dependency;
+  - prints `cache-hit` and `cache-primary-key`;
+  - fails when the key does not start with `setup-uv-2-<arch>-<platform>-`;
+  - is listed in `gate`'s `needs`.
+- [ ] [AC1] Raise `tests/composites-shellcheck.bats`'s minimum for the new `run:` step.
+- [ ] [AC3] Record in `verification.md`:
+  - the warm run and the hit for this composite;
+  - `setup-python-poetry`'s pull-request hit read from `main`, from this PR's `smoke-setup-python-poetry` run.
+- [ ] README: a `## setup-python-uv` section.
+
 ## Closing
 
 - [ ] Every acceptance criterion from `proposal.md` is covered by at least one test or recorded run
