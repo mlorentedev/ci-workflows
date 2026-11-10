@@ -73,3 +73,9 @@ assert_rule() {
   [ "$(jq -r '.automerge' "${PRESET}")" = "false" ]
   [ "$(jq '[.. | objects | select(.automerge == true)] | length' "${PRESET}")" = "0" ]
 }
+
+# GitHub started the 01:17 UTC cron 6.5 hours late on 2026-11-09, after a
+# 7-hour window had closed, and nothing opened (#48). The window is the whole day.
+@test "the preset's schedule spans the whole of Monday" {
+  [ "$(jq -c '.schedule' "${PRESET}")" = '["* * * * 1"]' ]
+}

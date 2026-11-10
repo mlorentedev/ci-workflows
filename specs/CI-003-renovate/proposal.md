@@ -26,7 +26,7 @@ engine version and the GitHub workflow.
 
 - **A shared preset**, `renovate/default.json`. It is plain JSON with no GitHub-only options, so a Gitea run
   can extend it too. It holds the generic settings from kubelab's `renovate.json`: `config:recommended`,
-  semantic commits with the `fix(deps):` prefix, timezone Europe/Madrid, a Monday-night schedule, the
+  semantic commits with the `fix(deps):` prefix, timezone Europe/Madrid, a Monday schedule (widened from Monday night in #48), the
   `dependencies` and `renovate` labels, `prConcurrentLimit` 3 plus an hourly limit, minor and patch grouped
   while majors stay individual, a Dependency Dashboard, and no automerge. Repositories extend it with
   `github>mlorentedev/ci-workflows//renovate/default#<tag>`.
