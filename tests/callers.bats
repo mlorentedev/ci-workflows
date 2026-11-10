@@ -4,6 +4,8 @@
 # Each rule runs against every caller and against a fixture that breaks it. A
 # reusable workflow that drops an input breaks here before it breaks a consumer.
 
+bats_require_minimum_version 1.5.0
+
 WORKFLOW="${BATS_TEST_DIRNAME}/../.github/workflows/pr-agent.yml"
 CALLERS="${BATS_TEST_DIRNAME}/fixtures/callers"
 BAD="${BATS_TEST_DIRNAME}/fixtures/caller-shape-bad.yml"
@@ -81,9 +83,9 @@ skips_release_branches() { [ "$(yq '.jobs.review.with.skip_branch_prefixes' "$1"
 }
 @test "this repository's caller uses the embedded pool by path" {
   calls_by_path_with_the_pool "${SELF}"
-  ! calls_by_path_with_the_pool "${CALLERS}/hive.yml"
+  run ! calls_by_path_with_the_pool "${CALLERS}/hive.yml"
 }
 @test "this repository's caller skips release-please branches" {
   skips_release_branches "${SELF}"
-  ! skips_release_branches "${BAD}"
+  run ! skips_release_branches "${BAD}"
 }

@@ -5,6 +5,8 @@
 # fixture that breaks it. A release workflow that drops an input or an output
 # breaks here before it breaks a consumer.
 
+bats_require_minimum_version 1.5.0
+
 ROOT="${BATS_TEST_DIRNAME}/.."
 WORKFLOW="${ROOT}/.github/workflows/release.yml"
 SELF="${ROOT}/.github/workflows/release-please.yml"
@@ -61,7 +63,7 @@ assert_rule() {
 @test "a consumer pins the workflow by full SHA" {
   local caller
   for caller in "${CALLERS}"/*.yml; do pins_by_full_sha "${caller}"; done
-  ! pins_by_full_sha "${BAD}"
+  run ! pins_by_full_sha "${BAD}"
 }
 
 # By path, so the merge that changes release.yml is the run that exercises it.

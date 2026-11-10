@@ -4,6 +4,8 @@
 # the way a composite runs it, against stubs of gh and dotf, so a gate that errors
 # has to fail the step rather than be read as a decision.
 
+bats_require_minimum_version 1.5.0
+
 ACTION="${BATS_TEST_DIRNAME}/../.github/actions/push-gate/action.yml"
 
 setup() {
@@ -65,5 +67,5 @@ run_step() { run bash --noprofile --norc -eo pipefail "${BATS_TEST_TMPDIR}/step.
   GH_FAILS=1 run_step
   [ "${status}" -eq 0 ]
   [ -s "${DOTF_CALLS}" ]
-  ! grep -q '^read ' "${DOTF_CALLS}"
+  run ! grep -q '^read ' "${DOTF_CALLS}"
 }

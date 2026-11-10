@@ -4,6 +4,8 @@
 # these tests hold the invariants this repository relies on, not the members,
 # which follow dotfiles. Each rule also runs against a copy that breaks it.
 
+bats_require_minimum_version 1.5.0
+
 ROOT="${BATS_TEST_DIRNAME}/.."
 POOL="${ROOT}/harness/reviewer-pool.json"
 ATTESTATION="${ROOT}/harness/review-attestation.json"
@@ -36,25 +38,25 @@ broken() { jq "$1" "$2" >"${BATS_TEST_TMPDIR}/broken.json" && echo "${BATS_TEST_
 
 @test "no Anthropic member signs a review first" {
   no_anthropic_first_signer "$POOL"
-  ! no_anthropic_first_signer "$(broken '(.pool[] | select(.vendor == "anthropic")) |= del(.signs)' "$POOL")"
+  run ! no_anthropic_first_signer "$(broken '(.pool[] | select(.vendor == "anthropic")) |= del(.signs)' "$POOL")"
 }
 
 @test "another vendor can sign first" {
   has_non_anthropic_first_signer "$POOL"
-  ! has_non_anthropic_first_signer "$(broken '.pool |= map(select(.vendor == "anthropic"))' "$POOL")"
+  run ! has_non_anthropic_first_signer "$(broken '.pool |= map(select(.vendor == "anthropic"))' "$POOL")"
 }
 
 @test "every pool member names its id, runner, model and vendor" {
   every_member_pinned "$POOL"
-  ! every_member_pinned "$(broken '.pool[0] |= del(.model)' "$POOL")"
+  run ! every_member_pinned "$(broken '.pool[0] |= del(.model)' "$POOL")"
 }
 
 @test "the release PR is exempt for exactly the files release-please writes" {
   release_exempt_matches_release_please "$ATTESTATION"
-  ! release_exempt_matches_release_please "$(broken '.exempt.signatures[0].files += ["version.txt"]' "$ATTESTATION")"
+  run ! release_exempt_matches_release_please "$(broken '.exempt.signatures[0].files += ["version.txt"]' "$ATTESTATION")"
 }
 
 @test "triage is recorded under ## Review triage" {
   triage_marker_is_review_triage "$ATTESTATION"
-  ! triage_marker_is_review_triage "$(broken '.triage.marker = "## Triage"' "$ATTESTATION")"
+  run ! triage_marker_is_review_triage "$(broken '.triage.marker = "## Triage"' "$ATTESTATION")"
 }

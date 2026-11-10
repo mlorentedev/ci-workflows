@@ -1,0 +1,11 @@
+# Breaks tests/bats-style.bats on purpose: line 9 is a bare ! in a test body.
+# The helper on line 4 keeps its ! as a return value and must not be flagged.
+
+refuses() { ! grep -q yes "$1"; }
+
+@test "a test that cannot fail on its negative" {
+  local f="${BATS_TEST_TMPDIR}/f"
+  echo yes >"$f"
+  ! grep -q yes "$f"
+  [ -s "$f" ]
+}
