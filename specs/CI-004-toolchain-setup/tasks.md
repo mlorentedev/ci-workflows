@@ -78,7 +78,7 @@ Tasks:
 
   Expected: actionlint clean, and the `callers`/shape tests pass.
 - [x] [AC1] Extend `tests/composites-shellcheck.bats`'s minimum step count for the new `run:` steps. Expected: the suite passes.
-- [ ] [AC3] After merge, record in `verification.md`:
+- [x] [AC3] After merge, record in `verification.md`:
   - the push run on `main` that warmed the cache (`cache-hit=false`);
   - the next run that read it (`cache-hit=true`, with a `cache-primary-key` holding the platform and arch);
   - a pull request reading `main`'s cache as its base branch. PR 2 records it from its own `smoke-setup-node` run.
@@ -121,7 +121,7 @@ The interface of `.github/actions/setup-python-poetry/action.yml`, for Linux and
 
 Tasks:
 
-- [ ] [AC1] Write `tests/setup-python-poetry.bats` with failing tests:
+- [x] [AC1] Write `tests/setup-python-poetry.bats` with failing tests:
   - the input defaults;
   - the outputs map to the right steps;
   - the scripts run under bash;
@@ -129,36 +129,36 @@ Tasks:
   - the `setup` wiring.
 
   Expected: FAIL, because `action.yml` is missing.
-- [ ] [AC1] Write `.github/actions/setup-python-poetry/action.yml`. Expected: those tests pass.
-- [ ] [AC2] Add failing tests for `resolve`, then implement it. The tests cover:
+- [x] [AC1] Write `.github/actions/setup-python-poetry/action.yml`. Expected: those tests pass.
+- [x] [AC2] Add failing tests for `resolve`, then implement it. The tests cover:
   - the version input;
   - the version file;
   - neither, which fails naming both;
   - an empty or non-exact `poetry-version`, which fails;
   - a missing `poetry.lock`, which fails naming its path;
   - `lock-hash` is the lockfile's sha256.
-- [ ] [AC5] Add failing tests for `keys`, then implement it:
+- [x] [AC5] Add failing tests for `keys`, then implement it:
   - both keys hold the OS, the arch and the exact Python version;
   - Poetry's key holds the Poetry version;
   - the venv's key holds the lock hash.
-- [ ] [AC2] Add failing tests for `install-poetry`, then implement it. They run it against a stub `python` and assert:
+- [x] [AC2] Add failing tests for `install-poetry`, then implement it. They run it against a stub `python` and assert:
   - it installs only when the venv has no `poetry`;
   - it always writes `PATH` and `POETRY_VIRTUALENVS_IN_PROJECT`.
-- [ ] [AC3] Add the fixture `tests/fixtures/toolchains/poetry/`, generated with Poetry 2.5.1. It holds:
+- [x] [AC3] Add the fixture `tests/fixtures/toolchains/poetry/`, generated with Poetry 2.5.1. It holds:
   - `.python-version`;
   - a `pyproject.toml` with `package-mode = false` and one tiny dependency;
   - its `poetry.lock`.
-- [ ] [AC3] Add a `smoke-setup-python-poetry` job to `lint.yml`. It:
+- [x] [AC3] Add a `smoke-setup-python-poetry` job to `lint.yml`. It:
   - runs behind the `toolchains` area;
   - runs `poetry check --lock`, then `poetry install`;
   - asserts that the venv is in the fixture;
   - prints `cache-hit` and `cache-primary-key`;
   - is listed in `gate`'s `needs`.
-- [ ] [AC1] Raise `tests/composites-shellcheck.bats`'s minimum for the three new `run:` steps.
-- [ ] [AC3] Record in `verification.md`:
+- [x] [AC1] Raise `tests/composites-shellcheck.bats`'s minimum for the three new `run:` steps.
+- [x] [AC3] Record in `verification.md`:
   - `setup-node`'s pull-request hit, from this PR's `smoke-setup-node` run;
   - this composite's warm run and its hit, with the cache scope each one read.
-- [ ] README: a `## setup-python-poetry` section, saying that a caller on a version range or on `latest` must pick an exact Poetry version.
+- [x] README: a `## setup-python-poetry` section, saying that a caller on a version range or on `latest` must pick an exact Poetry version.
 
 ## Closing
 

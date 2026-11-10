@@ -389,6 +389,7 @@ runners only, since a Windows venv keeps its scripts in `Scripts/`.
   `poetry-venv-<os>-<arch>-py<python>-<sha256 of poetry.lock>`. `cache-hit` and
   `cache-primary-key` come from it.
   - `poetry.lock` must exist, or the step fails naming it.
+  - On a miss `cache-hit` is empty, not `false`, so compare it with `'true'`.
   - Both keys hold the exact Python version, such as `3.13.9`, not the one the
     caller asked for. A venv points at its interpreter by path, so a venv
     restored onto another patch release would break. `python-version` reports
