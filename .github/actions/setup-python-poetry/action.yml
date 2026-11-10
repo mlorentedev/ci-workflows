@@ -1,0 +1,132 @@
+# Python, Poetry at an exact version, and a cached in-project venv (spec
+# CI-004). The Python version comes from the `version` input or the version
+# file; with neither, the step fails rather than install a default. Poetry is
+# installed with pip into a venv of its own, because the self-hosted runner has
+# no pipx, and both venvs are cached under keys naming the platform, the arch
+# and the exact Python, since a venv points at its interpreter by path. The
+# caller checks the repository out first, then runs `poetry install`. A cache
+# that cannot be reached only warns: the install still runs. Linux and macOS
+# runners only: a Windows venv keeps its scripts in Scripts/, not bin/.
+name: setup-python-poetry
+description: Install Python and an exact Poetry, with the project venv cached on poetry.lock.
+
+inputs:
+  version:
+    description: The Python version to install. Wins over version-file.
+    default: ""
+  version-file:
+    description: The version file, relative to working-directory, read when version is empty.
+    default: .python-version
+  poetry-version:
+    description: The exact Poetry version to install, such as 2.5.1. Required, since it names a cache key.
+    default: ""
+  working-directory:
+    description: The directory holding poetry.lock and the version file. The venv is created in it, as .venv.
+    default: .
+
+outputs:
+  cache-hit:
+    description: Whether the project venv was restored on its primary key.
+    value: ${{ steps.venv.outputs.cache-hit }}
+  cache-primary-key:
+    description: The project venv's cache key, which names the platform, the arch and the exact Python.
+    value: ${{ steps.keys.outputs.venv-key }}
+  poetry-cache-hit:
+    description: Whether Poetry's own venv was restored.
+    value: ${{ steps.poetry-cache.outputs.cache-hit }}
+  python-version:
+    description: The exact Python version installed.
+    value: ${{ steps.setup.outputs.python-version }}
+
+runs:
+  using: composite
+  steps:
+    - id: resolve
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_FILE: ${{ inputs.version-file }}
+        POETRY_VERSION: ${{ inputs.poetry-version }}
+        WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        file="${WORKDIR}/${VERSION_FILE}"
+        lock="${WORKDIR}/poetry.lock"
+        if [ -n "${VERSION}" ]; then
+          echo "version=${VERSION}" >>"${GITHUB_OUTPUT}"
+          echo "file=" >>"${GITHUB_OUTPUT}"
+        elif [ -f "${file}" ]; then
+          echo "version=" >>"${GITHUB_OUTPUT}"
+          echo "file=${file}" >>"${GITHUB_OUTPUT}"
+        else
+          echo "::error::setup-python-poetry: no Python version: set the version input or add ${file}"
+          exit 1
+        fi
+        if ! [[ "${POETRY_VERSION}" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+          echo "::error::setup-python-poetry: poetry-version must be an exact version such as 2.5.1, got '${POETRY_VERSION}'"
+          exit 1
+        fi
+        if [ ! -f "${lock}" ]; then
+          echo "::error::setup-python-poetry: no ${lock}: the venv cache is keyed on it"
+          exit 1
+        fi
+        # Not hashFiles: it returns an empty string for a missing file, which
+        # would put every project under one key.
+        if command -v sha256sum >/dev/null; then
+          hash=$(sha256sum "${lock}" | cut -d' ' -f1)
+        else
+          hash=$(shasum -a 256 "${lock}" | cut -d' ' -f1)
+        fi
+        echo "poetry-version=${POETRY_VERSION}" >>"${GITHUB_OUTPUT}"
+        echo "lock-hash=${hash}" >>"${GITHUB_OUTPUT}"
+
+    - id: setup
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: ${{ steps.resolve.outputs.version }}
+        python-version-file: ${{ steps.resolve.outputs.file }}
+
+    - id: keys
+      shell: bash
+      env:
+        OS: ${{ runner.os }}
+        ARCH: ${{ runner.arch }}
+        PYTHON_VERSION: ${{ steps.setup.outputs.python-version }}
+        POETRY_VERSION: ${{ steps.resolve.outputs.poetry-version }}
+        LOCK_HASH: ${{ steps.resolve.outputs.lock-hash }}
+      run: |
+        for part in OS ARCH PYTHON_VERSION POETRY_VERSION LOCK_HASH; do
+          if [ -z "${!part}" ]; then
+            echo "::error::setup-python-poetry: ${part} is empty, so the cache keys cannot be built"
+            exit 1
+          fi
+        done
+        echo "poetry-key=poetry-${OS}-${ARCH}-py${PYTHON_VERSION}-${POETRY_VERSION}" >>"${GITHUB_OUTPUT}"
+        echo "venv-key=poetry-venv-${OS}-${ARCH}-py${PYTHON_VERSION}-${LOCK_HASH}" >>"${GITHUB_OUTPUT}"
+        echo "poetry-dir=${HOME}/.cache/setup-python-poetry/${POETRY_VERSION}-py${PYTHON_VERSION}" >>"${GITHUB_OUTPUT}"
+
+    - id: poetry-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.keys.outputs.poetry-dir }}
+        key: ${{ steps.keys.outputs.poetry-key }}
+
+    - id: install-poetry
+      shell: bash
+      env:
+        PYTHON: ${{ steps.setup.outputs.python-path }}
+        POETRY_DIR: ${{ steps.keys.outputs.poetry-dir }}
+        POETRY_VERSION: ${{ steps.resolve.outputs.poetry-version }}
+      run: |
+        if [ ! -x "${POETRY_DIR}/bin/poetry" ]; then
+          "${PYTHON}" -m venv "${POETRY_DIR}"
+          "${POETRY_DIR}/bin/python" -m pip install --disable-pip-version-check --no-input "poetry==${POETRY_VERSION}"
+        fi
+        "${POETRY_DIR}/bin/poetry" --version
+        echo "${POETRY_DIR}/bin" >>"${GITHUB_PATH}"
+        echo "POETRY_VIRTUALENVS_IN_PROJECT=true" >>"${GITHUB_ENV}"
+
+    - id: venv
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ inputs.working-directory }}/.venv
+        key: ${{ steps.keys.outputs.venv-key }}
