@@ -33,5 +33,33 @@
     "verification": "bats tests/setup-node.bats --filter 'platform, the arch' && grep -F 'node-cache-${RUNNER_OS,,}-${RUNNER_ARCH,,}-npm-' .github/workflows/lint.yml",
     "state": "pending",
     "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f6",
+    "behavior": "setup-python-poetry's inputs, defaults and outputs (cache-hit included) read from action.yml, and every third-party action is pinned by a 40-hex SHA with its tag.",
+    "verification": "bats tests/setup-python-poetry.bats --filter 'inputs and their defaults|outputs map|pinned by full SHA'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f7",
+    "behavior": "The Python version comes from the version input or the version file, and with neither the step fails naming both; an inexact poetry-version or a missing poetry.lock fails too.",
+    "verification": "bats tests/setup-python-poetry.bats --filter 'version input|version file|neither a version|Poetry version|poetry.lock'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f8",
+    "behavior": "The poetry smoke job runs setup-python-poetry from this checkout against its fixture, behind gate; a later run reports cache-hit true.",
+    "verification": "grep -qE '^- \\[x\\] AC3 setup-python-poetry.*cache-hit=true' specs/CI-004-toolchain-setup/verification.md && bats tests/setup-python-poetry.bats --filter 'poetry smoke|poetry fixture' && bats tests/setup-node.bats --filter 'gate needs'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f9",
+    "behavior": "setup-python-poetry's cache keys name runner.os, runner.arch and the exact Python version.",
+    "verification": "bats tests/setup-python-poetry.bats --filter 'platform, the arch|keys step reads'",
+    "state": "pending",
+    "evidence": ""
   }
 ]

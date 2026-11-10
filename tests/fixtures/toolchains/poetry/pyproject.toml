@@ -1,0 +1,10 @@
+# The fixture for this repository's smoke-setup-python-poetry job (spec
+# CI-004): one tiny dependency, so the venv cache has something to store.
+[project]
+name = "setup-python-poetry-fixture"
+version = "0.0.0"
+requires-python = ">=3.13,<3.14"
+dependencies = ["six==1.17.0"]
+
+[tool.poetry]
+package-mode = false
