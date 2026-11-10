@@ -79,3 +79,13 @@ assert_rule() {
 @test "the preset's schedule spans the whole of Monday" {
   [ "$(jq -c '.schedule' "${PRESET}")" = '["* * * * 1"]' ]
 }
+
+@test "one manager reads every dotf version default as one dependency" {
+  local m
+  m=$(jq -c '.customManagers[] | select(.depNameTemplate == "mlorentedev/dotfiles")' "${ROOT}/renovate.json")
+  [ "$(jq -r '.datasourceTemplate' <<<"${m}")" = "github-releases" ]
+  for f in .github/workflows/pr-agent.yml .github/actions/hygiene/action.yml; do
+    grep -qE '^ +dotf[_-]version:$' "${ROOT}/${f}"
+    jq -r '.managerFilePatterns[]' <<<"${m}" | grep -qxF "/^${f//./\\.}\$/"
+  done
+}
