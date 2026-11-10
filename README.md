@@ -411,7 +411,7 @@ any repository without a `renovate.json`, so adopting Renovate is adding that
 file. Dependabot is not used: it does not exist on Gitea.
 
 - **The preset**, `renovate/default.json`, holds the fleet defaults: the
-  schedule (Monday night, Europe/Madrid), labels, one grouped PR for minor and
+  schedule (all of Monday, Europe/Madrid, so a delayed cron still lands in it), labels, one grouped PR for minor and
   patch updates, majors on their own, actions pinned by digest, a Dependency
   Dashboard, and no automerge. It is plain JSON with no GitHub-only option, so
   the Gitea run extends it too.
