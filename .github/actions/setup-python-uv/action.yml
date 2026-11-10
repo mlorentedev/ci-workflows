@@ -1,0 +1,74 @@
+# uv, a Python for it, and uv's cache keyed on uv.lock (spec CI-004). The
+# Python version comes from the `version` input or the version file; with
+# neither, the step fails rather than install a default. setup-uv owns the
+# cache: its key names the arch, the platform, the OS and the Python, and hashes
+# uv.lock. The composite requires the lock, since setup-uv only warns when its
+# glob matches nothing and every project would then share one key. The caller
+# checks the repository out first, then runs `uv sync --locked`, which links the
+# venv from the cache. A cache that cannot be reached only warns.
+name: setup-python-uv
+description: Install uv and a Python from the caller's version source, with uv's cache keyed on uv.lock.
+
+inputs:
+  version:
+    description: The Python version to use. Wins over version-file.
+    default: ""
+  version-file:
+    description: The version file, relative to working-directory, read when version is empty.
+    default: .python-version
+  uv-version:
+    description: The uv version to install. Empty reads required-version from pyproject.toml, or else installs the latest.
+    default: ""
+  working-directory:
+    description: The directory holding uv.lock and the version file.
+    default: .
+
+outputs:
+  cache-hit:
+    description: Whether uv's cache was restored on its primary key.
+    value: ${{ steps.setup.outputs.cache-hit }}
+  cache-primary-key:
+    description: uv's cache key, which names the arch, the platform and the Python.
+    value: ${{ steps.setup.outputs.cache-key }}
+  python-cache-hit:
+    description: Whether the uv-managed Python was restored from the cache.
+    value: ${{ steps.setup.outputs.python-cache-hit }}
+  uv-version:
+    description: The uv version installed.
+    value: ${{ steps.setup.outputs.uv-version }}
+
+runs:
+  using: composite
+  steps:
+    - id: resolve
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_FILE: ${{ inputs.version-file }}
+        WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        file="${WORKDIR}/${VERSION_FILE}"
+        lock="${WORKDIR}/uv.lock"
+        version="${VERSION}"
+        if [ -z "${version}" ] && [ -f "${file}" ]; then
+          read -r version <"${file}" || true
+        fi
+        if [ -z "${version}" ]; then
+          echo "::error::setup-python-uv: no Python version: set the version input or add a version to ${file}"
+          exit 1
+        fi
+        if [ ! -f "${lock}" ]; then
+          echo "::error::setup-python-uv: no ${lock}: the cache is keyed on it"
+          exit 1
+        fi
+        echo "python-version=${version}" >>"${GITHUB_OUTPUT}"
+
+    - id: setup
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      with:
+        version: ${{ inputs.uv-version }}
+        python-version: ${{ steps.resolve.outputs.python-version }}
+        working-directory: ${{ inputs.working-directory }}
+        enable-cache: "true"
+        cache-dependency-glob: uv.lock
+        cache-python: "true"
