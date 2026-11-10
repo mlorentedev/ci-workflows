@@ -20,5 +20,5 @@ ACTIONS="${BATS_TEST_DIRNAME}/../.github/actions"
       checked=$((checked + 1))
     done
   done
-  [ "${checked}" -ge 6 ]
+  [ "${checked}" -ge 8 ]
 }
