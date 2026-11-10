@@ -33,7 +33,11 @@ PR 3 (`setup-python-uv`). Commits on `feat/issue-10-setup-python-uv`.
 
 - [x] AC1 setup-python-uv shape: `tests/setup-python-uv.bats` (inputs, outputs, bash, pin, the setup-uv wiring). Pin checked against the tag over the API: `astral-sh/setup-uv` v10.3.3 = `68559e9`.
 - [x] AC2 setup-python-uv version source: `tests/setup-python-uv.bats` (version input, first line of the version file, neither or an empty file fails naming both; a missing `uv.lock` fails naming it).
-- [ ] AC3 setup-python-uv cache proof: `smoke-setup-python-uv`. Pending its runs.
+- [x] AC3 setup-python-uv cache proof: `smoke-setup-python-uv` on #58, [run 42767427099](https://github.com/mlorentedev/ci-workflows/actions/runs/42767427099). Its second run logged `cache-hit=true`.
+  - Warm: [job 129667140775](https://github.com/mlorentedev/ci-workflows/actions/runs/42767427099/job/129667140775) logged `cache-hit=false` and `python-cache-hit=false`, downloaded CPython 3.13.18, and saved under `setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-3.13-py-97d49e0f…`.
+  - Hit: the rerun of that job, [job 129667859606](https://github.com/mlorentedev/ci-workflows/actions/runs/42767427099/job/129667859606), restored both caches and logged `cache-hit=true` and `python-cache-hit=true`.
+  - The scope is the pull request's own branch. A pull request reading `main`'s uv cache comes after this merges.
+- [x] AC3 setup-python-poetry, read from `main`: the push of #55 to `main` saved both Poetry keys ([job 129664538608](https://github.com/mlorentedev/ci-workflows/actions/runs/42766617019/job/129664538608)). On #58, `smoke-setup-python-poetry` ([job 129667140896](https://github.com/mlorentedev/ci-workflows/actions/runs/42767427099/job/129667140896)) restored them as its base branch's. It logged `cache-hit=true` and `poetry-cache-hit=true`, and `poetry install` had nothing to do.
 - [x] AC5 setup-python-uv per-platform keys: the smoke job fails when `cache-primary-key` does not start with `setup-uv-2-<arch>-<platform>-` (`astral-sh/setup-uv` v10.3.3 builds it from `process.arch` and `process.platform`, `src/cache/restore-cache.ts`).
 
 ## Test status

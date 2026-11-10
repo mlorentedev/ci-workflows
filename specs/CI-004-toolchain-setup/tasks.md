@@ -191,25 +191,25 @@ The interface of `.github/actions/setup-python-uv/action.yml`:
 
 Tasks:
 
-- [ ] [AC1] Write `tests/setup-python-uv.bats` with failing tests for the defaults, the outputs, bash, the pin, and the `setup` wiring. Expected: FAIL, because `action.yml` is missing.
-- [ ] [AC1] Write `.github/actions/setup-python-uv/action.yml`. Expected: those tests pass.
-- [ ] [AC2] Add failing tests for `resolve`, then implement it. The tests cover:
+- [x] [AC1] Write `tests/setup-python-uv.bats` with failing tests for the defaults, the outputs, bash, the pin, and the `setup` wiring. Expected: FAIL, because `action.yml` is missing.
+- [x] [AC1] Write `.github/actions/setup-python-uv/action.yml`. Expected: those tests pass.
+- [x] [AC2] Add failing tests for `resolve`, then implement it. The tests cover:
   - the version input;
   - the version file, first line, trimmed;
   - neither, which fails naming both;
   - a missing `uv.lock`, which fails naming its path.
-- [ ] [AC3] Add the fixture `tests/fixtures/toolchains/uv/`. It holds `.python-version`, a `pyproject.toml` with one tiny dependency, and its `uv.lock`.
-- [ ] [AC3, AC5] Add a `smoke-setup-python-uv` job to `lint.yml`. It:
+- [x] [AC3] Add the fixture `tests/fixtures/toolchains/uv/`. It holds `.python-version`, a `pyproject.toml` with one tiny dependency, and its `uv.lock`.
+- [x] [AC3, AC5] Add a `smoke-setup-python-uv` job to `lint.yml`. It:
   - runs behind the `toolchains` area;
   - runs `uv sync --locked` and imports the dependency;
   - prints `cache-hit` and `cache-primary-key`;
   - fails when the key does not start with `setup-uv-2-<arch>-<platform>-`;
   - is listed in `gate`'s `needs`.
-- [ ] [AC1] Raise `tests/composites-shellcheck.bats`'s minimum for the new `run:` step.
-- [ ] [AC3] Record in `verification.md`:
+- [x] [AC1] Raise `tests/composites-shellcheck.bats`'s minimum for the new `run:` step.
+- [x] [AC3] Record in `verification.md`:
   - the warm run and the hit for this composite;
   - `setup-python-poetry`'s pull-request hit read from `main`, from this PR's `smoke-setup-python-poetry` run.
-- [ ] README: a `## setup-python-uv` section.
+- [x] README: a `## setup-python-uv` section.
 
 ## Closing
 
