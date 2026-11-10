@@ -141,6 +141,7 @@ publish() {
   GITHUB_WORKSPACE=/ws LESSONS_DIR=docs/lessons run_step lessons
   [ "$status" -eq 1 ]
   [[ "$output" == *"used twice"* ]]
+  grep -q "used twice" "${RUNNER_TEMP}/hygiene-lessons.txt"
 }
 
 # Smoke wiring (AC2)
@@ -150,6 +151,10 @@ publish() {
   [ "$(yq "${job}.steps[] | select(.id == \"duplicate\") | .continue-on-error" "${WORKFLOW}")" = "true" ]
   [ "$(yq "${job}.steps[] | select(.id == \"duplicate\") | .with.lessons-dir" "${WORKFLOW}")" = "tests/fixtures/lessons/duplicate-number" ]
   yq "${job}.steps[].env.OUTCOME" "${WORKFLOW}" | grep -qx '${{ steps.duplicate.outcome }}'
+  # The composite's own report, not a second dotf run that would pass even when
+  # the fixture's install failed.
+  yq "${job}.steps[-1].run" "${WORKFLOW}" | grep -q 'RUNNER_TEMP}/hygiene-lessons.txt'
+  ! yq "${job}.steps[-1].run" "${WORKFLOW}" | grep -q 'dotf lessons'
 }
 
 @test "the gate needs smoke-hygiene" {

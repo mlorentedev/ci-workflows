@@ -341,15 +341,16 @@ hygiene checks in it (spec CI-005). It replaces the vendored
   `dotf lessons fmt --check` on `lessons-dir` (default `docs/lessons`). It fails
   on a lesson out of its canonical form, a lesson number used twice, a wikilink
   to no lesson, and a committed `_index.md`: the index is rendered by
-  `dotf lessons index`, never committed. An adopter runs `dotf lessons fmt`
+  `dotf lessons index`, never committed. The report is also written to
+  `$RUNNER_TEMP/hygiene-lessons.txt` for a later step. An adopter runs `dotf lessons fmt`
   and deletes `_index.md` in the PR that adopts the composite.
 - **Pinned actions** are not checked yet. That rule arrives with
   `dotf lint` (dotfiles#3147); until then an adopter keeps its vendored
   `check-actions-pinned.sh`.
 - **This repository smokes it.** The `smoke-hygiene` job in `lint.yml` runs
   the composite on this repository's lessons, then on
-  `tests/fixtures/lessons/duplicate-number/`, and fails unless that fixture
-  fails, naming the duplicate file.
+  `tests/fixtures/lessons/duplicate-number/`, and fails unless that run's own
+  report names the duplicate file.
 
 ## release
 

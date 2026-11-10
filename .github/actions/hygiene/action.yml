@@ -54,5 +54,8 @@ runs:
       shell: bash
       env:
         LESSONS_DIR: ${{ inputs.lessons-dir }}
+      # The report is also kept in RUNNER_TEMP, so a later step can tell which
+      # check failed. bash runs this step with pipefail, so tee keeps the status.
       run: |
-        dotf lessons fmt --check --dir "${GITHUB_WORKSPACE:-.}/${LESSONS_DIR}"
+        dotf lessons fmt --check --dir "${GITHUB_WORKSPACE:-.}/${LESSONS_DIR}" 2>&1 |
+          tee "${RUNNER_TEMP:-/tmp}/hygiene-lessons.txt"

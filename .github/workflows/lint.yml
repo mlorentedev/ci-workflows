@@ -209,12 +209,14 @@ jobs:
             echo "::error::the duplicate-number fixture passed the lessons check (outcome ${OUTCOME})"
             exit 1
           fi
-          if dotf lessons fmt --check --dir tests/fixtures/lessons/duplicate-number >report.txt 2>&1; then
-            echo "::error::dotf passed the duplicate-number fixture"
+          # The composite's own report: a run that failed in its install never
+          # wrote the fixture's, and the first run's report names no fixture.
+          report="${RUNNER_TEMP}/hygiene-lessons.txt"
+          cat "${report}"
+          grep -q "lesson-001-same-number.md" "${report}" || {
+            echo "::error::the lessons check did not report the fixture's duplicate number"
             exit 1
-          fi
-          cat report.txt
-          grep -q "lesson-001-same-number.md" report.txt
+          }
 
   # The one check branch protection will require (ADR-001 decision 3), once it
   # has reported on main. `if: always()` keeps a failed need from skipping it.
