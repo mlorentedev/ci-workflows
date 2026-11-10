@@ -5,6 +5,8 @@
 # directory and `dotf` records its arguments. The real dotf runs in lint.yml's
 # smoke-hygiene job, against this repository and the lesson fixtures.
 
+bats_require_minimum_version 1.5.0
+
 ACTION="${BATS_TEST_DIRNAME}/../.github/actions/hygiene/action.yml"
 WORKFLOW="${BATS_TEST_DIRNAME}/../.github/workflows/lint.yml"
 
@@ -69,7 +71,7 @@ publish() {
 @test "every step is a bash run step: no action, so nothing GitHub-only" {
   [ "$(yq '[.runs.steps[] | select(has("uses"))] | length' "${ACTION}")" = "0" ]
   [ "$(yq '[.runs.steps[] | select(.shell != "bash")] | length' "${ACTION}")" = "0" ]
-  ! grep -qE '\bgh |GH_TOKEN|github\.token' "${ACTION}"
+  run ! grep -qE '\bgh |GH_TOKEN|github\.token' "${ACTION}"
 }
 
 @test "the lessons step runs only when lessons is 'true'" {
@@ -154,7 +156,8 @@ publish() {
   # The composite's own report, not a second dotf run that would pass even when
   # the fixture's install failed.
   yq "${job}.steps[-1].run" "${WORKFLOW}" | grep -q 'RUNNER_TEMP}/hygiene-lessons.txt'
-  ! yq "${job}.steps[-1].run" "${WORKFLOW}" | grep -q 'dotf lessons'
+  run yq "${job}.steps[-1].run" "${WORKFLOW}"
+  [[ "${output}" != *"dotf lessons"* ]]
 }
 
 @test "the gate needs smoke-hygiene" {
