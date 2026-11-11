@@ -79,4 +79,9 @@ jobs:
           RENOVATE_REPOSITORIES: ${{ inputs.repositories }}
           RENOVATE_ONBOARDING: "false"
           RENOVATE_REQUIRE_CONFIG: required
+          # A repository that ends in a platform, config, system or temporary
+          # error (rate-limit-exceeded among them) makes Renovate exit non-zero
+          # once every repository has run, so the job goes red instead of green
+          # (#43, lesson-006). A repository without a renovate.json is not an error.
+          RENOVATE_EXIT_CODE_FOR_ERRORS: "true"
           LOG_LEVEL: info

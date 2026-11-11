@@ -35,6 +35,11 @@ config_required() {
     [ "$(yq '.jobs.renovate.steps[] | select(.uses == "renovatebot/github-action@*") | .env.RENOVATE_ONBOARDING' "$1")" = "false" ]
 }
 
+# A repository that aborts (the rate limit, a broken config) fails the job (#43).
+errors_fail_the_run() {
+  [ "$(yq '.jobs.renovate.steps[] | select(.uses == "renovatebot/github-action@*") | .env.RENOVATE_EXIT_CODE_FOR_ERRORS' "$1")" = "true" ]
+}
+
 every_action_pinned_by_sha() {
   [ "$(yq '[.jobs[].steps[] | select(has("uses")) | .uses | select(test("@[0-9a-f]{40}$") | not)] | length' "$1")" = "0" ]
 }
@@ -55,6 +60,7 @@ assert_rule() {
 @test "Renovate authenticates with RENOVATE_TOKEN" { assert_rule renovate_uses_the_token; }
 @test "the engine version comes from renovate/engine.json" { assert_rule engine_from_the_pin_file; }
 @test "only repositories with a renovate.json run, with no onboarding" { assert_rule config_required; }
+@test "a repository that aborts fails the run" { assert_rule errors_fail_the_run; }
 @test "every action is pinned by full SHA" { assert_rule every_action_pinned_by_sha; }
 @test "GITHUB_TOKEN gets contents read and nothing else" { assert_rule asks_for_least; }
 
