@@ -89,5 +89,33 @@
     "verification": "bats tests/setup-python-uv.bats --filter 'platform and the arch|platform and arch'",
     "state": "pending",
     "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f14",
+    "behavior": "setup-go-lint's inputs, defaults and outputs (cache-hit included) read from action.yml, and every third-party action is pinned by a 40-hex SHA with its tag.",
+    "verification": "bats tests/setup-go-lint.bats --filter 'inputs and their defaults|outputs map|pinned by full SHA|steps run'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f15",
+    "behavior": "The Go version comes from the version input or the version file, and golangci-lint's from its input or go.mod; with neither, the step fails naming both; a missing go.sum fails too.",
+    "verification": "bats tests/setup-go-lint.bats --filter 'version input|version file|neither|go.sum|golangci-lint version|tool line'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f16",
+    "behavior": "The Go smoke job runs setup-go-lint from this checkout against its fixture, behind gate; a later run reports cache-hit true.",
+    "verification": "grep -qE '^- \\[x\\] AC3 setup-go-lint.*cache-hit=true' specs/CI-004-toolchain-setup/verification.md && bats tests/setup-go-lint.bats --filter 'Go smoke|Go fixture'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f17",
+    "behavior": "setup-go-lint's cache is setup-go v7.0.0's, whose key names RUNNER_OS and the arch, and golangci-lint's result cache is never kept.",
+    "verification": "bats tests/setup-go-lint.bats --filter 'v7.0.0 pin|never caches results'",
+    "state": "pending",
+    "evidence": ""
   }
 ]
