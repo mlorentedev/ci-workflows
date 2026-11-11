@@ -55,11 +55,14 @@ Three forks for the owner to decide before any fleet PR opens:
 
 1. **The Anthropic key in NaN-only repositories.** Decided (A), sync it to every adopter: the owner ran
    `dotf secrets sync ci ... PR_AGENT_ANTHROPIC_API_KEY` on six adopters on 2026-11-10. The secrets registry
-   refused all six, correctly, because they are not consumers yet. Each adopter therefore needs, in order:
-   - a dotfiles PR adding `ci:mlorentedev/<repo>` to the key's consumers. One PR can cover all twelve, as
-     dotfiles#3210 did for this repository;
-   - `dotf secrets sync ci` by the owner after it merges;
-   - the adopter's PR here, whose first review then draws from the full pool.
+   refused all six, correctly, because they are not consumers yet. dotfiles declares the key only for a
+   repository whose workflow reads it or whose adopting PR is open: "a credential synced where nothing reads
+   it only widens the surface" (tests/pr-agent-config.bats). So on T+1, in order:
+   - the twelve adopter PRs open as drafts, so no review runs yet;
+   - one dotfiles PR adds all twelve as consumers, as dotfiles#3210 did for this repository. It satisfies the
+     rule, because every adopting PR is open;
+   - after it merges, the owner runs `dotf secrets sync ci`;
+   - the adopter PRs are marked ready, and each first review draws from the full pool.
    dotfiles#3290 is to derive each repository's CI secrets from the workflows it runs and report missing and
    excess ones. Until it lands, the consumer list is kept by hand.
 2. **Where the `Class:` instruction lives.** PR-Agent (The-PR-Agent/pr-agent at efdde4a,
