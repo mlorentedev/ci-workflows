@@ -85,6 +85,18 @@ Three forks for the owner to decide before any fleet PR opens. Forks 1 and 2 are
      - (C) A base file through `EXTRA_CONFIG_URL`, with repositories putting their extras under a different key.
    - Before (C) is chosen, check that the image the shared workflow pins (`pragent/pr-agent@sha256:80edef7…`)
      supports `EXTRA_CONFIG_URL`.
+   - **2b, open: where the guard runs.** (A) assumed each adopter could carry a test like #61's. The
+     inventory below says otherwise: eleven of the twelve have no bats, and only ts-bridge runs it in CI.
+     - (A1) A per-repository guard, as svqtriana.github.io already has in `scripts/check-harness.mjs`.
+       Drift fails the adopter's own PR. Costs a CI step in eleven adopters (`.github/workflows/` touched in
+       each) and twelve copies of the check.
+     - (A2) One guard in the shared `pr-agent.yml`: a step before the review reads the caller's
+       `.pr_agent.toml` and `harness/review-attestation.json` and fails when they disagree. One
+       implementation, nothing added to adopter CI. Drift fails the next review run, not the drifting PR.
+       It is a change to the shared workflow, so it is its own PR here, and it reaches the adopters only
+       through a release and a bump of each caller's SHA pin (Renovate's, once #30 is adopted).
+     - Recommended: (A2). Neither blocks T+1: the paragraph and the registry block land first, and the
+       guard follows. f3's "a `.bats` file holds the test" clause follows this decision.
 3. **Batch order and size.** ci-workflows-34 opens every Renovate and hygiene adopter PR on day T, when
    v0.5.0 is tagged; the owner chose not to stagger (2026-11-10). The adopter PRs here therefore start on T+1,
    in any order.
@@ -95,6 +107,25 @@ Three forks for the owner to decide before any fleet PR opens. Forks 1 and 2 are
    - The PRs open as drafts, so the review starts when each is marked ready. They are marked ready four at a
      time, and the next four only once the previous reviews have posted and no other review is running in the
      same window.
+
+## Inventory for the kit (2026-11-11)
+
+Read from each adopter's default branch through the GitHub API:
+
+| Fact | Adopters |
+|---|---|
+| `harness/review-attestation.json` present, `github-actions` registered as a reviewer | all twelve |
+| `classification` block present | svqtriana.github.io only (same prefix and classes as this repository) |
+| `extra_instructions` set in `.pr_agent.toml` (1.6 to 2.7 KB each) | all twelve |
+| A `Class:` paragraph in `extra_instructions` | svqtriana.github.io only, written with backticks |
+| bats files | ts-bridge only (one file, run by `ci.yml`) |
+| `pr-agent.yml` workflows | one each; hive has two (its own and `pr-agent-shared.yml`) |
+
+So every adopter keeps its own instructions and gains the shared paragraph first in them
+(`kit/class-paragraph.txt`), and every registry except svqtriana.github.io's gains the block in
+`kit/classification.json`. The paragraph is byte-identical to the first paragraph of this repository's
+`extra_instructions`. svqtriana.github.io's guard checks substrings `Class: <name>`, which the kit paragraph
+still contains.
 
 ## Acceptance criteria
 
