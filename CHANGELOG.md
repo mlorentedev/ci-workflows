@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.0](https://github.com/mlorentedev/ci-workflows/compare/v0.4.0...v0.5.0) (2026-11-11)
+
+
+### Features
+
+* **hygiene:** add a composite that runs dotf's lessons check on any forge ([#54](https://github.com/mlorentedev/ci-workflows/issues/54)) ([0807897](https://github.com/mlorentedev/ci-workflows/commit/08078978c4816ff0b1f0edf5bc8b32a5f9df48e1))
+* **setup-go-lint:** add a Go composite with its caches keyed on go.sum ([#64](https://github.com/mlorentedev/ci-workflows/issues/64)) ([e64d2c6](https://github.com/mlorentedev/ci-workflows/commit/e64d2c6a95a7165e021825ebf6da716958192da5))
+* **setup-python-poetry:** add a cached Python and Poetry composite ([#55](https://github.com/mlorentedev/ci-workflows/issues/55)) ([299a48a](https://github.com/mlorentedev/ci-workflows/commit/299a48a5103bcaeb7bfa2972d414de9546347b0f))
+* **setup-python-uv:** add a uv composite with its cache keyed on uv.lock ([#58](https://github.com/mlorentedev/ci-workflows/issues/58)) ([6727a5b](https://github.com/mlorentedev/ci-workflows/commit/6727a5b76bd9b6ade16f416a1af247a52d8e150e))
+
+
+### Bug Fixes
+
+* **renovate:** fail the run when a repository aborts on an error ([#62](https://github.com/mlorentedev/ci-workflows/issues/62)) ([1a2d938](https://github.com/mlorentedev/ci-workflows/commit/1a2d9387d13b3f71db0c5c028486a55bc6050b80))
+* **renovate:** open updates all Monday so a delayed cron still lands in the window ([#49](https://github.com/mlorentedev/ci-workflows/issues/49)) ([91bf940](https://github.com/mlorentedev/ci-workflows/commit/91bf940674227ed26037f0f8b023bb15ccbdface))
+
 ## [0.4.0](https://github.com/mlorentedev/ci-workflows/compare/v0.3.0...v0.4.0) (2026-11-06)
 
 
