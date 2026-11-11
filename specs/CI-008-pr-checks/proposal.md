@@ -51,10 +51,16 @@ dotf lint fleet     --dir <repo>
 dotf lessons fmt    --check --dir <dir>
 ```
 
-- `--event` is the forge's event payload file (`GITHUB_EVENT_PATH`, which Gitea's runner also sets). The
-  pull request's number, labels, body and author come from it, not from an API call, so the gates run on
-  both forges and spend no API budget. A gate that needs live state (a label added after the event) is
-  re-run by the `labeled` and `edited` events the caller already listens to.
+- `--event` is a pull request event file. The gates read the number, base, head, labels, body and author
+  from it and call no API, so dotf stays forge-neutral.
+- **The composite refreshes that file before the gates read it.** "Re-run failed jobs" replays the
+  original payload (dotfiles BUG-066, #877), so a gate reading `GITHUB_EVENT_PATH` as is would re-judge the
+  pull request as it was before the operator added the escape label or the rationale section, and the
+  escape would need an unrelated push. One step in the composite fetches the pull request's current
+  labels, body and author from the forge API (`GITHUB_API_URL`, which Gitea's runner also sets) and writes
+  a refreshed copy of the event file. It is the only API call, it belongs to the forge adapter, not to
+  dotf, and it takes the token as an input, since composites cannot read secrets. A re-run sees the
+  current labels and body.
 - Exit 0 passes, 1 fails, 2 is a usage or environment error. A failure names the file and line, or the
   missing section, on stderr.
 - `--summary <file>` appends a Markdown section for the job summary.
@@ -82,6 +88,8 @@ dotf lessons fmt    --check --dir <dir>
   hatches today, and in one job they would re-run lessons and lint too. Every check takes seconds, so this
   costs one short job where it now costs three. The concurrency group must not cancel on these events
   (dotfiles BUG-066), which the caller fixture carries.
+- **Gitea's pull request API.** The refresh step assumes Gitea's `/repos/{owner}/{repo}/pulls/{n}` returns
+  labels, body and author in the GitHub shape. Verified on one Gitea repository before a Gitea adopter.
 - **Blocked on dotfiles#3147.** Until the gates exist in dotf, the composite can run only the lessons
   check, which `hygiene` already does. PR 1 here waits for #3147.
 
@@ -91,7 +99,9 @@ dotf lessons fmt    --check --dir <dir>
       version and runs each check behind an input.
 2. [ ] With one check failing, every other check still runs, the summary shows each result, and the job
       fails.
-3. [ ] The spec and knowledge gates read the pull request from the event file and make no API call.
+3. [ ] The spec and knowledge gates read the pull request from an event file and make no API call. The
+      composite refreshes labels, body and author with one API call first, so a re-run of a failed job
+      sees the escape label or rationale added since the original event.
 4. [ ] dotfiles and kubelab each run one job per pull request event for the cheap checks, in place of two
       or three workflows, with branch protection updated.
 5. [ ] After adoption, runner wait for those repositories is recorded against the snapshot in #14.

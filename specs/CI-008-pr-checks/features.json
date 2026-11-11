@@ -15,8 +15,8 @@
   },
   {
     "id": "CI-008-pr-checks-f3",
-    "behavior": "The spec and knowledge gates read the pull request from the event file and make no API call.",
-    "verification": "bats tests/pr-checks.bats --filter 'event file|no API'",
+    "behavior": "The spec and knowledge gates read the pull request from an event file and make no API call; the composite first refreshes labels, body and author with one API call, so a re-run sees an escape added after the original event.",
+    "verification": "bats tests/pr-checks.bats --filter 'event file|no API|refresh'",
     "state": "pending",
     "evidence": ""
   },

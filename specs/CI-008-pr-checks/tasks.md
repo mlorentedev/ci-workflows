@@ -23,7 +23,7 @@ PR 1, the composite (after dotfiles#3147):
 
 - [ ] [AC1] Write `tests/pr-checks.bats` with failing tests: inputs per check, bash steps only, no token, dotf installed through `hygiene`.
 - [ ] [AC2] Failing tests that one failing check leaves the others running, writes each result to the summary, and fails the job. Then implement.
-- [ ] [AC3] Failing tests that the gate steps pass `--event "$GITHUB_EVENT_PATH"` and that the composite calls no `gh` and no API. Then implement.
+- [ ] [AC3] Failing tests that the gate steps pass `--event` the refreshed file and call no API, and that the refresh step, the only API call, replaces labels, body and author in a stale payload with the current ones (stub `curl`). Then implement.
 - [ ] [AC1, AC2] Smoke job in `lint.yml` on this repository, with a fixture where one check fails.
 - [ ] README section; caller fixtures for dotfiles and kubelab under `tests/fixtures/callers/`.
 
