@@ -191,6 +191,6 @@ lock_with() {
 
 @test "the spec's feature list parses and gives every feature a verification" {
   run jq -e 'all(.[]; (.verification | type) == "string" and (.verification | length) > 0)' \
-    "${BATS_TEST_DIRNAME}/../specs/CI-004-toolchain-setup/features.json"
+    "${BATS_TEST_DIRNAME}/../specs/archive/CI-004-toolchain-setup/features.json"
   [ "$status" -eq 0 ]
 }

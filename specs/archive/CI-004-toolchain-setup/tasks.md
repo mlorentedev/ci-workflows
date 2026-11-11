@@ -272,12 +272,12 @@ Tasks:
 
 ## Closing
 
-- [ ] Every acceptance criterion from `proposal.md` is covered by at least one test or recorded run
-- [ ] Every acceptance criterion has a `features.json` entry with a non-vacuous verification command
-- [ ] `bats tests/` and `actionlint` pass
-- [ ] No unrelated changes in the diff
-- [ ] `verification.md` filled in
-- [ ] PR opened referencing this spec folder
+- [x] Every acceptance criterion from `proposal.md` is covered by at least one test or recorded run
+- [x] Every acceptance criterion has a `features.json` entry with a non-vacuous verification command
+- [x] `bats tests/` and `actionlint` pass
+- [x] No unrelated changes in the diff
+- [x] `verification.md` filled in
+- [x] PR opened referencing this spec folder
 
 ## Machine-readable features
 
