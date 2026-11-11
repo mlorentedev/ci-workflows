@@ -585,7 +585,7 @@ file. Dependabot is not used: it does not exist on Gitea.
   actions pinned by digest, a weekly `uv.lock` refresh through lock file
   maintenance (a `>=` bound gets no update PR of its own), a three-day wait on
   new npm, PyPI and Go releases (a Renovate branch runs CI with the repository's
-  secrets), at most three open PRs and no hourly cap (one run a week would defer
+  secrets; the uv lock refresh does not apply it yet, #81), at most three open PRs and no hourly cap (one run a week would defer
   the rest by a week), a Dependency Dashboard, and no automerge. It is plain JSON
   with no GitHub-only option, so the Gitea run extends it too.
 - **The engine pin**, `renovate/engine.json`, is the Renovate image and version.
