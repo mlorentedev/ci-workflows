@@ -265,7 +265,7 @@ Tasks:
   - prints `cache-hit`, `go-version` and `golangci-lint-version`;
   - is listed in `gate`'s `needs`.
 - [x] [AC1] Raise `tests/composites-shellcheck.bats`'s minimum for the new `run:` step.
-- [ ] [AC3, AC5] Record in `verification.md`:
+- [x] [AC3, AC5] Record in `verification.md`:
   - the warm run and the hit for this composite, with the key from the log;
   - `setup-python-uv`'s pull-request hit read from `main` (main saved it in job 130266579757), from this PR's `smoke-setup-python-uv` run.
 - [x] README: a `## setup-go-lint` section.

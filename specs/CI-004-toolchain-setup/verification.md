@@ -44,9 +44,13 @@ PR 4 (`setup-go-lint`). Commits on `feat/issue-10-setup-go-lint`.
 
 - [x] AC1 setup-go-lint shape: `tests/setup-go-lint.bats` (inputs, outputs, bash, both pins, the step order, the setup-go and lint wiring). Pins checked against the tags over the API: `actions/setup-go` v7.0.0 = `b7ad1da`, `golangci/golangci-lint-action` v9.3.0 = `ba0d7d2`.
 - [x] AC2 setup-go-lint version sources: `tests/setup-go-lint.bats` (the Go version input or the version file, neither fails naming both; the golangci-lint input with or without its `v`, go.mod's golangci-lint/v2 line, neither fails naming both; a missing `go.sum` fails naming it).
-- [ ] AC3 setup-go-lint cache proof: pending the pull request's warm run and its rerun.
-- [ ] AC3 setup-python-uv, read from `main`: the push of #58 to `main` ran `smoke-setup-python-uv` ([job 130266579757](https://github.com/mlorentedev/ci-workflows/actions/runs/42942226466/job/130266579757)). Pending this pull request's run of it.
-- [ ] AC5 setup-go-lint per-platform keys: `actions/setup-go` v7.0.0 builds its key in `src/cache-restore.ts` (line 35) as `setup-go-${RUNNER_OS}-${process.arch}-${ImageOS}-go-<version>-<hash>`, and publishes no key output, so no smoke can check it. `tests/setup-go-lint.bats` holds the pin; the warm run's log gives the key. golangci-lint's result cache is never kept (`skip-cache`, tested).
+- [x] AC3 setup-go-lint cache proof: `smoke-setup-go-lint` on #64, [run 42948162863](https://github.com/mlorentedev/ci-workflows/actions/runs/42948162863). Its second run logged `cache-hit=true`.
+  - Warm: [job 130288140297](https://github.com/mlorentedev/ci-workflows/actions/runs/42948162863/job/130288140297) logged `cache-hit=false`, installed Go 1.25.14 from `go.mod`'s `go 1.25`, built and linted the fixture (`0 issues.`), and saved `setup-go-Linux-x64-ubuntu24-go-1.25.14-a363ac2e…`.
+  - Hit: the rerun of that job, [job 130294223833](https://github.com/mlorentedev/ci-workflows/actions/runs/42948162863/job/130294223833), restored that key, logged `cache-hit=true`, and skipped the save ("Cache hit occurred on the primary key").
+  - The lint action logged "Skipping cache restoration" and "Skipping cache saving" in both runs: only the binary was installed.
+  - The scope is the pull request's own branch. A pull request reading `main`'s Go cache comes after this merges.
+- [x] AC3 setup-python-uv, read from `main`: the push of #58 to `main` saved the uv cache ([job 130266579757](https://github.com/mlorentedev/ci-workflows/actions/runs/42942226466/job/130266579757)). On #64, `smoke-setup-python-uv` ([job 130288140299](https://github.com/mlorentedev/ci-workflows/actions/runs/42948162863/job/130288140299)) restored it as its base branch's and logged `cache-hit=true` and `python-cache-hit=true`.
+- [x] AC5 setup-go-lint per-platform keys: `actions/setup-go` v7.0.0 builds its key in `src/cache-restore.ts` (line 35) as `setup-go-${RUNNER_OS}-${process.arch}-${ImageOS}-go-<version>-<hash>`, and publishes no key output, so no smoke step can check it. `tests/setup-go-lint.bats` holds the pin, and the warm run's log shows the key naming both: `setup-go-Linux-x64-ubuntu24-…`. golangci-lint's result cache is never kept (`skip-cache`, tested, and the log above).
 
 ## Test status
 

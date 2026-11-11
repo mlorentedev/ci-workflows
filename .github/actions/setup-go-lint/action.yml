@@ -49,7 +49,7 @@ runs:
         WORKDIR: ${{ inputs.working-directory }}
       run: |
         prefix="${WORKDIR%/}/"
-        if [ "${WORKDIR}" = . ]; then prefix=""; fi
+        if [ -z "${WORKDIR}" ] || [ "${WORKDIR}" = . ]; then prefix=""; fi
         file="${prefix}${VERSION_FILE}"
         sum="${prefix}go.sum"
         mod="${prefix}go.mod"

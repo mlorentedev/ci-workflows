@@ -114,6 +114,16 @@ module() {
   [ "$(output_of go-sum)" = "go.sum" ]
 }
 
+# A caller forwarding an unset input passes "", which overrides the default.
+@test "an empty working directory is read as ., not as the filesystem root" {
+  cd "${WORK}"
+  module
+  VERSION='' VERSION_FILE=go.mod LINT_VERSION=v2.15.0 WORKDIR='' run_resolve
+  [ "$status" -eq 0 ]
+  [ "$(output_of go-version-file)" = "go.mod" ]
+  [ "$(output_of go-sum)" = "go.sum" ]
+}
+
 @test "with neither a Go version nor the file, the step fails naming both" {
   touch "${WORK}/go.sum"
   VERSION='' VERSION_FILE=go.mod LINT_VERSION=v2.15.0 WORKDIR="${WORK}" run_resolve
