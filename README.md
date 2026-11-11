@@ -440,6 +440,44 @@ caller runs `uv sync --locked`, which links the venv from the cache.
   runs `uv sync --locked`, and checks that the cache key names the runner's arch
   and platform.
 
+## setup-go-lint
+
+`.github/actions/setup-go-lint` installs Go and golangci-lint, with Go's module
+cache and build cache keyed on `go.sum` (spec CI-004). It runs nothing: the
+caller runs `go build`, `go test` and `golangci-lint run`.
+
+```yaml
+    steps:
+      - uses: actions/checkout@<40-hex-sha> # vX.Y.Z
+        with:
+          persist-credentials: false
+      - id: go
+        uses: mlorentedev/ci-workflows/.github/actions/setup-go-lint@<40-hex-sha> # vX.Y.Z
+        with:
+          golangci-lint-version: v2.15.0
+      - run: golangci-lint run
+```
+
+- **The Go version.** `version` wins when it is set. Otherwise `actions/setup-go`
+  reads `version-file` (default `go.mod`) in `working-directory` (default `.`).
+  With neither, the step fails and names both.
+- **The golangci-lint version** is `golangci-lint-version`, v2 only, with or
+  without its `v`. Left empty, it comes from the
+  `github.com/golangci/golangci-lint/v2` line of `go.mod`. With neither, the
+  step fails rather than install the latest.
+- **The cache** is `actions/setup-go`'s. Its key is
+  `setup-go-<os>-<arch>-<image>-go-<version>-<hash of go.sum>`, and `cache-hit`
+  comes from it. `setup-go` publishes no key, so there is no
+  `cache-primary-key` output.
+  - `go.sum` must exist, or the step fails naming it: `setup-go` cannot key the
+    cache without it.
+  - golangci-lint's result cache is never kept. A restored one reports findings
+    a clean run does not, so only the binary is installed (`install-only`,
+    `skip-cache`). `golangci-lint run` still reuses Go's build cache.
+- **This repository smokes it.** The `smoke-setup-go-lint` job in `lint.yml`
+  runs the composite from this checkout against `tests/fixtures/toolchains/go/`,
+  then `go build ./...` and `golangci-lint run`.
+
 ## release
 
 `.github/workflows/release.yml` runs

@@ -1,0 +1,97 @@
+# Go and golangci-lint from the caller's version sources, with the module cache
+# and the build cache keyed on go.sum (spec CI-004). The Go version comes from
+# the `version` input or the version file, and golangci-lint's from its input or
+# go.mod's tool line; with neither, the step fails rather than install a
+# default. setup-go owns the cache: its key names RUNNER_OS, the arch and the Go
+# version, and hashes go.sum, which the composite therefore requires.
+# golangci-lint's own result cache is never kept, because a restored one reports
+# findings a clean run does not: only the binary is installed. The caller checks
+# the repository out first, then runs go build, go test and golangci-lint run.
+name: setup-go-lint
+description: Install Go and golangci-lint from the caller's version sources, with Go's module and build caches keyed on go.sum.
+
+inputs:
+  version:
+    description: The Go version to use. Wins over version-file.
+    default: ""
+  version-file:
+    description: The file setup-go reads the Go version from, relative to working-directory, when version is empty.
+    default: go.mod
+  golangci-lint-version:
+    description: The golangci-lint version, v2 only. Empty reads the golangci-lint/v2 line of go.mod.
+    default: ""
+  working-directory:
+    description: The directory holding go.mod and go.sum.
+    default: .
+
+outputs:
+  cache-hit:
+    description: Whether Go's module and build caches were restored on their primary key.
+    value: ${{ steps.setup.outputs.cache-hit }}
+  go-version:
+    description: The Go version installed.
+    value: ${{ steps.setup.outputs.go-version }}
+  golangci-lint-version:
+    description: The golangci-lint version installed.
+    value: ${{ steps.resolve.outputs.golangci-lint-version }}
+
+runs:
+  using: composite
+  steps:
+    # setup-go has no working-directory, so the paths it gets are relative to
+    # the workspace. It warns when given both a version and a file.
+    - id: resolve
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_FILE: ${{ inputs.version-file }}
+        LINT_VERSION: ${{ inputs.golangci-lint-version }}
+        WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        prefix="${WORKDIR%/}/"
+        if [ -z "${WORKDIR}" ] || [ "${WORKDIR}" = . ]; then prefix=""; fi
+        file="${prefix}${VERSION_FILE}"
+        sum="${prefix}go.sum"
+        mod="${prefix}go.mod"
+        from_file=""
+        if [ -z "${VERSION}" ]; then
+          if [ ! -f "${file}" ]; then
+            echo "::error::setup-go-lint: no Go version: set the version input or add ${file}"
+            exit 1
+          fi
+          from_file="${file}"
+        fi
+        if [ ! -f "${sum}" ]; then
+          echo "::error::setup-go-lint: no ${sum}: the cache is keyed on it"
+          exit 1
+        fi
+        lint="${LINT_VERSION}"
+        if [ -z "${lint}" ] && [ -f "${mod}" ]; then
+          lint=$(sed -nE 's#.*github\.com/golangci/golangci-lint/v2[[:space:]]+(v[^[:space:]]+).*#\1#p' "${mod}" | head -n 1)
+        fi
+        if [ -z "${lint}" ]; then
+          echo "::error::setup-go-lint: no golangci-lint version: set the golangci-lint-version input or require github.com/golangci/golangci-lint/v2 in ${mod}"
+          exit 1
+        fi
+        {
+          echo "go-version=${VERSION}"
+          echo "go-version-file=${from_file}"
+          echo "go-sum=${sum}"
+          echo "golangci-lint-version=v${lint#v}"
+        } >>"${GITHUB_OUTPUT}"
+
+    - id: setup
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version: ${{ steps.resolve.outputs.go-version }}
+        go-version-file: ${{ steps.resolve.outputs.go-version-file }}
+        cache: "true"
+        cache-dependency-path: ${{ steps.resolve.outputs.go-sum }}
+
+    - id: lint
+      uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+      with:
+        version: ${{ steps.resolve.outputs.golangci-lint-version }}
+        install-only: "true"
+        skip-cache: "true"
+        working-directory: ${{ inputs.working-directory }}
