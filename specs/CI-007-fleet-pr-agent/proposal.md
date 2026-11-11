@@ -53,11 +53,15 @@ repositories after v0.5.0, so no repository gets two adopter PRs on the same day
 
 Three forks for the owner to decide before any fleet PR opens:
 
-1. **The Anthropic key in NaN-only repositories.** Only dotfiles, hive, kubelab and ci-workflows hold
-   `PR_AGENT_ANTHROPIC_API_KEY`. The input is optional: without it, `dotf pr route` draws NaN only and writes a
-   note naming the remedy. The new weights (Haiku 50) reach a repository only if the key is synced to it.
-   - (A) Sync the key to every adopter. This spends Anthropic budget; last month's total was about 30 USD.
-   - (B) Adopt NaN-only and sync later, repo by repo.
+1. **The Anthropic key in NaN-only repositories.** Decided (A), sync it to every adopter: the owner ran
+   `dotf secrets sync ci ... PR_AGENT_ANTHROPIC_API_KEY` on six adopters on 2026-11-10. The secrets registry
+   refused all six, correctly, because they are not consumers yet. Each adopter therefore needs, in order:
+   - a dotfiles PR adding `ci:mlorentedev/<repo>` to the key's consumers. One PR can cover all twelve, as
+     dotfiles#3210 did for this repository;
+   - `dotf secrets sync ci` by the owner after it merges;
+   - the adopter's PR here, whose first review then draws from the full pool.
+   dotfiles#3290 is to derive each repository's CI secrets from the workflows it runs and report missing and
+   excess ones. Until it lands, the consumer list is kept by hand.
 2. **Where the `Class:` instruction lives.** PR-Agent (The-PR-Agent/pr-agent at efdde4a,
    `git_providers/utils.py`) puts env vars at the top of its precedence: `_reapply_env_overrides` replays them
    after every file layer. It merges files key by key.
@@ -91,5 +95,5 @@ Three forks for the owner to decide before any fleet PR opens:
 
 ## References
 
-- #33, #51 (self-review), #59 / #61 (classification), dotfiles#3188 (NaN slots), dotfiles#3212 (weights)
+- #33, #51 (self-review), #59 / #61 (classification), dotfiles#3290 (CI secrets derived from workflows), dotfiles#3188 (NaN slots), dotfiles#3212 (weights)
 - hive `.github/workflows/pr-agent-shared.yml`, the caller shape to copy
