@@ -1,7 +1,7 @@
 [
   {"id": "CI-010-docker-build-f1", "behavior": "docker-build is a composite that builds with buildx and caches with type=gha scoped by default to the image name, loading or pushing.", "verification": "bats tests/docker-build.bats", "state": "pending", "evidence": ""},
-  {"id": "CI-010-docker-build-f2", "behavior": "docker-publish.yml logs in, pushes, uploads the Trivy SARIF under the caller's category, fails on CRITICAL, and reads registry secrets by name only.", "verification": "bats tests/docker-publish-shape.bats tests/secrets-contract.bats", "state": "pending", "evidence": ""},
+  {"id": "CI-010-docker-build-f2", "behavior": "docker-publish.yml pushes by digest, scans every platform, fails on CRITICAL before tagging, uploads each SARIF under the caller's category, and reads registry secrets by name only.", "verification": "bats tests/docker-publish-shape.bats tests/secrets-contract.bats", "state": "pending", "evidence": ""},
   {"id": "CI-010-docker-build-f3", "behavior": "A warm rebuild with no source change takes under 30 s in this repository's CI, from the gha cache in a fresh builder.", "verification": "the smoke-docker-build warm job in lint.yml", "state": "pending", "evidence": ""},
-  {"id": "CI-010-docker-build-f4", "behavior": "Caller fixtures for web and dotfiles are checked by their own test.", "verification": "bats tests/docker-callers.bats", "state": "pending", "evidence": ""},
+  {"id": "CI-010-docker-build-f4", "behavior": "Caller fixtures for web, kubelab and dotfiles are checked by their own test.", "verification": "bats tests/docker-callers.bats", "state": "pending", "evidence": ""},
   {"id": "CI-010-docker-build-f5", "behavior": "After adoption, dotfiles' integration build time and kubelab's per-app cache restore are recorded.", "verification": "recorded in verification.md per adopter", "state": "pending", "evidence": ""}
 ]

@@ -34,14 +34,19 @@ There are two layers, following ADR-001 §2: a composite by default, and a reusa
   - it does not log in: the caller does, or uses the workflow below.
 
   Because it runs in the caller's job, a build-then-run job keeps its shape. dotfiles' integration test and hive's smoke test build, then `docker run` the image they just built, which a separate job could not do without exporting the image.
-- **A reusable workflow `docker-publish.yml`** for registries and scans, the part that needs `security-events: write`. It logs in, runs the composite with `push`, scans with Trivy, uploads the SARIF report under a caller-named category, and fails on a CRITICAL finding. That is web's `build-image.yml` with kubelab's tag inputs.
+- **A reusable workflow `docker-publish.yml`** for registries and scans, the part that needs `security-events: write`. It scans before anything is published under a tag:
+  1. it logs in and runs the composite to push by digest only, so no tag points at the image yet;
+  2. it scans every published platform's image by digest with Trivy (`--platform` per platform, since Trivy picks one platform by default), uploads each SARIF report under the caller's category plus the platform, and fails on a CRITICAL finding in any of them;
+  3. only then does it apply the caller's tags to the digest, with `docker buildx imagetools create`.
+
+  A CRITICAL finding or a Trivy outage leaves an untagged digest in the registry and publishes nothing a consumer pulls by tag. That is web's `build-image.yml`, with kubelab's tag inputs and the order changed.
   - Registry credentials are passed by name, as `registry_username` and `registry_token`, with `secrets: inherit` never used. `tests/secrets-contract.bats` already enforces it.
   - kubelab's `release.yml` drops its `secrets: inherit` when it adopts.
 
 ## Out of scope
 
 - **Tag computation.** kubelab's `docker_tags` step (pre-release, rc, final) stays in the caller and is passed in as `tags`.
-- **Multi-arch manifest promotion** (`docker buildx imagetools create` in both release workflows). It is a release concern, and can be a second composite later.
+- **Release promotion** (re-tagging a pre-release digest as the final version in both release workflows). It is a release concern and can be a second composite later. Tagging a freshly scanned digest is in scope, above.
 - **Gitea.** See Risks: `type=gha` needs the GitHub cache service.
 - **Signing and SBOM attestations.** No adopter does them today.
 
@@ -50,14 +55,14 @@ There are two layers, following ADR-001 §2: a composite by default, and a reusa
 - **Cache size.** GitHub keeps 10 GB of cache per repository and evicts the least recently used entries. `mode=max` on a two-platform build can approach that in kubelab. The composite exposes `cache-mode`, defaulting to `max`. The README states the trade-off, and kubelab measures its usage after adopting.
 - **Gitea.** `type=gha` talks to GitHub's cache service, and whether Gitea's runner cache server speaks its protocol is unverified. Until a Gitea adopter checks it, the composite takes `cache-from` and `cache-to` overrides (for example `type=registry`), and the README marks the default as GitHub-only.
 - **Trivy's pin.** Both adopters pin `aquasecurity/trivy-action` v0.36.0 by SHA. The workflow pins it once, and Renovate's digest pinning moves it. A Trivy outage fails publishing, so the CRITICAL gate stays a separate step with its own pin, as in web, and the SARIF upload keeps `continue-on-error`.
-- **The fixture location departs from #11.** #11 asks for fixtures in `tests/fixtures/callers/`, but `tests/callers.bats` reads every file there as a pr-agent caller. The fixtures go to `tests/fixtures/docker-callers/`, with their own test, as `pages-callers` and `release-callers` do.
+- **The fixtures depart from #11 in location, and add one.** #11 asks for fixtures in `tests/fixtures/callers/`, but `tests/callers.bats` reads every file there as a pr-agent caller. The fixtures go to `tests/fixtures/docker-callers/`, with their own test, as `pages-callers` and `release-callers` do. #11 names web and kubelab. Both stay, and dotfiles is added, because the build-then-run shape is the composite's reason to exist.
 
 ## Acceptance criteria
 
 1. [ ] `docker-build` is a composite that builds with buildx, caches with `type=gha` scoped by default to the image name, and either loads or pushes. A test asserts the scope default, and asserts that no input value leaves the scope empty.
-2. [ ] `docker-publish.yml` logs in, pushes through the composite, uploads the Trivy SARIF report under the caller's category, and fails on a CRITICAL finding. It reads registry secrets by name only, and `tests/secrets-contract.bats` covers it.
+2. [ ] `docker-publish.yml` pushes by digest, scans every published platform by digest, and fails on a CRITICAL finding in any of them before it applies a tag. Each SARIF report is uploaded under the caller's category and the platform. It reads registry secrets by name only, and `tests/secrets-contract.bats` covers it. Tests assert the order (no tag before the gate) and one scan per platform.
 3. [ ] A warm rebuild with no source change takes under 30 s in this repository's CI. A smoke job builds a fixture image, and a second job with a fresh builder rebuilds it from the `gha` cache. The test asserts the time and the cache hit.
-4. [ ] Caller fixtures for web (publish) and dotfiles (build, then run), under `tests/fixtures/docker-callers/`, checked by their own test.
+4. [ ] Caller fixtures for web and kubelab (publish, kubelab with its computed tags and no `secrets: inherit`) and dotfiles (build, then run), under `tests/fixtures/docker-callers/`, checked by their own test.
 5. [ ] After adoption, dotfiles' integration build time is recorded against its 3.4 min p50, and kubelab's apps each restore their own cache.
 
 ## References
