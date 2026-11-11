@@ -50,6 +50,13 @@ release-please. It does three things, each with its own trust rule.
     only narrow the class (turn merging off, exclude paths), never widen it;
   - (d) production excluded: each caller declares the paths that reach production, and a change to any
     of them is not in the class. The lane does not define production fleet-wide.
+- **The merge decision runs from a definition the pull request cannot change.** On `pull_request`, GitHub
+  runs the workflow file from the pull request's merge ref. A digest bump may touch `.github/workflows/`,
+  so a pull request pushed with the Renovate token could rewrite the caller to skip the verifier. The
+  verifying and merging job therefore runs on `workflow_run` (or `pull_request_target`), which reads the
+  workflow from the default branch. It calls the SHA-pinned reusable workflow, never checks out the pull
+  request's code, and reads the diff through the API. As belt and braces, the class also excludes the
+  caller's own lane workflow file.
 - **Release-please pull requests are never merged by the lane.** Release PRs stay the owner's.
 - Library and image bumps are never in the merge class. They are reviewed, or merged by the owner.
 
@@ -85,7 +92,12 @@ Owner decisions, needed before PR 1:
 - **Tag re-pointing.** Verifying the new SHA against the tag as it is now accepts a tag an attacker moved,
   the known attack on action pins. A minimum age on the release (Renovate's `minimumReleaseAge`, and the
   verifier checking the release's publication date rather than the commit's, which can be forged) is the
-  usual guard. Proposed: 7 days, enforced by the verifier as well as by the preset.
+  usual guard. Proposed: 7 days, enforced by the verifier as well as by the preset. The verifier also
+  requires an exact `vX.Y.Z` tag in the comment. A floating major tag (`# v4`) moves on every release
+  while its release keeps the original date, so the age check would pass for the very re-pointing it is
+  meant to catch. Residual risk the owner accepts or not: an exact tag re-pointed after its release still
+  carries the old date. The verifier can catch that only between proposal and merge, by comparing the
+  tag's SHA to the one Renovate recorded in the pull request.
 - **The merging token.** A merge made with `GITHUB_TOKEN` starts no workflow, so the push to the default
   branch would not run release-please or anything else that runs on push. Options: the Renovate PAT,
   which already writes, or a GitHub App with `contents: write` and `pull-requests: write` only.
@@ -110,8 +122,10 @@ Other risks:
 2. [ ] A red lane pull request opens one issue within one run, a second red run updates it, and a green
       run closes it. A test asserts all three.
 3. [ ] An action digest bump that the verifier accepts merges with `--match-head-commit`. A bump with any
-      other hunk, a SHA that does not match its tag, or a file on the caller's production list does not
-      merge. Tests cover each.
+      other hunk, a SHA that does not match its tag, a tag that is not an exact `vX.Y.Z`, a change to the
+      caller's lane workflow, or a file on the caller's production list does not merge. Tests cover each.
+      A test asserts that the merging job runs on `workflow_run` or `pull_request_target` and checks out
+      no pull request code.
 4. [ ] The merge class is declared in `bot-lane/merge-class.json`. Committed tests fail if the class
       widens, and if the merging job's condition or its head-commit pin changes. `allow_auto_merge` stays
       false.
