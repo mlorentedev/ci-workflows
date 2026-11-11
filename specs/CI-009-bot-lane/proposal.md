@@ -149,8 +149,8 @@ Other risks:
 3. [ ] An action digest bump that the verifier accepts merges with `--match-head-commit`. A bump with any
       other hunk, a SHA that does not match its tag, a tag that is not an exact `vX.Y.Z`, a change to the
       caller's lane workflow, or a file on the caller's production list does not merge. Tests cover each.
-      A test asserts that the merging job runs on `workflow_run` or `pull_request_target` and checks out
-      no pull request code.
+      A test asserts that the merging job runs on `workflow_run` and a schedule, never on `pull_request` or
+      `pull_request_target`, and checks out no pull request code.
 4. [ ] The merge class is declared in `bot-lane/merge-class.json`. Committed tests fail if the class
       widens, and if the merging job's condition or its head-commit pin changes. `allow_auto_merge` stays
       false.
