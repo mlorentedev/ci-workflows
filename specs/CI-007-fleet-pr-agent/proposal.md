@@ -71,10 +71,14 @@ Three forks for the owner to decide before any fleet PR opens:
      - (C) A base file through `EXTRA_CONFIG_URL`, with repositories putting their extras under a different key.
    - Before (C) is chosen, check that the image the shared workflow pins (`pragent/pr-agent@sha256:80edef7…`)
      supports `EXTRA_CONFIG_URL`.
-3. **Batch order and size.** Proposed: batch 1 on T+1 (garsync, pollex, ts-bridge, web), batch 2 on T+2
-   (iris, leaving-denver, mail2markdown, yt-metrics-cli), then svqtriana.github.io and pdf-modifier, and
-   kubelab and hive last, because they carry the most local logic. T is the day v0.5.0 is tagged.
-   ci-workflows-34 has hive, kubelab and pollex on T+2 to T+4, so hive and kubelab move after T+4.
+3. **Batch order and size.** ci-workflows-34 opens every Renovate and hygiene adopter PR on day T, when
+   v0.5.0 is tagged; the owner chose not to stagger (2026-11-10). The adopter PRs here therefore start on T+1,
+   in any order. Their size depends on fork 1:
+   - The embedded pool spreads reviews over NaN and Haiku only where `PR_AGENT_ANTHROPIC_API_KEY` is present.
+     Of the twelve adopters only hive and kubelab hold it.
+   - The other ten draw NaN alone and share its five concurrent slots. Eight pushes at once lost three reviews
+     in dotfiles#3188.
+   - With (A), one batch is enough. With (B), batches of four.
 
 ## Acceptance criteria
 
