@@ -16,14 +16,14 @@
   {
     "id": "CI-004-toolchain-setup-f3",
     "behavior": "The smoke job runs setup-node from this checkout against its fixture, behind gate; its second run reports cache-hit true.",
-    "verification": "grep -qE '^- \\[x\\] AC3 .*cache-hit=true' specs/CI-004-toolchain-setup/verification.md && bats tests/setup-node.bats --filter 'gate needs|smoke|toolchains area|fixture'",
+    "verification": "grep -qE '^- \\[x\\] AC3 .*cache-hit=true' specs/archive/CI-004-toolchain-setup/verification.md && bats tests/setup-node.bats --filter 'gate needs|smoke|toolchains area|fixture'",
     "state": "pending",
     "evidence": ""
   },
   {
     "id": "CI-004-toolchain-setup-f4",
     "behavior": "setup-node runs on the Gitea runner in imagesensortool, and the cache hits there or degrades with the job green.",
-    "verification": "grep -qE '^- \\[x\\] AC4 .*imagesensortool.*(cache-hit=true|degraded)' specs/CI-004-toolchain-setup/verification.md",
+    "verification": "grep -qE '^- \\[x\\] AC4 .*imagesensortool.*(cache-hit=true|degraded)' specs/archive/CI-004-toolchain-setup/verification.md",
     "state": "pending",
     "evidence": ""
   },
@@ -51,7 +51,7 @@
   {
     "id": "CI-004-toolchain-setup-f8",
     "behavior": "The poetry smoke job runs setup-python-poetry from this checkout against its fixture, behind gate; a later run reports cache-hit true.",
-    "verification": "grep -qE '^- \\[x\\] AC3 setup-python-poetry.*cache-hit=true' specs/CI-004-toolchain-setup/verification.md && bats tests/setup-python-poetry.bats --filter 'poetry smoke|poetry fixture' && bats tests/setup-node.bats --filter 'gate needs'",
+    "verification": "grep -qE '^- \\[x\\] AC3 setup-python-poetry.*cache-hit=true' specs/archive/CI-004-toolchain-setup/verification.md && bats tests/setup-python-poetry.bats --filter 'poetry smoke|poetry fixture' && bats tests/setup-node.bats --filter 'gate needs'",
     "state": "pending",
     "evidence": ""
   },
@@ -79,7 +79,7 @@
   {
     "id": "CI-004-toolchain-setup-f12",
     "behavior": "The uv smoke job runs setup-python-uv from this checkout against its fixture, behind gate; a later run reports cache-hit true.",
-    "verification": "grep -qE '^- \\[x\\] AC3 setup-python-uv.*cache-hit=true' specs/CI-004-toolchain-setup/verification.md && bats tests/setup-python-uv.bats --filter 'uv smoke runs|uv fixture' && bats tests/setup-node.bats --filter 'gate needs'",
+    "verification": "grep -qE '^- \\[x\\] AC3 setup-python-uv.*cache-hit=true' specs/archive/CI-004-toolchain-setup/verification.md && bats tests/setup-python-uv.bats --filter 'uv smoke runs|uv fixture' && bats tests/setup-node.bats --filter 'gate needs'",
     "state": "pending",
     "evidence": ""
   },
@@ -107,7 +107,7 @@
   {
     "id": "CI-004-toolchain-setup-f16",
     "behavior": "The Go smoke job runs setup-go-lint from this checkout against its fixture, behind gate; a later run reports cache-hit true.",
-    "verification": "grep -qE '^- \\[x\\] AC3 setup-go-lint.*cache-hit=true' specs/CI-004-toolchain-setup/verification.md && bats tests/setup-go-lint.bats --filter 'Go smoke|Go fixture'",
+    "verification": "grep -qE '^- \\[x\\] AC3 setup-go-lint.*cache-hit=true' specs/archive/CI-004-toolchain-setup/verification.md && bats tests/setup-go-lint.bats --filter 'Go smoke|Go fixture'",
     "state": "pending",
     "evidence": ""
   },

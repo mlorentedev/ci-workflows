@@ -67,13 +67,21 @@ PR 4 (`setup-go-lint`). Commits on `feat/issue-10-setup-go-lint`.
 
 Answer each line `yes: <path>`, naming the file you promoted, or `no: <reason>`. `dotf spec archive` refuses a line left unanswered, a `no` without a reason, and a `yes` whose file does not exist; a `00_meta/` path is looked up in the vault.
 
-- [ ] Lesson for the repo's `docs/lessons/`? <yes: path / no: reason>
-- [ ] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? <yes: path / no: reason>
-- [ ] New pattern candidate for `00_meta/patterns/`? Only if this recurs in >1 project. <yes: path / no: reason>
+- [x] Lesson for the repo's `docs/lessons/`? yes: docs/lessons/lesson-009-a-cache-hit-is-proved-by-rerunning-the-same-job.md
+- [x] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? no: ADR-001 practice S5 already sets the composite shape; each composite's choices are in tasks.md
+- [x] New pattern candidate for `00_meta/patterns/`? no: the cache-scope rule is GitHub's and lives in this repo's lesson until a second project needs it
+
+## Review dispositions
+
+`review.md` (agy/gemini-3.8-flash-high, PASS on `8eeba76`) raised three Minor, THEORETICAL findings:
+
+- The Playwright cache path is Linux-only: ticketed in #67.
+- A CRLF `.python-version` publishes `3.13\r` in `setup-python-uv`: ticketed in #67.
+- `setup-node` does not check `package-lock.json` itself when `playwright` is off: declined. `actions/setup-node` with `cache: npm` already fails naming the missing lock file, and the composite reads the lock itself only for Playwright.
 
 ## Archive checklist
 
-- [ ] `proposal.md` frontmatter set to `status: archived`
-- [ ] Folder moved: `specs/CI-004-toolchain-setup/` -> `specs/archive/CI-004-toolchain-setup/`
-- [ ] Bitácora board ticket for this spec moved to Done / closed with PR link (ADR-018)
-- [ ] Promotions above executed (if any)
+- [x] `proposal.md` frontmatter set to `status: archived`
+- [x] Folder moved: `specs/CI-004-toolchain-setup/` -> `specs/archive/CI-004-toolchain-setup/`
+- [x] Bitácora board ticket for this spec moved to Done / closed with PR link (ADR-018): #10 closes with the pull request that archives this folder
+- [x] Promotions above executed (if any)
