@@ -323,10 +323,41 @@ jobs:
             *) echo "::error::the uv cache key '${KEY}' does not start with setup-uv-2-${arch}-${platform}-: either it lost the platform, or astral-sh/setup-uv changed its key format"; exit 1 ;;
           esac
 
+  smoke-setup-go-lint:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.areas), 'toolchains')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: go
+        uses: ./.github/actions/setup-go-lint
+        with:
+          golangci-lint-version: v2.15.0
+          working-directory: tests/fixtures/toolchains/go
+      - name: Build and lint the fixture
+        working-directory: tests/fixtures/toolchains/go
+        run: |
+          go build ./...
+          golangci-lint run
+      # setup-go publishes no key. Its key names RUNNER_OS and the arch
+      # (src/cache-restore.ts at v7.0.0), and the warm run's log shows it.
+      - name: Report the cache
+        env:
+          HIT: ${{ steps.go.outputs.cache-hit }}
+          GO_VERSION: ${{ steps.go.outputs.go-version }}
+          LINT_VERSION: ${{ steps.go.outputs.golangci-lint-version }}
+        run: |
+          echo "cache-hit=${HIT}"
+          echo "go-version=${GO_VERSION}"
+          echo "golangci-lint-version=${LINT_VERSION}"
+
   # The one check branch protection will require (ADR-001 decision 3), once it
   # has reported on main. `if: always()` keeps a failed need from skipping it.
   gate:
-    needs: [changes, lint, test, renovate-config, smoke-setup-node, smoke-hygiene, smoke-setup-python-poetry, smoke-setup-python-uv]
+    needs: [changes, lint, test, renovate-config, smoke-setup-node, smoke-hygiene, smoke-setup-python-poetry, smoke-setup-python-uv, smoke-setup-go-lint]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
