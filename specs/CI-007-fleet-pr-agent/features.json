@@ -1,0 +1,30 @@
+[
+  {
+    "id": "CI-007-fleet-pr-agent-f1",
+    "behavior": "Every adopting repository calls the shared workflow pinned by full SHA.",
+    "verification": "for r in garsync hive iris kubelab leaving-denver mail2markdown pdf-modifier pollex svqtriana.github.io ts-bridge web yt-metrics-cli; do gh api repos/mlorentedev/$r/contents/.github/workflows/pr-agent.yml --jq .content | base64 -d | grep -qE 'ci-workflows/.github/workflows/pr-agent.yml@[0-9a-f]{40}' || echo $r; done | (! grep .)",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-007-fleet-pr-agent-f2",
+    "behavior": "No adopter keeps a copy of the review steps.",
+    "verification": "for r in garsync hive iris kubelab leaving-denver mail2markdown pdf-modifier pollex svqtriana.github.io ts-bridge web yt-metrics-cli; do files=$(gh api repos/mlorentedev/$r/contents/.github/workflows --jq '.[].path') || { echo \"$r: list failed\"; continue; }; for p in $files; do c=$(gh api repos/mlorentedev/$r/contents/$p --jq .content) || { echo \"$r: $p read failed\"; continue; }; base64 -d <<<\"$c\" | grep -q 'The-PR-Agent/pr-agent' && echo \"$r: $p\"; done; done | (! grep .)",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-007-fleet-pr-agent-f3",
+    "behavior": "Each adopter's .pr_agent.toml holds only what differs from the base plus the shared class paragraph, and a test holds it against the adopter's own classification registry.",
+    "verification": "for r in garsync hive iris kubelab leaving-denver mail2markdown pdf-modifier pollex svqtriana.github.io ts-bridge web yt-metrics-cli; do jq -e '.classification.prefix == \"Class: \" and .classification.classes == [\"REAL\",\"THEORETICAL\",\"SPECULATIVE\"] and .classification.reviewers == [\"github-actions\"]' <(gh api repos/mlorentedev/$r/contents/harness/review-attestation.json --jq .content | base64 -d) >/dev/null || { echo \"$r: registry\"; continue; }; ins=$(gh api repos/mlorentedev/$r/contents/.pr_agent.toml --jq .content | base64 -d | yq -p toml -oy '.pr_reviewer.extra_instructions // \"\"'); for c in REAL THEORETICAL SPECULATIVE; do grep -qF \"\\\"Class: $c\\\"\" <<<\"$ins\" || echo \"$r: instructions lack $c\"; done; bats=$(gh api \"repos/mlorentedev/$r/git/trees/HEAD?recursive=1\" --jq '.tree[].path | select(endswith(\".bats\"))') || { echo \"$r: tree failed\"; continue; }; found=0; for p in $bats; do c=$(gh api repos/mlorentedev/$r/contents/$p --jq .content) || { echo \"$r: $p read failed\"; continue; }; base64 -d <<<\"$c\" | grep -qE '^@test \"the instructions ask for exactly the classes the registry reads\" \\{' && found=1; done; [ \"$found\" = 1 ] || echo \"$r: no registry test\"; done | (! grep .)",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-007-fleet-pr-agent-f4",
+    "behavior": "Every adopter PR gets a PR-Agent review from the shared workflow, and no batch loses a review to NaN's slot limit.",
+    "verification": "for r in garsync hive iris kubelab leaving-denver mail2markdown pdf-modifier pollex svqtriana.github.io ts-bridge web yt-metrics-cli; do n=$(gh pr list --repo mlorentedev/$r --head chore/adopt-shared-pr-agent --state all --json number --jq '.[0].number // empty') || { echo \"$r: list failed\"; continue; }; [ -n \"$n\" ] || { echo \"$r: no adopter PR\"; continue; }; k=$(gh api --paginate repos/mlorentedev/$r/issues/$n/comments --jq '.[] | select(.user.login == \"github-actions[bot]\" and (.body | test(\"PR Reviewer Guide\"))) | .id') || { echo \"$r#$n: comments failed\"; continue; }; [ -n \"$k\" ] || echo \"$r#$n: no review\"; done | (! grep .)",
+    "state": "pending",
+    "evidence": ""
+  }
+]
