@@ -61,6 +61,11 @@ dotf lessons fmt    --check --dir <dir>
   a refreshed copy of the event file. It is the only API call, it belongs to the forge adapter, not to
   dotf, and it takes the token as an input, since composites cannot read secrets. A re-run sees the
   current labels and body.
+- **A refresh that fails fails the job; it never falls back to the original payload.** The step retries a
+  transient error (rate limit, 5xx), then exits 2 naming the cause: the status code, or a token without
+  `pull-requests: read`. Falling back would let a gate read an escape label or rationale removed since the
+  event and pass a pull request that should fail. On an event with no pull request, the refresh and the
+  gates are skipped and the summary says so; the other checks still run.
 - Exit 0 passes, 1 fails, 2 is a usage or environment error. A failure names the file and line, or the
   missing section, on stderr.
 - `--summary <file>` appends a Markdown section for the job summary.
