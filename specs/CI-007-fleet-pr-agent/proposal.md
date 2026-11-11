@@ -15,18 +15,18 @@ owner: manu
 
 <!-- from issue #33: chore: adopt the shared pr-agent workflow across the fleet -->
 
-Thirteen repositories run PR-Agent. Inventory on 2026-11-10:
+Fourteen repositories run PR-Agent. Inventory on 2026-11-10:
 
-- Eleven run their own `pr-agent.yml`, 190 to 883 lines each, on `The-PR-Agent/pr-agent` at one of two SHAs:
+- Twelve run their own `pr-agent.yml`, 190 to 883 lines each, on `The-PR-Agent/pr-agent` at one of two SHAs:
   garsync, hive, iris, kubelab, leaving-denver, mail2markdown, pdf-modifier, pollex, svqtriana.github.io,
   ts-bridge, web, yt-metrics-cli. hive also runs the shared workflow beside its own (`pr-agent-shared.yml`);
   the comparison week for removing its old job ends on 2026-11-09 (thread main@macmini).
 - dotfiles runs its own workflow on purpose: the shared one derives from it.
 - ci-workflows calls the shared workflow by path (#51).
 - Each repository holds its own `.pr_agent.toml`, 2 to 18 KB. Only dotfiles asks for the `Class:` line that
-  the triage queue reads (#59 / #61 adds it here).
+  the triage queue reads (#61 added it here).
 
-A fix to the review lane reaches one repository at a time, and the eleven copies drift.
+A fix to the review lane reaches one repository at a time, and the twelve copies drift.
 
 ## What
 
