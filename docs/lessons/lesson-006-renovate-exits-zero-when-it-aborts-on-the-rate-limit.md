@@ -30,5 +30,8 @@ later the same dispatch finished with `"result": "done"`.
   job's colour. `done` is success; `rate-limit-exceeded` means nothing happened.
 - Check GraphQL with a real query, such as `{ viewer { login } }`, not with
   `GET /rate_limit`.
-- #43 makes the job fail on a non-`done` result, and weighs a GitHub App token,
-  whose rate pool is its own, against the shared PAT.
+- `RENOVATE_EXIT_CODE_FOR_ERRORS=true` (#43) makes Renovate itself exit
+  non-zero once every repository has run, when any of them ended in a platform,
+  config, system or temporary error. `rate-limit-exceeded` exits 4 and turns the
+  job red. A repository without a `renovate.json` is not an error. The option is
+  off by default, so the action's exit status says nothing until it is set.
