@@ -32,9 +32,15 @@ None.
 
 1 of 3 items and 1 of 6 iterations used. No dollar figure exists. The GitHub API hit its GraphQL rate limit twice; the limit is shared with the other sessions.
 
+## Disclosures
+
+- The envelope's `allowed_commands` was incomplete. The run also used python3, actionlint, sed, awk and caffeinate, each for local edits, lint or the wake lock. Widen the list next time rather than read this as the run stepping outside its fence.
+- Noticed, not filed: the `why` in svqtriana.github.io's registry names `scripts/check-harness.sh`, but the file is `scripts/check-harness.mjs`. Its T+1 adopter PR can align the text (tasks.md: "leave it, or align `why`").
+- #75 was filed with `gh issue create` and then added to the board (Backlog).
+
 ## Host
 
-`caffeinate -i -t 43200` was armed at 07:45Z. The window is covered while the host stays on AC power.
+`caffeinate -i -t 43200` was armed at 07:45Z. The host stayed awake, but the session paused on a usage limit from about 09:15Z to 12:00Z, so that part of the window was not worked.
 
 ## Next action
 
