@@ -16,9 +16,9 @@ owner: manu
 <!-- from issue #12: feat: run the cheap pull request checks as one job -->
 
 Runner wait is the account's bottleneck, not compute. In the 48 hours to 2026-11-11, Ubuntu jobs waited
-379 s p50 in dotfiles and 350 s p50 in kubelab for jobs that do 3 to 30 s of work. That misses the ADR-001
-objective (wait p90 ≤ 2 min) by five to six times, and it is about five times worse than the 2026-11-04
-baseline (#14, comment of 2026-11-11). Each cheap check is its own workflow, so each one holds a runner
+379 s p50 and 691 s p90 in dotfiles, and 350 s p50 and 663 s p90 in kubelab, for jobs that do 3 to 30 s of
+work. The p90 misses the ADR-001 objective (wait p90 ≤ 2 min) by 5.5 to 5.8 times, and the p50 is about
+five times the 2026-11-04 baseline's p50 (#14, comment of 2026-11-11). Each cheap check is its own workflow, so each one holds a runner
 slot and pays a VM start for seconds of work: dotfiles starts `repo-hygiene`, `knowledge-gate` and
 `spec-gate` on every pull request event, kubelab `repo-hygiene` and `spec-gate`. Folding them into one job
 gives back one slot per check per event, in every adopter.
@@ -81,9 +81,12 @@ dotf lessons fmt    --check --dir <dir>
   checks need none once the gates read the event file. A composite also leaves the job and its check name
   in the caller, so an adopter does not rename a required check by moving a job into a reusable (ADR-001,
   context). Decided here: composite.
-- **Required checks change once per adopter.** The new job replaces three checks. Branch protection must
-  swap them in the same change, or the PR waits forever on checks that no longer run. Each adoption PR
-  names the swap, and the owner applies it.
+- **Required checks change once per adopter, in two steps.** The new job replaces two or three required
+  checks, and branch protection waits forever on a required check that no longer runs. So each adopter
+  follows the README's `gate` sequence: the first PR adds the `pr-checks` job next to the old workflows,
+  under `gate`, and the owner makes `gate` required once it has reported on the default branch; the
+  second PR deletes the old workflows, and the owner removes only the checks they replaced, keeping the
+  contexts from outside CI such as `review-attestation`.
 - **Metadata events re-run every check.** `labeled`, `unlabeled` and `edited` re-evaluate the gates' escape
   hatches today, and in one job they would re-run lessons and lint too. Every check takes seconds, so this
   costs one short job where it now costs three. The concurrency group must not cancel on these events
