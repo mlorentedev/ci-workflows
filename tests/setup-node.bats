@@ -13,6 +13,9 @@ step() { yq ".runs.steps[] | select(.id == \"$1\") | .$2" "${ACTION}"; }
 setup() {
   export GITHUB_OUTPUT="${BATS_TEST_TMPDIR}/output"
   : >"${GITHUB_OUTPUT}"
+  export GITHUB_ENV="${BATS_TEST_TMPDIR}/env"
+  : >"${GITHUB_ENV}"
+  unset PLAYWRIGHT_BROWSERS_PATH
   step resolve run >"${BATS_TEST_TMPDIR}/resolve.sh"
   step playwright-version run >"${BATS_TEST_TMPDIR}/playwright-version.sh"
   WORK="${BATS_TEST_TMPDIR}/work"
@@ -116,7 +119,7 @@ lock_with() {
 
 @test "the Playwright cache key holds the platform, the arch and the Playwright version" {
   [ "$(step playwright uses | cut -d@ -f1)" = "actions/cache" ]
-  [ "$(step playwright with.path)" = "~/.cache/ms-playwright" ]
+  [ "$(step playwright with.path)" = '${{ steps.playwright-version.outputs.path }}' ]
   local key
   key=$(step playwright with.key)
   [[ "${key}" == *'${{ runner.os }}'* ]]
@@ -143,6 +146,44 @@ lock_with() {
   WORKDIR="${WORK}" run_step playwright-version
   [ "$status" -ne 0 ]
   [[ "$output" == *"Playwright"* ]]
+}
+
+# Playwright's own default is per-OS (~/Library/Caches on macOS), so the composite
+# names one path, caches it, and hands it to the caller's later steps (#67).
+@test "the browsers path defaults to ~/.cache/ms-playwright and reaches the caller's steps" {
+  lock_with @playwright/test 1.56.1
+  HOME=/home/runner WORKDIR="${WORK}" run_step playwright-version
+  [ "$status" -eq 0 ]
+  [ "$(output_of path)" = "/home/runner/.cache/ms-playwright" ]
+  grep -qx 'PLAYWRIGHT_BROWSERS_PATH=/home/runner/.cache/ms-playwright' "${GITHUB_ENV}"
+}
+
+@test "a caller's PLAYWRIGHT_BROWSERS_PATH is the path cached" {
+  lock_with @playwright/test 1.56.1
+  PLAYWRIGHT_BROWSERS_PATH=/opt/browsers WORKDIR="${WORK}" run_step playwright-version
+  [ "$status" -eq 0 ]
+  [ "$(output_of path)" = "/opt/browsers" ]
+  grep -qx 'PLAYWRIGHT_BROWSERS_PATH=/opt/browsers' "${GITHUB_ENV}"
+}
+
+@test "PLAYWRIGHT_BROWSERS_PATH=0 fails, since the browsers would sit in node_modules" {
+  lock_with @playwright/test 1.56.1
+  PLAYWRIGHT_BROWSERS_PATH=0 WORKDIR="${WORK}" run_step playwright-version
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"PLAYWRIGHT_BROWSERS_PATH=0"* ]]
+}
+
+@test "on Windows the default path is handed over in Windows form" {
+  lock_with @playwright/test 1.56.1
+  mkdir -p "${BATS_TEST_TMPDIR}/bin"
+  cat >"${BATS_TEST_TMPDIR}/bin/cygpath" <<'STUB'
+#!/bin/sh
+[ "$1" = -w ] && printf '%s\n' 'C:\Users\runneradmin\.cache\ms-playwright'
+STUB
+  chmod +x "${BATS_TEST_TMPDIR}/bin/cygpath"
+  PATH="${BATS_TEST_TMPDIR}/bin:${PATH}" HOME=/c/Users/runneradmin WORKDIR="${WORK}" run_step playwright-version
+  [ "$status" -eq 0 ]
+  [ "$(output_of path)" = 'C:\Users\runneradmin\.cache\ms-playwright' ]
 }
 
 @test "a missing lockfile fails with its path" {

@@ -51,7 +51,8 @@ runs:
         lock="${WORKDIR}/uv.lock"
         python="${VERSION}"
         if [ -z "${python}" ] && [ -f "${file}" ]; then
-          read -r python <"${file}" || true
+          # \r in IFS: a version file written with CRLF endings.
+          IFS=$' \t\r' read -r python <"${file}" || true
         fi
         if [ -z "${python}" ]; then
           echo "::error::setup-python-uv: no Python version: set the version input or add a version to ${file}"
