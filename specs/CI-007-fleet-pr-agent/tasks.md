@@ -51,10 +51,13 @@ Then, in order:
 - [ ] [AC4] `gh pr ready` four adopters at a time. Start the next four only once each of the previous
       four has a PR-Agent review and no other review is running in the fleet.
 - [ ] Triage each PR (`## Review triage`); the owner merges (adopter workflows are always-human).
+- [ ] [AC3] After each adopter merges, confirm the classification on its next PR-Agent review with findings:
+      the shared workflow reads `.pr_agent.toml` and the registry from the default branch, so the adopter
+      PR's own review cannot exercise the paragraph it adds. Record the link in `verification.md`.
 
 ## Closing
 
-- [ ] f1, f2 and f4 in `features.json` exit 0; f3's guard clause follows fork 2b.
+- [ ] f1 to f5 in `features.json` exit 0. f5 fails until fork 2b is decided and its verification rewritten.
 - [ ] `verification.md` filled with the PR links and command outputs.
 - [ ] Independent adversarial review before archive.
 
