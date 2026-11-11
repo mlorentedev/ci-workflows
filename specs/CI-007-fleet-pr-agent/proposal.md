@@ -30,7 +30,7 @@ A fix to the review lane reaches one repository at a time, and the eleven copies
 
 ## What
 
-For each adopting repository, one PR that:
+For each adopting repository, one PR from the branch `chore/adopt-shared-pr-agent` that:
 
 - Replaces its `pr-agent.yml` with a thin caller of `mlorentedev/ci-workflows/.github/workflows/pr-agent.yml`,
   pinned by full SHA with the tag as a comment. It has the same shape as hive's `pr-agent-shared.yml` and passes
@@ -87,16 +87,18 @@ Three forks for the owner to decide before any fleet PR opens. Forks 1 and 2 are
      supports `EXTRA_CONFIG_URL`.
 3. **Batch order and size.** ci-workflows-34 opens every Renovate and hygiene adopter PR on day T, when
    v0.5.0 is tagged; the owner chose not to stagger (2026-11-10). The adopter PRs here therefore start on T+1,
-   in any order. Their size depends on fork 1:
+   in any order.
    - The embedded pool spreads reviews over NaN and Haiku only where `PR_AGENT_ANTHROPIC_API_KEY` is present.
-     Of the twelve adopters only hive and kubelab hold it.
-   - The other ten draw NaN alone and share its five concurrent slots. Eight pushes at once lost three reviews
-     in dotfiles#3188.
-   - With (A), one batch is enough. With (B), batches of four.
+     Today only hive and kubelab hold it; fork 1 extends it to all twelve.
+   - A weighted draw lowers the expected load on NaN but does not bound it: twelve reviews can still send more
+     than five to NaN at once. Eight pushes at once lost three reviews in dotfiles#3188.
+   - The PRs open as drafts, so the review starts when each is marked ready. They are marked ready four at a
+     time, and the next four only once the previous reviews have posted and no other review is running in the
+     same window.
 
 ## Acceptance criteria
 
-- [ ] Every repository that runs PR-Agent, except dotfiles, calls the shared workflow pinned by full SHA.
+- [ ] Every adopting repository (the twelve in Why) calls the shared workflow pinned by full SHA.
 - [ ] No adopter keeps a copy of the review steps (`The-PR-Agent/pr-agent` appears in no adopter's workflows).
 - [ ] Each adopter's `.pr_agent.toml` holds only what differs from the base, and asks for the `Class:` line
       in the paragraph fork 2 (A) decides, guarded by a test against its own registry.
