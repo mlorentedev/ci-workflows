@@ -211,6 +211,65 @@ Tasks:
   - `setup-python-poetry`'s pull-request hit read from `main`, from this PR's `smoke-setup-python-poetry` run.
 - [x] README: a `## setup-python-uv` section.
 
+### PR 4: `setup-go-lint`
+
+Pins:
+- `actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0`.
+- `golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0`.
+
+`setup-go` caches the module cache and the build cache. Its key (`src/cache-restore.ts`, line 35 at v7.0.0) is `setup-go-<RUNNER_OS>-<process.arch>-<ImageOS on Linux>-go-<version>-<hash of the dependency path>`. It throws when the dependency path hashes to nothing, so the composite requires `go.sum` and says so first.
+
+golangci-lint keeps a result cache. That cache reports findings a clean run does not (lessons 353 and 501 in dotfiles), so the composite never caches it: the lint action runs with `install-only` and `skip-cache`, and only the binary is installed. The caller runs `golangci-lint run`, which still reads the build cache.
+
+`setup-go` has no `cache-primary-key` output and no `working-directory` input. So:
+- the composite exposes `cache-hit` only;
+- AC5 rests on the pinned source line above, a test on the pin and the wiring, and the key read from the warm run's log in `verification.md`. This is a decision, not a gap the review should find later.
+
+The interface of `.github/actions/setup-go-lint/action.yml`:
+- **Inputs.**
+  - `version`, default empty. The Go version.
+  - `version-file`, default `go.mod`. `setup-go` reads its `toolchain` or `go` line.
+  - `golangci-lint-version`, default empty. When it is empty, the version comes from go.mod's `tool` line for `github.com/golangci/golangci-lint/v2`. With neither, the step fails rather than install the latest.
+  - `working-directory`, default `.`.
+- **Outputs.**
+  - `cache-hit`, from `setup-go`.
+  - `go-version`, from `setup-go`.
+  - `golangci-lint-version`, from `resolve`.
+- **Steps.**
+  - `resolve` (bash) publishes paths relative to the workspace, so the next steps take only its outputs:
+    - `go-version`: the input, or empty;
+    - `go-version-file`: `<working-directory>/<version-file>`, only when the input is empty, since `setup-go` warns when it gets both;
+    - `go-sum`: `<working-directory>/go.sum`;
+    - `golangci-lint-version`: the input or go.mod's `tool` line, with a leading `v` added when missing.
+    It fails, naming both sources, when it has no Go version or no golangci-lint version. It fails, naming the path, when `go.sum` is missing.
+  - `setup` (`actions/setup-go`) with those outputs and `cache: "true"`.
+  - `lint` (`golangci/golangci-lint-action`) with the version, `install-only: "true"`, `skip-cache: "true"` and `working-directory`.
+- **What stays with the caller.** The caller runs `go build`, `go test` and `golangci-lint run`.
+
+Tasks:
+
+- [ ] [AC1, AC5] Write `tests/setup-go-lint.bats` with failing tests for the defaults, the outputs, bash, the pins, the step order, and the wiring of `setup` and `lint`, `skip-cache` included. Expected: FAIL, because `action.yml` is missing.
+- [ ] [AC1] Write `.github/actions/setup-go-lint/action.yml`. Expected: those tests pass.
+- [ ] [AC2] Add failing tests for `resolve`, then implement it. The tests cover:
+  - the Go version input, which leaves the version file empty;
+  - the version file, when the input is empty;
+  - neither, which fails naming both;
+  - a missing `go.sum`, which fails naming its path;
+  - the golangci-lint input, with and without its `v`;
+  - go.mod's `tool` line;
+  - no golangci-lint version, which fails naming both.
+- [ ] [AC3] Add the fixture `tests/fixtures/toolchains/go/`: a `go.mod` naming one tiny dependency, its `go.sum`, and a file that uses it and passes golangci-lint's defaults.
+- [ ] [AC3] Add a `smoke-setup-go-lint` job to `lint.yml`. It:
+  - runs behind the `toolchains` area;
+  - runs `go build ./...` and `golangci-lint run` in the fixture;
+  - prints `cache-hit`, `go-version` and `golangci-lint-version`;
+  - is listed in `gate`'s `needs`.
+- [ ] [AC1] Raise `tests/composites-shellcheck.bats`'s minimum for the new `run:` step.
+- [ ] [AC3, AC5] Record in `verification.md`:
+  - the warm run and the hit for this composite, with the key from the log;
+  - `setup-python-uv`'s pull-request hit read from `main` (main saved it in job 130266579757), from this PR's `smoke-setup-python-uv` run.
+- [ ] README: a `## setup-go-lint` section.
+
 ## Closing
 
 - [ ] Every acceptance criterion from `proposal.md` is covered by at least one test or recorded run
