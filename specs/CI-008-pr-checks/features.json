@@ -1,0 +1,37 @@
+[
+  {
+    "id": "CI-008-pr-checks-f1",
+    "behavior": "pr-checks is a composite of bash steps with no GitHub-only action, installs dotf at a pinned version through hygiene, and runs each check behind an input.",
+    "verification": "bats tests/pr-checks.bats --filter 'inputs|bash run step|install'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-008-pr-checks-f2",
+    "behavior": "With one check failing, every other check still runs, the summary shows each result, and the job fails.",
+    "verification": "bats tests/pr-checks.bats --filter 'one failing check'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-008-pr-checks-f3",
+    "behavior": "The spec and knowledge gates read the pull request from the event file and make no API call.",
+    "verification": "bats tests/pr-checks.bats --filter 'event file|no API'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-008-pr-checks-f4",
+    "behavior": "dotfiles and kubelab each run one job per pull request event for the cheap checks, with branch protection updated.",
+    "verification": "recorded per adopter in verification.md: the adoption PR, the removed workflows and the required-check swap",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-008-pr-checks-f5",
+    "behavior": "Runner wait after adoption is recorded against the #14 snapshot.",
+    "verification": "recorded in verification.md with the measurement command and its output",
+    "state": "pending",
+    "evidence": ""
+  }
+]
