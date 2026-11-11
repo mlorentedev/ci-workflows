@@ -1,0 +1,14 @@
+# Only what this repository adds to the shared pr-agent workflow's defaults (#59).
+# The triage queue reads a finding's class from one exact line, declared in
+# harness/review-attestation.json; tests/harness.bats fails if the two drift.
+
+[pr_reviewer]
+extra_instructions = """
+Classify each finding as REAL, THEORETICAL or SPECULATIVE. State the class as
+the first line of its issue_content, alone on that line and spelled exactly
+"Class: REAL", "Class: THEORETICAL" or "Class: SPECULATIVE". The triage reads
+only that line; a finding without it goes to a human unclassified.
+
+Every finding classified as REAL must describe a concrete execution trace or
+failing input, not a stylistic preference. Write every finding in English.
+"""

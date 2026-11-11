@@ -44,6 +44,11 @@ jobs:
 ```
 
 - **Secrets are passed by name.** `secrets: inherit` is not used.
+- **`on.workflow_call.secrets` is the list a caller needs.** Each reusable
+  workflow declares exactly the secrets it reads, and `tests/secrets-contract.bats`
+  fails otherwise. Composites read none: they take credentials as inputs. So the
+  secrets a repository needs follow from the workflows it calls at its pinned
+  SHAs, which dotf reads to report missing and excess CI secrets (dotfiles#3290).
 - **The caller owns** triggers, branches, `permissions:` (which caps the called
   workflow) and workflow-level `concurrency:`. A repository-wide lane may stay
   inside a job. Workflows here hard-code no branch name.

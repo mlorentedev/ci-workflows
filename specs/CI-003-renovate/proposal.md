@@ -65,6 +65,11 @@ engine version and the GitHub workflow.
   `.github/workflows`. A PR opened with `GITHUB_TOKEN` starts no checks, so a PAT is required. Proposal: a
   fine-grained PAT, `RENOVATE_TOKEN`, scoped to all repositories, registered in dotfiles' secret registry
   like `RELEASE_TOKEN`. The owner creates it. The first run proves its permissions.
+- **The token's rate pool (decided 2026-11-10, #43).** The PAT shares the account's GraphQL pool with every
+  session, and two runs on 2026-11-06 aborted on it. A GitHub App would have its own pool, but it adds an
+  App the owner must create, rotate and install on every repository. The run is weekly and now goes red when a
+  repository aborts (`RENOVATE_EXIT_CODE_FOR_ERRORS`), so the PAT stays. A scheduled run that goes red on the
+  rate limit reopens the question, with the App as the fix.
 - **Review fan-out.** The first run over several adopted repositories can open three PRs each. Every PR
   starts a PR-Agent review, and NaN serves five at a time. Mitigations: adopt in batches, keep
   `prHourlyLimit` low, and have bot branches (`renovate/`) skip the review or take the bot lane (#13),
