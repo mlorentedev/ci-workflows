@@ -95,3 +95,11 @@ assert_rule() {
     jq -r '.managerFilePatterns[]' <<<"${m}" | grep -qxF "/^${f//./\\.}\$/"
   done
 }
+
+@test "CI runs the pinned engine on an aborting repository and expects a non-zero exit" {
+  local run
+  run=$(yq '.jobs.renovate-config.steps[] | select(.name == "Check the engine exits non-zero when a repository aborts") | .run' "${ROOT}/.github/workflows/lint.yml")
+  grep -q 'renovate/engine.json' <<<"${run}"
+  grep -q 'RENOVATE_EXIT_CODE_FOR_ERRORS=true' <<<"${run}"
+  grep -q 'if \[ "${rc}" -eq 0 \]' <<<"${run}"
+}
