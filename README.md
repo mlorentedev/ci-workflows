@@ -307,9 +307,13 @@ caller runs `npm ci` and the Playwright install.
 - **The npm cache** is `actions/setup-node`'s, keyed on the platform, the arch
   and `<working-directory>/package-lock.json`. So the lockfile must exist.
   `cache-hit` and `cache-primary-key` come from it.
-- **Playwright** (`playwright: "true"`, off by default) caches
-  `~/.cache/ms-playwright` under
-  `playwright-<os>-<arch>-<version>`. The version is read from
+- **Playwright** (`playwright: "true"`, off by default) caches the browsers
+  under `playwright-<os>-<arch>-<version>`. The path is the caller's
+  `PLAYWRIGHT_BROWSERS_PATH`, or else `~/.cache/ms-playwright` on every OS,
+  since Playwright's own default differs on macOS and Windows. The composite
+  exports it as `PLAYWRIGHT_BROWSERS_PATH`, so the caller's install writes
+  where the cache reads. `PLAYWRIGHT_BROWSERS_PATH=0` fails the step: the
+  browsers would sit in `node_modules`, which this cache does not hold. The version is read from
   `@playwright/test`, or else `playwright`, in the lockfile. A lockfile with
   neither fails the step rather than cache under an empty key.
   `playwright-cache-hit` reports the restore. Run
@@ -422,7 +426,7 @@ caller runs `uv sync --locked`, which links the venv from the cache.
 
 - **The Python version.** `version` wins when it is set. Otherwise the composite
   reads the first line of `version-file` (default `.python-version`) in
-  `working-directory` (default `.`). With neither, or with an empty file, the
+  `working-directory` (default `.`), trimmed, a CRLF ending included. With neither, or with an empty file, the
   step fails and names both.
 - **The uv version** is `uv-version`. Left empty, `astral-sh/setup-uv` reads
   `required-version` from `pyproject.toml`, or else installs the latest. It

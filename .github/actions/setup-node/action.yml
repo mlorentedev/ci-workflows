@@ -78,11 +78,26 @@ runs:
           echo "::error::setup-node: no Playwright package in ${lock}"
           exit 1
         fi
-        echo "version=${version}" >>"${GITHUB_OUTPUT}"
+        # Playwright's default is per-OS (~/Library/Caches on macOS), so one
+        # path is named here, cached, and handed to the caller's later steps.
+        path="${PLAYWRIGHT_BROWSERS_PATH:-}"
+        if [ "${path}" = 0 ]; then
+          echo "::error::setup-node: PLAYWRIGHT_BROWSERS_PATH=0 keeps the browsers in node_modules, which this cache does not hold"
+          exit 1
+        fi
+        if [ -z "${path}" ]; then
+          path="${HOME}/.cache/ms-playwright"
+          if command -v cygpath >/dev/null; then path=$(cygpath -w "${path}"); fi
+        fi
+        {
+          echo "version=${version}"
+          echo "path=${path}"
+        } >>"${GITHUB_OUTPUT}"
+        echo "PLAYWRIGHT_BROWSERS_PATH=${path}" >>"${GITHUB_ENV}"
 
     - id: playwright
       if: inputs.playwright == 'true'
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: ~/.cache/ms-playwright
+        path: ${{ steps.playwright-version.outputs.path }}
         key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright-version.outputs.version }}

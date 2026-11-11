@@ -88,6 +88,14 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
   [ "$(output_of python-version)" = "3.13" ]
 }
 
+@test "a CRLF version file gives the version without its carriage return" {
+  touch "${WORK}/uv.lock"
+  printf ' 3.13 \r\n' >"${WORK}/.python-version"
+  VERSION='' VERSION_FILE=.python-version WORKDIR="${WORK}" run_resolve
+  [ "$status" -eq 0 ]
+  [ "$(output_of python-version)" = "3.13" ]
+}
+
 @test "with neither a version nor the file, the step fails naming both" {
   touch "${WORK}/uv.lock"
   VERSION='' VERSION_FILE=.python-version WORKDIR="${WORK}" run_resolve
