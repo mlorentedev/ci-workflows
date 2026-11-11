@@ -30,9 +30,9 @@ owner: manu
 
 Per adopter, one draft PR from `chore/adopt-shared-pr-agent`, in its own worktree:
 
-- [ ] [AC1] Replace `.github/workflows/pr-agent.yml` with the thin caller (hive's `pr-agent-shared.yml` shape),
-      `uses: mlorentedev/ci-workflows/.github/workflows/pr-agent.yml@<v0.5.0 SHA> # v0.5.0`, passing
-      `NAN_API_KEY` and `PR_AGENT_ANTHROPIC_API_KEY`. In hive, delete the old `pr-agent.yml` and keep one caller.
+- [ ] [AC1] Replace `.github/workflows/pr-agent.yml` with `kit/pr-agent.yml`: hive's `pr-agent-shared.yml`
+      shape, pinned to v0.5.0 (`04f2d0a…`). Carry over any trigger or input the old file had for a reason
+      (read its comments first). In hive, delete both old files and keep only this caller.
 - [ ] [AC2] No `The-PR-Agent/pr-agent` left in any workflow (`grep -r` in the worktree).
 - [ ] [AC3] Trim `.pr_agent.toml` to what differs from the base, and put `kit/class-paragraph.txt` first in
       `extra_instructions`, byte for byte. In svqtriana.github.io, replace its existing backtick paragraph;

@@ -1,0 +1,33 @@
+name: pr-agent
+
+# The reusable reviewer from mlorentedev/ci-workflows (CI-007). Repository-specific
+# review instructions live in .pr_agent.toml; this file only calls the shared job.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.issue.number }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  review:
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    uses: mlorentedev/ci-workflows/.github/workflows/pr-agent.yml@04f2d0aebbf4d37303463b86d04619781db8d896 # v0.5.0
+    # dotf_version and the model chain take the tag's defaults: the dotf release it
+    # was tested with, and the chain read from the pool.
+    with:
+      pool: embedded
+      # Release PRs restate commits each reviewed when it landed.
+      skip_branch_prefixes: release-please--
+    secrets:
+      NAN_API_KEY: ${{ secrets.NAN_API_KEY }}
+      PR_AGENT_ANTHROPIC_API_KEY: ${{ secrets.PR_AGENT_ANTHROPIC_API_KEY }}
