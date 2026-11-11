@@ -580,9 +580,14 @@ file. Dependabot is not used: it does not exist on Gitea.
 
 - **The preset**, `renovate/default.json`, holds the fleet defaults: the
   schedule (all of Monday, Europe/Madrid, so a delayed cron still lands in it), labels, one grouped PR for minor and
-  patch updates, majors on their own, actions pinned by digest, a Dependency
-  Dashboard, and no automerge. It is plain JSON with no GitHub-only option, so
-  the Gitea run extends it too.
+  patch updates, a second one for GitHub Actions (its `ci(deps):` prefix cuts no
+  release, so it must never carry an application update), majors on their own,
+  actions pinned by digest, a weekly `uv.lock` refresh through lock file
+  maintenance (a `>=` bound gets no update PR of its own), a three-day wait on
+  new npm, PyPI and Go releases (a Renovate branch runs CI with the repository's
+  secrets), at most three open PRs and no hourly cap (one run a week would defer
+  the rest by a week), a Dependency Dashboard, and no automerge. It is plain JSON
+  with no GitHub-only option, so the Gitea run extends it too.
 - **The engine pin**, `renovate/engine.json`, is the Renovate image and version.
   The run here and the Gitea run both read it, and this repository's own
   Renovate bumps it.
