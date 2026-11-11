@@ -1,0 +1,44 @@
+[
+  {
+    "id": "CI-009-bot-lane-f1",
+    "behavior": "A lane pull request is declared unreviewed whatever its files, with the lane's rationale.",
+    "verification": "bats tests/bot-lane.bats --filter 'unreviewed'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-009-bot-lane-f2",
+    "behavior": "A red lane pull request opens one issue, a second red run updates it, and a green run closes it.",
+    "verification": "bats tests/bot-lane.bats --filter 'issue'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-009-bot-lane-f3",
+    "behavior": "Only a verified action digest bump outside the caller's production paths merges, pinned to the verified head commit.",
+    "verification": "bats tests/bot-lane.bats --filter 'merge'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-009-bot-lane-f4",
+    "behavior": "Committed tests fail if the merge class widens or the merging condition or head-commit pin changes; allow_auto_merge stays false.",
+    "verification": "bats tests/bot-lane.bats --filter 'class|condition'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-009-bot-lane-f5",
+    "behavior": "Release-please pull requests are declared unreviewed and never merged by the lane.",
+    "verification": "bats tests/bot-lane.bats --filter 'release'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-009-bot-lane-f6",
+    "behavior": "Caller fixtures for two repositories, one with production paths.",
+    "verification": "bats tests/bot-lane.bats --filter 'fixture'",
+    "state": "pending",
+    "evidence": ""
+  }
+]
