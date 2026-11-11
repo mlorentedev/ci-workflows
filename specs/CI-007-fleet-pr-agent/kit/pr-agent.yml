@@ -1,0 +1,49 @@
+name: pr-agent
+
+# The reusable reviewer from mlorentedev/ci-workflows (CI-007). Repository-specific
+# review instructions live in .pr_agent.toml; this file only calls the shared job.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  # The event name is part of the key: a PR comment is an issue_comment whose
+  # issue.number is the PR number, and without it a comment cancels the review.
+  # Only a comment the shared job runs (a slash command from an association it
+  # trusts) shares the /review group, so a newer /review supersedes an older one;
+  # any other comment gets its own group and cancels nothing (dotfiles #2855).
+  # The association list must equal the shared job's.
+  # A bot's push gets its own group too: the shared job ignores bot commits, so a
+  # bot run that cancelled a human run would leave the PR with no review.
+  group: >-
+    ${{ format('{0}-{1}-{2}{3}{4}', github.workflow,
+      github.event.pull_request.number || github.event.issue.number, github.event_name,
+      (github.event_name == 'issue_comment'
+        && !(startsWith(github.event.comment.body, '/')
+          && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
+      && format('-{0}', github.event.comment.id) || '',
+      (github.event_name == 'pull_request' && endsWith(github.actor, '[bot]'))
+      && format('-{0}', github.run_id) || '') }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  review:
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    uses: mlorentedev/ci-workflows/.github/workflows/pr-agent.yml@04f2d0aebbf4d37303463b86d04619781db8d896 # v0.5.0
+    # dotf_version and the model chain take the tag's defaults: the dotf release it
+    # was tested with, and the chain read from the pool.
+    with:
+      pool: embedded
+      # Release PRs restate commits each reviewed when it landed.
+      skip_branch_prefixes: release-please--
+    secrets:
+      NAN_API_KEY: ${{ secrets.NAN_API_KEY }}
+      PR_AGENT_ANTHROPIC_API_KEY: ${{ secrets.PR_AGENT_ANTHROPIC_API_KEY }}
