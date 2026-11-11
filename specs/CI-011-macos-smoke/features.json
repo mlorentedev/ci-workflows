@@ -1,0 +1,23 @@
+[
+  {
+    "id": "CI-011-macos-smoke-f1",
+    "behavior": "Every toolchain smoke is a fail-fast false matrix over ubuntu-latest and macos-latest that runs on matrix.os",
+    "verification": "bats --filter 'on macOS' tests/toolchain-smokes.bats",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-011-macos-smoke-f2",
+    "behavior": "The node smoke passes playwright true, installs Chromium and checks the browsers path, and the fixture pins @playwright/test",
+    "verification": "bats --filter 'Playwright' tests/toolchain-smokes.bats",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-011-macos-smoke-f3",
+    "behavior": "Every macOS leg is behind the toolchains area and its job stays in gate's needs",
+    "verification": "bats --filter 'toolchains area' tests/toolchain-smokes.bats",
+    "state": "pending",
+    "evidence": ""
+  }
+]
