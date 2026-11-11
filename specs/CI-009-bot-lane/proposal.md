@@ -60,6 +60,17 @@ release-please. It does three things, each with its own trust rule.
 - **Release-please pull requests are never merged by the lane.** Release PRs stay the owner's.
 - Library and image bumps are never in the merge class. They are reviewed, or merged by the owner.
 
+### Prior art: kubelab's `deploy-merge`
+
+kubelab already runs this exception for mechanical staging deploys (DELIVERY-004, kubelab#1619). Its
+`deploy-merge.yml` runs on `workflow_run` and on a schedule, and judges every open pull request from
+the default branch's code. It never reads the event payload or a branch name. It merges with
+`--match-head-commit` and a release token, so the push workflows still fire, and builds the commit
+subject itself, never from the pull request's title or body. Auto-merge stays off, and
+`tests/test_deploy_shape_widening.py` pins the merge line. The lane follows the same shape. PR 2
+starts by reading that workflow and its toolkit judge, and takes from them what is not
+kubelab-specific.
+
 ### The command surface dotf must offer
 
 Two things are missing, and both belong in dotf (ADR-001: the logic is dotf's, the workflow wires it):
@@ -141,3 +152,4 @@ Other risks:
   is reviewed; it does not verify content)
 - dotfiles#3313 (dotfiles' own move to Renovate)
 - dotfiles#3317 (the two dotf commands)
+- kubelab `deploy-merge.yml` and `toolkit tools deploy-merge` (DELIVERY-004, kubelab#1619): the exception already in production
