@@ -63,4 +63,6 @@ There are two layers, following ADR-001 §2: a composite by default, and a reusa
 ## References
 
 - ADR-001 §2 (composites by default), #8 (epic), #14 (runner wait)
+- kubelab#3299 (the unscoped cache, fixed on its own)
 - web `.github/workflows/build-image.yml`, kubelab `.github/workflows/ci-publish.yml` and `release.yml`, dotfiles `ci.yml` (`integration` job), hive `ci.yml` (`docker` job)
+- kubelab#3299 (the unscoped cache, fixed on its own)
