@@ -52,5 +52,17 @@
     ],
     "standing_why": "Who may write the triage record, so a marker from any commenter cannot clear the queue.",
     "why": "A disposition recorded on the PR is durable and machine-readable; one in a chat message is not."
+  },
+  "classification": {
+    "prefix": "Class: ",
+    "classes": [
+      "REAL",
+      "THEORETICAL",
+      "SPECULATIVE"
+    ],
+    "reviewers": [
+      "github-actions"
+    ],
+    "why": "A finding's class is read from a whole line equal to prefix + class, never parsed out of prose; a finding with no such line, or two that disagree, is unclassified and goes to a human. .pr_agent.toml asks the reviewer for exactly these lines, and tests/harness.bats fails if the two drift apart. reviewers names PR-Agent (github-actions) only, because CodeRabbit writes its own severity format. Shape copied from dotfiles (TOOL-017)."
   }
 }

@@ -60,3 +60,48 @@ broken() { jq "$1" "$2" >"${BATS_TEST_TMPDIR}/broken.json" && echo "${BATS_TEST_
   triage_marker_is_review_triage "$ATTESTATION"
   run ! triage_marker_is_review_triage "$(broken '.triage.marker = "## Triage"' "$ATTESTATION")"
 }
+
+TOML="${ROOT}/.pr_agent.toml"
+
+# The classes the registry reads and the classes the active instructions ask
+# for are the same set (#59). Only the parsed extra_instructions value counts, so
+# a class left behind in a TOML comment does not.
+registry_classes() {
+  jq -er '.classification.classes
+    | if type == "array" and length > 0 and all(.[]; type == "string") then .[] else error("no classes") end' "$1" | sort -u
+}
+instruction_classes() {
+  local prefix="$1" toml="$2" text
+  text="$(yq -p toml -oy '.pr_reviewer.extra_instructions // ""' "${toml}")" || return 1
+  grep -oE "\"${prefix}[A-Z]+\"" <<<"${text}" | sed -E "s/^\"${prefix}//; s/\"$//" | sort -u
+}
+instructions_ask_for_every_class() {
+  local registry="$1" toml="$2" prefix expected actual
+  prefix="$(jq -r '.classification.prefix // ""' "${registry}")"
+  [ -n "${prefix// /}" ] || return 1
+  expected="$(registry_classes "${registry}")" || return 1
+  actual="$(instruction_classes "${prefix}" "${toml}")" || return 1
+  [ "${expected}" = "${actual}" ]
+}
+
+# PR-Agent is asked for the line; CodeRabbit writes its own severity format.
+classifies_pr_agent_only() { jq -e '.classification.reviewers == ["github-actions"]' "$1" >/dev/null; }
+
+@test "the instructions ask for exactly the classes the registry reads" {
+  instructions_ask_for_every_class "${ATTESTATION}" "${TOML}"
+  run ! instructions_ask_for_every_class "$(broken '.classification.classes += ["MINOR"]' "${ATTESTATION}")" "${TOML}"
+  run ! instructions_ask_for_every_class "$(broken 'del(.classification)' "${ATTESTATION}")" "${TOML}"
+  run ! instructions_ask_for_every_class "$(broken '.classification.classes = "REAL"' "${ATTESTATION}")" "${TOML}"
+  local t="${BATS_TEST_TMPDIR}/pr_agent.toml"
+  sed 's/"Class: THEORETICAL"/"Class: THEORETIC"/' "${TOML}" >"${t}"
+  run ! instructions_ask_for_every_class "${ATTESTATION}" "${t}"
+  sed 's/"Class: SPECULATIVE"/"Class: SPECULATIVE" or "Class: MINOR"/' "${TOML}" >"${t}"
+  run ! instructions_ask_for_every_class "${ATTESTATION}" "${t}"
+  { printf '# "Class: REAL", "Class: THEORETICAL", "Class: SPECULATIVE"\n'; sed '/^extra_instructions/,/^"""$/d' "${TOML}"; } >"${t}"
+  run ! instructions_ask_for_every_class "${ATTESTATION}" "${t}"
+}
+
+@test "only PR-Agent is held to the class line" {
+  classifies_pr_agent_only "${ATTESTATION}"
+  run ! classifies_pr_agent_only "$(broken '.classification.reviewers += ["coderabbitai"]' "${ATTESTATION}")"
+}
