@@ -1,7 +1,7 @@
 ---
 id: "CI-004-toolchain-setup"
 type: spec
-status: verifying # draft | implementing | verifying | archived
+status: archived # draft | implementing | verifying | archived
 created: "2026-11-05"
 issue: "mlorentedev/ci-workflows#10"   # repo#NNN — GitHub issue / Project item that tracks this spec
 tags: [spec, proposal]
@@ -74,3 +74,5 @@ They ship as one pull request per composite, starting with `setup-node`.
 - Baseline: `docs/audits/2026-11-ci-baseline.md`, the source of the minutes in Why
 - Pins: every third-party action is pinned by SHA. Renovate (#30) bumps them once #35 lands.
 - Sister spec: `specs/archive/CI-001-gate-and-changes/` (the Gitea pilot and the smoke-proof pattern)
+
+<!-- archived 2026-11-11 — PR: https://github.com/mlorentedev/ci-workflows/pull/64 -->
