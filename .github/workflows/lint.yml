@@ -127,6 +127,27 @@ jobs:
       # without renovate.json (the local platform cannot fetch local> presets),
       # and fail when a workflow or a composite that pins an action by reference
       # yields no extracted dependency. Files with only local `./` uses pin nothing.
+      # renovate.yml relies on RENOVATE_EXIT_CODE_FOR_ERRORS to go red when a
+      # repository aborts (#43). Run the pinned engine on a repository whose
+      # config is broken: an engine bump that stops honouring it fails here.
+      - name: Check the engine exits non-zero when a repository aborts
+        run: |
+          engine="$(jq -er '.image + ":" + .version' renovate/engine.json)"
+          work="$(mktemp -d)"
+          mkdir "${work}/repo"
+          echo '{"extends": [' > "${work}/repo/renovate.json"
+          chmod -R a+rwX "${work}"
+          rc=0
+          docker run --rm -v "${work}:/w" -w /w/repo -e LOG_LEVEL=info \
+            -e RENOVATE_PLATFORM=local -e RENOVATE_DRY_RUN=extract \
+            -e RENOVATE_EXIT_CODE_FOR_ERRORS=true "${engine}" > "${work}/run.log" 2>&1 || rc=$?
+          if [ "${rc}" -eq 0 ]; then
+            tail -20 "${work}/run.log"
+            echo "::error::Renovate ${engine} exited 0 on a repository that ended in config-validation: RENOVATE_EXIT_CODE_FOR_ERRORS no longer turns an aborted repository into a failed run"
+            exit 1
+          fi
+          echo "the engine exits ${rc} on an aborted repository"
+
       - name: Check the preset reads every pinned workflow and composite
         run: |
           engine="$(jq -er '.image + ":" + .version' renovate/engine.json)"
