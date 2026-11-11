@@ -93,7 +93,8 @@ Three forks for the owner to decide before any fleet PR opens. Forks 1 and 2 are
      - (A2) One guard in the shared `pr-agent.yml`: a step before the review reads the caller's
        `.pr_agent.toml` and `harness/review-attestation.json` and fails when they disagree. One
        implementation, nothing added to adopter CI. Drift fails the next review run, not the drifting PR.
-       It is a change to the shared workflow, so it is its own PR here.
+       It is a change to the shared workflow, so it is its own PR here, and it reaches the adopters only
+       through a release and a bump of each caller's SHA pin (Renovate's, once #30 is adopted).
      - Recommended: (A2). Neither blocks T+1: the paragraph and the registry block land first, and the
        guard follows. f3's "a `.bats` file holds the test" clause follows this decision.
 3. **Batch order and size.** ci-workflows-34 opens every Renovate and hygiene adopter PR on day T, when
