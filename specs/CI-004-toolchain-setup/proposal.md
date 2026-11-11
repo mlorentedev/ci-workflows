@@ -1,7 +1,7 @@
 ---
 id: "CI-004-toolchain-setup"
 type: spec
-status: implementing # draft | implementing | verifying | archived
+status: verifying # draft | implementing | verifying | archived
 created: "2026-11-05"
 issue: "mlorentedev/ci-workflows#10"   # repo#NNN — GitHub issue / Project item that tracks this spec
 tags: [spec, proposal]
@@ -58,14 +58,14 @@ They ship as one pull request per composite, starting with `setup-node`.
 
 ## Acceptance criteria
 
-- [ ] **Shape tests.** Each composite has a bats test that reads from `action.yml`:
+- [x] **Shape tests.** Each composite has a bats test that reads from `action.yml`:
   - its inputs and their defaults;
   - its outputs, including `cache-hit`;
   - every third-party action pinned by a 40-hex SHA with its tag as a comment.
-- [ ] **Version source.** The version comes from the `version` input or the version file. With neither, the step fails with a message, and a test asserts it. No version is hard-coded.
-- [ ] **Cache proof.** This repository's `smoke` job runs each composite against its fixture. Its second run reports `cache-hit == 'true'`, with the run cited in `verification.md`.
-- [ ] **Gitea.** `setup-node` runs on the Gitea runner (imagesensortool). `verification.md` records whether the cache hits there, or degrades without failing the job.
-- [ ] **Per-platform keys.** Every cache key includes `runner.os` and `runner.arch`, so a runner never restores another platform's binaries. A test asserts it.
+- [x] **Version source.** The version comes from the `version` input or the version file. With neither, the step fails with a message, and a test asserts it. No version is hard-coded.
+- [x] **Cache proof.** This repository's `smoke` job runs each composite against its fixture. Its second run reports `cache-hit == 'true'`, with the run cited in `verification.md`.
+- [x] **Gitea.** `setup-node` runs on the Gitea runner (imagesensortool). `verification.md` records whether the cache hits there, or degrades without failing the job.
+- [x] **Per-platform keys.** Every cache key includes `runner.os` and `runner.arch`, so a runner never restores another platform's binaries. A test asserts it.
 
 ## References
 

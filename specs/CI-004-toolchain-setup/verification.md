@@ -67,9 +67,9 @@ PR 4 (`setup-go-lint`). Commits on `feat/issue-10-setup-go-lint`.
 
 Answer each line `yes: <path>`, naming the file you promoted, or `no: <reason>`. `dotf spec archive` refuses a line left unanswered, a `no` without a reason, and a `yes` whose file does not exist; a `00_meta/` path is looked up in the vault.
 
-- [ ] Lesson for the repo's `docs/lessons/`? <yes: path / no: reason>
-- [ ] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? <yes: path / no: reason>
-- [ ] New pattern candidate for `00_meta/patterns/`? Only if this recurs in >1 project. <yes: path / no: reason>
+- [x] Lesson for the repo's `docs/lessons/`? yes: docs/lessons/lesson-009-a-cache-hit-is-proved-by-rerunning-the-same-job.md
+- [x] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? no: ADR-001 practice S5 already sets the composite shape; each composite's choices are in tasks.md
+- [x] New pattern candidate for `00_meta/patterns/`? no: the cache-scope rule is GitHub's and lives in this repo's lesson until a second project needs it
 
 ## Archive checklist
 
