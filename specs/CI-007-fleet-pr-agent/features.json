@@ -1,0 +1,30 @@
+[
+  {
+    "id": "CI-007-fleet-pr-agent-f1",
+    "behavior": "Every repository that runs PR-Agent, except dotfiles, calls the shared workflow pinned by full SHA.",
+    "verification": "for r in garsync hive iris kubelab leaving-denver mail2markdown pdf-modifier pollex svqtriana.github.io ts-bridge web yt-metrics-cli; do gh api repos/mlorentedev/$r/contents/.github/workflows/pr-agent.yml --jq .content | base64 -d | grep -qE 'ci-workflows/.github/workflows/pr-agent.yml@[0-9a-f]{40}' || echo $r; done | (! grep .)",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-007-fleet-pr-agent-f2",
+    "behavior": "No adopter keeps a copy of the review steps.",
+    "verification": "for r in garsync hive iris kubelab leaving-denver mail2markdown pdf-modifier pollex svqtriana.github.io ts-bridge web yt-metrics-cli; do gh search code 'The-PR-Agent/pr-agent' --repo mlorentedev/$r --json path --jq '.[].path' | sed \"s|^|$r: |\"; done | (! grep .)",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-007-fleet-pr-agent-f3",
+    "behavior": "Each adopter's .pr_agent.toml holds only what differs from the base and asks for the Class line as fork 2 decides.",
+    "verification": "manual per adopter PR, recorded in verification.md, until fork 2 is decided",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-007-fleet-pr-agent-f4",
+    "behavior": "Every adopter PR gets a PR-Agent review from the shared workflow, and no batch loses a review to NaN's slot limit.",
+    "verification": "per adopter PR: gh api repos/mlorentedev/<repo>/issues/<pr>/comments --jq '[.[]|select(.user.login==\"github-actions[bot]\" and (.body|test(\"PR Reviewer Guide\")))]|length' is at least 1",
+    "state": "pending",
+    "evidence": ""
+  }
+]

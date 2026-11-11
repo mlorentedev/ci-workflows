@@ -1,0 +1,91 @@
+---
+id: "CI-007-fleet-pr-agent"
+type: spec
+status: draft # draft | implementing | verifying | archived
+created: "2026-11-10"
+issue: "mlorentedev/ci-workflows#33"   # repo#NNN — GitHub issue / Project item that tracks this spec
+tags: [spec, proposal, ci, pr-agent, fleet]
+template_version: "1.0"
+owner: manu
+---
+
+# CI-007-fleet-pr-agent
+
+## Why
+
+<!-- from issue #33: chore: adopt the shared pr-agent workflow across the fleet -->
+
+Thirteen repositories run PR-Agent. Inventory on 2026-11-10:
+
+- Eleven run their own `pr-agent.yml`, 190 to 883 lines each, on `The-PR-Agent/pr-agent` at one of two SHAs:
+  garsync, hive, iris, kubelab, leaving-denver, mail2markdown, pdf-modifier, pollex, svqtriana.github.io,
+  ts-bridge, web, yt-metrics-cli. hive also runs the shared workflow beside its own (`pr-agent-shared.yml`);
+  the comparison week for removing its old job ends on 2026-11-09 (thread main@macmini).
+- dotfiles runs its own workflow on purpose: the shared one derives from it.
+- ci-workflows calls the shared workflow by path (#51).
+- Each repository holds its own `.pr_agent.toml`, 2 to 18 KB. Only dotfiles asks for the `Class:` line that
+  the triage queue reads (#59 / #61 adds it here).
+
+A fix to the review lane reaches one repository at a time, and the eleven copies drift.
+
+## What
+
+For each adopting repository, one PR that:
+
+- Replaces its `pr-agent.yml` with a thin caller of `mlorentedev/ci-workflows/.github/workflows/pr-agent.yml`,
+  pinned by full SHA with the tag as a comment. It has the same shape as hive's `pr-agent-shared.yml` and passes
+  `NAN_API_KEY`, plus `PR_AGENT_ANTHROPIC_API_KEY` where the repository holds it.
+- Trims its `.pr_agent.toml` to what differs from the base: its own instructions and ignores.
+- Leaves its `review-attestation` registry as is.
+
+Batches stay below NaN's five concurrent review slots (dotfiles#3188: eight pushes at once lost three reviews).
+They are sequenced around the Renovate and hygiene adopter PRs that ci-workflows-34 opens in the same
+repositories after v0.5.0, so no repository gets two adopter PRs on the same day.
+
+## Out of scope
+
+- dotfiles: it is the source the shared workflow derives from.
+- New review behaviour. Any change to the shared workflow itself is its own PR in this repository.
+- A fleet tool. `dotf fleet apply`, which #33 assumed, does not exist in dotf 0.79.0 (`unknown command
+  "fleet"`); the PRs are opened one by one.
+
+## Risks / open questions
+
+Three forks for the owner to decide before any fleet PR opens:
+
+1. **The Anthropic key in NaN-only repositories.** Only dotfiles, hive, kubelab and ci-workflows hold
+   `PR_AGENT_ANTHROPIC_API_KEY`. The input is optional: without it, `dotf pr route` draws NaN only and writes a
+   note naming the remedy. The new weights (Haiku 50) reach a repository only if the key is synced to it.
+   - (A) Sync the key to every adopter. This spends Anthropic budget; last month's total was about 30 USD.
+   - (B) Adopt NaN-only and sync later, repo by repo.
+2. **Where the `Class:` instruction lives.** PR-Agent (The-PR-Agent/pr-agent at efdde4a,
+   `git_providers/utils.py`) puts env vars at the top of its precedence: `_reapply_env_overrides` replays them
+   after every file layer. It merges files key by key.
+   - Setting `PR_REVIEWER.EXTRA_INSTRUCTIONS` in the shared workflow would therefore erase every repository's
+     own instructions.
+   - A base file loaded through `CONFIG.EXTRA_CONFIG_URL` sits below the repository file. But a repository
+     that sets its own `extra_instructions` replaces the base string whole, so the class line is lost there too.
+   - Choices:
+     - (A) Each repository's minimal `.pr_agent.toml` carries the class paragraph, guarded by a test like #61's.
+     - (B) dotf composes the base and the repository's instructions into one value the workflow passes.
+     - (C) A base file through `EXTRA_CONFIG_URL`, with repositories putting their extras under a different key.
+   - Before (C) is chosen, check that the image the shared workflow pins (`pragent/pr-agent@sha256:80edef7…`)
+     supports `EXTRA_CONFIG_URL`.
+3. **Batch order and size.** Proposed: batch 1 on T+1 (garsync, pollex, ts-bridge, web), batch 2 on T+2
+   (iris, leaving-denver, mail2markdown, yt-metrics-cli), then svqtriana.github.io and pdf-modifier, and
+   kubelab and hive last, because they carry the most local logic. T is the day v0.5.0 is tagged.
+   ci-workflows-34 has hive, kubelab and pollex on T+2 to T+4, so hive and kubelab move after T+4.
+
+## Acceptance criteria
+
+- [ ] Every repository that runs PR-Agent, except dotfiles, calls the shared workflow pinned by full SHA.
+- [ ] No adopter keeps a copy of the review steps (`The-PR-Agent/pr-agent` appears in no adopter's workflows).
+- [ ] Each adopter's `.pr_agent.toml` holds only what differs from the base, and asks for the `Class:` line
+      in the way fork 2 decides.
+- [ ] Every adopter PR gets a PR-Agent review from the shared workflow. No batch loses a review to NaN's slot
+      limit.
+
+## References
+
+- #33, #51 (self-review), #59 / #61 (classification), dotfiles#3188 (NaN slots), dotfiles#3212 (weights)
+- hive `.github/workflows/pr-agent-shared.yml`, the caller shape to copy
