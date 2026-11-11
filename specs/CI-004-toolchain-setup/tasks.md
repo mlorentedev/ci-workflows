@@ -248,9 +248,9 @@ The interface of `.github/actions/setup-go-lint/action.yml`:
 
 Tasks:
 
-- [ ] [AC1, AC5] Write `tests/setup-go-lint.bats` with failing tests for the defaults, the outputs, bash, the pins, the step order, and the wiring of `setup` and `lint`, `skip-cache` included. Expected: FAIL, because `action.yml` is missing.
-- [ ] [AC1] Write `.github/actions/setup-go-lint/action.yml`. Expected: those tests pass.
-- [ ] [AC2] Add failing tests for `resolve`, then implement it. The tests cover:
+- [x] [AC1, AC5] Write `tests/setup-go-lint.bats` with failing tests for the defaults, the outputs, bash, the pins, the step order, and the wiring of `setup` and `lint`, `skip-cache` included. Expected: FAIL, because `action.yml` is missing.
+- [x] [AC1] Write `.github/actions/setup-go-lint/action.yml`. Expected: those tests pass.
+- [x] [AC2] Add failing tests for `resolve`, then implement it. The tests cover:
   - the Go version input, which leaves the version file empty;
   - the version file, when the input is empty;
   - neither, which fails naming both;
@@ -258,17 +258,17 @@ Tasks:
   - the golangci-lint input, with and without its `v`;
   - go.mod's `tool` line;
   - no golangci-lint version, which fails naming both.
-- [ ] [AC3] Add the fixture `tests/fixtures/toolchains/go/`: a `go.mod` naming one tiny dependency, its `go.sum`, and a file that uses it and passes golangci-lint's defaults.
-- [ ] [AC3] Add a `smoke-setup-go-lint` job to `lint.yml`. It:
+- [x] [AC3] Add the fixture `tests/fixtures/toolchains/go/`: a `go.mod` naming one tiny dependency, its `go.sum`, and a file that uses it and passes golangci-lint's defaults.
+- [x] [AC3] Add a `smoke-setup-go-lint` job to `lint.yml`. It:
   - runs behind the `toolchains` area;
   - runs `go build ./...` and `golangci-lint run` in the fixture;
   - prints `cache-hit`, `go-version` and `golangci-lint-version`;
   - is listed in `gate`'s `needs`.
-- [ ] [AC1] Raise `tests/composites-shellcheck.bats`'s minimum for the new `run:` step.
+- [x] [AC1] Raise `tests/composites-shellcheck.bats`'s minimum for the new `run:` step.
 - [ ] [AC3, AC5] Record in `verification.md`:
   - the warm run and the hit for this composite, with the key from the log;
   - `setup-python-uv`'s pull-request hit read from `main` (main saved it in job 130266579757), from this PR's `smoke-setup-python-uv` run.
-- [ ] README: a `## setup-go-lint` section.
+- [x] README: a `## setup-go-lint` section.
 
 ## Closing
 

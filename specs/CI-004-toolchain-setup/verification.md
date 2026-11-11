@@ -40,6 +40,14 @@ PR 3 (`setup-python-uv`). Commits on `feat/issue-10-setup-python-uv`.
 - [x] AC3 setup-python-poetry, read from `main`: the push of #55 to `main` saved both Poetry keys ([job 129664538608](https://github.com/mlorentedev/ci-workflows/actions/runs/42766617019/job/129664538608)). On #58, `smoke-setup-python-poetry` ([job 129667140896](https://github.com/mlorentedev/ci-workflows/actions/runs/42767427099/job/129667140896)) restored them as its base branch's. It logged `cache-hit=true` and `poetry-cache-hit=true`, and `poetry install` had nothing to do.
 - [x] AC5 setup-python-uv per-platform keys: the smoke job fails when `cache-primary-key` does not start with `setup-uv-2-<arch>-<platform>-` (`astral-sh/setup-uv` v10.3.3 builds it in `src/cache/restore-cache.ts` from `process.arch` and `process.platform`, renamed in `src/utils/platforms.ts`). `tests/setup-python-uv.bats` runs that check against keys that do and do not name them.
 
+PR 4 (`setup-go-lint`). Commits on `feat/issue-10-setup-go-lint`.
+
+- [x] AC1 setup-go-lint shape: `tests/setup-go-lint.bats` (inputs, outputs, bash, both pins, the step order, the setup-go and lint wiring). Pins checked against the tags over the API: `actions/setup-go` v7.0.0 = `b7ad1da`, `golangci/golangci-lint-action` v9.3.0 = `ba0d7d2`.
+- [x] AC2 setup-go-lint version sources: `tests/setup-go-lint.bats` (the Go version input or the version file, neither fails naming both; the golangci-lint input with or without its `v`, go.mod's golangci-lint/v2 line, neither fails naming both; a missing `go.sum` fails naming it).
+- [ ] AC3 setup-go-lint cache proof: pending the pull request's warm run and its rerun.
+- [ ] AC3 setup-python-uv, read from `main`: the push of #58 to `main` ran `smoke-setup-python-uv` ([job 130266579757](https://github.com/mlorentedev/ci-workflows/actions/runs/42942226466/job/130266579757)). Pending this pull request's run of it.
+- [ ] AC5 setup-go-lint per-platform keys: `actions/setup-go` v7.0.0 builds its key in `src/cache-restore.ts` (line 35) as `setup-go-${RUNNER_OS}-${process.arch}-${ImageOS}-go-<version>-<hash>`, and publishes no key output, so no smoke can check it. `tests/setup-go-lint.bats` holds the pin; the warm run's log gives the key. golangci-lint's result cache is never kept (`skip-cache`, tested).
+
 ## Test status
 
 - Test suite: `bats tests/` -> every test ok; `actionlint` clean.
