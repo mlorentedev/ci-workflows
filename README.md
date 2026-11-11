@@ -399,6 +399,42 @@ runners only, since a Windows venv keeps its scripts in `Scripts/`.
   `tests/fixtures/toolchains/poetry/`. It runs `poetry check --lock` and
   `poetry install`, then imports the fixture's dependency from the venv.
 
+## setup-python-uv
+
+`.github/actions/setup-python-uv` installs uv and a Python, with uv's cache
+keyed on `uv.lock` (spec CI-004). It installs no project dependencies: the
+caller runs `uv sync --locked`, which links the venv from the cache.
+
+```yaml
+    steps:
+      - uses: actions/checkout@<40-hex-sha> # vX.Y.Z
+        with:
+          persist-credentials: false
+      - id: python
+        uses: mlorentedev/ci-workflows/.github/actions/setup-python-uv@<40-hex-sha> # vX.Y.Z
+      - run: uv sync --locked
+```
+
+- **The Python version.** `version` wins when it is set. Otherwise the composite
+  reads the first line of `version-file` (default `.python-version`) in
+  `working-directory` (default `.`). With neither, or with an empty file, the
+  step fails and names both.
+- **The uv version** is `uv-version`. Left empty, `astral-sh/setup-uv` reads
+  `required-version` from `pyproject.toml`, or else installs the latest. It
+  names no cache key, so unlike `poetry-version` it may be left empty.
+- **The cache** is `astral-sh/setup-uv`'s, with uv-managed Pythons included
+  (`cache-python`). Its key is
+  `setup-uv-2-<arch>-<platform>-<os>-<python>-py-<hash of uv.lock>`.
+  `cache-hit` and `cache-primary-key` come from it, and `python-cache-hit`
+  reports the Python restore.
+  - `uv.lock` must exist, or the step fails naming it. `setup-uv` itself only
+    warns when its glob matches nothing, and every project would then share one
+    key.
+- **This repository smokes it.** The `smoke-setup-python-uv` job in `lint.yml`
+  runs the composite from this checkout against `tests/fixtures/toolchains/uv/`,
+  runs `uv sync --locked`, and checks that the cache key names the runner's arch
+  and platform.
+
 ## release
 
 `.github/workflows/release.yml` runs

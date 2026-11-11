@@ -61,5 +61,33 @@
     "verification": "bats tests/setup-python-poetry.bats --filter 'platform, the arch|keys step reads'",
     "state": "pending",
     "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f10",
+    "behavior": "setup-python-uv's inputs, defaults and outputs (cache-hit included) read from action.yml, and every third-party action is pinned by a 40-hex SHA with its tag.",
+    "verification": "bats tests/setup-python-uv.bats --filter 'inputs and their defaults|outputs map|pinned by full SHA'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f11",
+    "behavior": "The Python version comes from the version input or the version file, and with neither the step fails naming both; a missing uv.lock fails too.",
+    "verification": "bats tests/setup-python-uv.bats --filter 'version input|version file|neither a version|uv.lock'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f12",
+    "behavior": "The uv smoke job runs setup-python-uv from this checkout against its fixture, behind gate; a later run reports cache-hit true.",
+    "verification": "grep -qE '^- \\[x\\] AC3 setup-python-uv.*cache-hit=true' specs/CI-004-toolchain-setup/verification.md && bats tests/setup-python-uv.bats --filter 'uv smoke runs|uv fixture' && bats tests/setup-node.bats --filter 'gate needs'",
+    "state": "pending",
+    "evidence": ""
+  },
+  {
+    "id": "CI-004-toolchain-setup-f13",
+    "behavior": "setup-python-uv's cache key names the runner arch and platform.",
+    "verification": "bats tests/setup-python-uv.bats --filter 'platform and the arch|platform and arch'",
+    "state": "pending",
+    "evidence": ""
   }
 ]
