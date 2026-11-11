@@ -16,6 +16,8 @@ Map every acceptance criterion from `proposal.md` to concrete proof (commit hash
 - [ ] Criterion 1 -> commit `<hash>` / test `<name>`
 - [ ] Criterion 2 -> commit `<hash>` / test `<name>`
 - [ ] Criterion 3 -> commit `<hash>` / test `<name>`
+- [ ] Criterion 4 -> adoption PR per repository, the workflows it removes, and the required-check swap
+- [ ] Criterion 5 -> the runner-wait measurement command and its output, against the #14 snapshot
 
 ## Test status
 
