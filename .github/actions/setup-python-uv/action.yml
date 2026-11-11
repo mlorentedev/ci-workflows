@@ -51,8 +51,12 @@ runs:
         lock="${WORKDIR}/uv.lock"
         python="${VERSION}"
         if [ -z "${python}" ] && [ -f "${file}" ]; then
-          # \r in IFS: a version file written with CRLF endings.
-          IFS=$' \t\r' read -r python <"${file}" || true
+          read -r python <"${file}" || true
+          # A CRLF file leaves \r, and the space before it, in the value.
+          # Stripped explicitly: how read splits on a \r in IFS varies with
+          # the bash version.
+          python="${python//$'\r'/}"
+          python="${python%"${python##*[![:space:]]}"}"
         fi
         if [ -z "${python}" ]; then
           echo "::error::setup-python-uv: no Python version: set the version input or add a version to ${file}"
