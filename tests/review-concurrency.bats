@@ -39,8 +39,13 @@ associations_in() { grep -o "fromJSON('\[[^]]*\]')" | head -n 1; }
 # starts with a slash (a path, or /improve) would otherwise cancel an in-flight
 # /review, and the run replacing it publishes no Guide.
 @test "only a /review command shares the comment group" {
-  group_of "${CALLER}" | grep -Fq "!(startsWith(github.event.comment.body, '/review')"
+  group_of "${CALLER}" | grep -Fq "github.event.comment.body == '/review'"
+  group_of "${CALLER}" | grep -Fq "startsWith(github.event.comment.body, '/review ')"
   [ -z "$(group_of "${CALLER}" | grep -F "startsWith(github.event.comment.body, '/')")" ]
+}
+
+@test "a word that only begins with /review, such as /reviewed, gets its own group" {
+  [ -z "$(group_of "${CALLER}" | grep -F "startsWith(github.event.comment.body, '/review')")" ]
 }
 
 @test "a bot's push gets a group of its own" {
