@@ -40,4 +40,4 @@ Armed 2026-11-12T07:06:00Z, expires 19:06:00Z. `merge: never`: every PR below wa
 ## Close
 
 - Every opened PR passes `dotf pr triage-queue --pr N` (exit 0); ci-workflows#98 was behind and its branch was updated again.
-- Board status for #31 and #32 not set: GraphQL rate limit exceeded at close. Both should read In Progress.
+- Board: #31 and #32 read In Progress (set after the GraphQL limit reset).
