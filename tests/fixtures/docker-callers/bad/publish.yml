@@ -1,0 +1,14 @@
+# Breaks every docker-publish caller rule: an undeclared input, a required input
+# missing, inherited secrets, a tag pin, and no security-events grant.
+on:
+  push:
+jobs:
+  publish:
+    permissions:
+      contents: read
+    uses: mlorentedev/ci-workflows/.github/workflows/docker-publish.yml@v0.6.0
+    with:
+      image: docker.io/owner/app
+      tags: latest
+      push: true
+    secrets: inherit
