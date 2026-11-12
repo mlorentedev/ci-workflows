@@ -21,7 +21,7 @@ owner: manu
 - [x] Adopter inventory taken 2026-11-11 (proposal.md, "Inventory for the kit").
 - [x] Kit written: `kit/class-paragraph.txt` (byte-identical to the first paragraph of this repository's
       `extra_instructions`) and `kit/classification.json` (the block each registry gains).
-- [ ] Fork 2b decided by the owner: where the guard that holds paragraph and registry together runs.
+- [x] Fork 2b decided by the owner (2026-11-12): (A2), one guard in the shared `pr-agent.yml`, built in #82.
 - [ ] Coordinated with the session opening the day-T Renovate and hygiene PRs: no file overlap
       (`renovate.json`, `.github/dependabot.yml`, `repo-hygiene.yml`, `scripts/check-lessons.sh`,
       `docs/lessons/**`). Re-check on T+1 before opening, with `gh pr list` in each adopter.
@@ -39,7 +39,7 @@ Per adopter, one draft PR from `chore/adopt-shared-pr-agent`, in its own worktre
       its `scripts/check-harness.mjs` checks substrings `Class: <name>`, which the kit paragraph still contains.
 - [ ] [AC3] Add `classification` from `kit/classification.json` to `harness/review-attestation.json`
       (svqtriana.github.io already has it: leave it, or align `why`).
-- [ ] [AC3] The guard, as fork 2b decides. Not in the T+1 PRs if 2b is still open.
+- [ ] [AC3] No per-adopter guard: (A2) puts it in the shared workflow (#82), reached through the pin bump.
 - [ ] Run the repository's own checks locally before pushing.
 
 Then, in order:
@@ -57,7 +57,7 @@ Then, in order:
 
 ## Closing
 
-- [ ] f1 to f5 in `features.json` exit 0. f5 fails until fork 2b is decided and its verification rewritten.
+- [ ] f1 to f5 in `features.json` exit 0. f5 fails until #82 ships in a release.
 - [ ] `verification.md` filled with the PR links and command outputs.
 - [ ] Independent adversarial review before archive.
 

@@ -29,8 +29,8 @@
   },
   {
     "id": "CI-007-fleet-pr-agent-f5",
-    "behavior": "A guard fails when an adopter's class paragraph and its registry disagree, where fork 2b places it.",
-    "verification": "echo 'fork 2b (where the guard runs) is undecided; rewrite this verification for the chosen guard' >&2; false",
+    "behavior": "The shared workflow fails a review when the caller's class paragraph and its registry disagree (fork 2b A2, #82).",
+    "verification": "yq -e '.jobs.review.steps[] | select(.name == \"Check the class paragraph against the registry\")' .github/workflows/pr-agent.yml >/dev/null && bats tests/class-guard.bats",
     "state": "pending",
     "evidence": ""
   }
