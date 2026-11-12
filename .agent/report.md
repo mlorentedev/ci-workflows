@@ -1,5 +1,7 @@
 # Run report: ciw-20261112T0745Z-pra
 
+Ended: queue-empty, around 11:30Z (the envelope ran to 19:05Z).
+
 Envelope: `.agent/unattended.yml` (82dc8ff). Merge authority: never. Every PR
 touches `.github/workflows/`, which the merge grant excludes.
 
@@ -16,7 +18,7 @@ touches `.github/workflows/`, which the merge grant excludes.
 
 - Merge order: #94 and #97 both add a rule at the same spot in
   `tests/pr-agent-shape.bats` and in the bad fixture. Whichever merges second
-  needs a rebase.
+  needs `origin/main` merged in (no force-push) and the conflict resolved.
 - #96: adopters' callers keep the old `'/'` key until their next caller touch.
   The PR body says so.
 - #100: adopters may drop `max_model_tokens` and `ai_timeout` from
