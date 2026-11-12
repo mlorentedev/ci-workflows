@@ -32,5 +32,8 @@ again. The fix would have broken the pull request it produced.
 - Before moving a setting into a runner's environment, check whether the tool
   records it in a committed file. If it does, the setting belongs in the
   project's config, not in one caller's environment.
+- Rewrite the lock with the uv version that last wrote it. uv 0.12.18 rewrote
+  pdf-modifier's `revision = 5` lock as `revision = 3`; uv 0.13.7 added only
+  the `[options]` table.
 - Test it with the repository's own lock gate (`uv lock --check`,
   `uv sync --locked`), not only with the command that writes the lock.

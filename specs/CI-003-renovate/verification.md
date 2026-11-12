@@ -27,12 +27,48 @@ owner: manu
       the preset's window. The first scheduled run (42582312694, 2026-11-09) started 6.5 hours late, after the Monday 00:00-06:59 window had closed, and opened nothing; #48 widened the window to all of Monday. The preset-tag manager waits for the first tag.
 - [x] AC5 -> kubelab#3271 (b78d171): kubelab's `renovate.yml` and `tests/test_renovate_engine_version.py` are gone from
       master, `ci.renovate.image` survives only in the text of its IDP-036 spec, and its `renovate.json` extends the preset.
-- [ ] AC6 -> partial. Eight repositories carry a `renovate.json` extending `renovate/default#v0.6.0`, read from each default
-      branch on 2026-11-12; per repository in tasks.md. Seven have no `dependabot.yml`; kubelab keeps its own by design.
-      dotfiles is out of the wave (dotfiles#3313). Both contradict AC6 as written, so it stays open until the
-      owner amends it or they adopt. Fourteen non-archived repositories carry no `renovate.json` yet; tasks.md
-      lists them.
+- [ ] AC6 -> partial, amended 2026-11-12 (the exemptions are listed in AC6 of proposal.md). Eight repositories carry a
+      `renovate.json` extending `renovate/default#v0.6.0`. The six left in scope have open adoption PRs, listed per
+      repository in tasks.md. AC6 closes when those six merge.
 - [x] AC7 -> ADR-001 decision 6 amended; README `## renovate`.
+
+## Secret exposure inventory (#74)
+
+A Renovate pull request is a same-repository run: it reads the repository's Actions secrets and whatever
+`GITHUB_TOKEN` scope the workflow grants. A Dependabot run reads neither. Each adopter's `pull_request` jobs,
+read from its default branch on 2026-11-12, are listed below by whether they run dependency code (install,
+build or test) while holding a secret or a write-scoped token. The `review` job that every adopter calls holds
+the model keys, but it runs the pinned PR-Agent image over the diff, not the repository's code. The
+`add-to-project` job holds `BITACORA_PAT` but checks nothing out. Neither job is counted below.
+
+- garsync (a15f62a): none. The `ci.yml` and `docs.yml` build jobs read no secret, and the workflows pin
+  `contents: read` over the repository's default of `write`.
+- leaving-denver (a17a1f3): none. `ci.yml` `deploy` holds the Cloudflare token and the sealed seller data, but
+  only runs when `github.ref == 'refs/heads/main'`.
+- hive (270d9ff): none. The CI jobs read no secret; the default token is read-only.
+- pollex (73d5128): none, for the same reasons.
+- ts-bridge (46b921c): none, for the same reasons.
+- kubelab (3e8adfd): **exposed**, tracked in kubelab#3344.
+  - `ci.yml` grants `contents`, `pull-requests` and `security-events: write` at workflow level, so `validate`,
+    `tests` and `test-shards` run dependency code with a write token that `actions/checkout` persists.
+  - `call-publish` skips only `dependabot[bot]`, so a Renovate branch that changes an app pushes a `sha-` image
+    to Docker Hub.
+  - Renovate there runs only `custom.regex` and `ansible-galaxy`, which narrows what such a branch can change.
+- web (b92fd06): none. `pr-validation.yml` `validate` passes the Docker Hub credentials to `build-image.yml`
+  with `push: false`. The login step is skipped and BuildKit build steps cannot read the `secrets` context.
+- yt-metrics-cli (1be1804): none. The CI jobs read no secret; the default token is read-only.
+
+The six repositories in AC6's second wave, read on 2026-11-12 before their adoption PRs:
+
+- iris (580d9fa), kasa-provisioner (07c62a1), mail2markdown (792b686) and svqtriana.github.io (656b40c): none. The CI
+  jobs read no secret, and either the workflows set read-only permissions or the repository default is read.
+- nan-video-pipeline (d1333e0): none, because no workflow runs on pull requests.
+- pdf-modifier (74c18b2): none. `docker-build.yml` logs in to Docker Hub only off pull requests and builds with
+  `push: false` there. Its build jobs hold `packages: write`, but only BuildKit runs dependency code in them.
+
+Mitigations already in force everywhere: the preset's `minimumReleaseAge` of 3 days (npm, PyPI, Go) and the
+uv adopters' `exclude-newer` (#81). #74's third criterion no longer needs a decision: every adopter already pins
+v0.6.0, which carries the release age.
 
 ## Test status
 

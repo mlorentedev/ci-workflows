@@ -482,6 +482,72 @@ caller runs `go build`, `go test` and `golangci-lint run`.
   runs the composite from this checkout against `tests/fixtures/toolchains/go/`,
   then `go build ./...` and `golangci-lint run`.
 
+## docker-build and docker-publish
+
+Two layers, per ADR-001 §2 (spec CI-010).
+
+**`.github/actions/docker-build`** is a composite that builds an image with buildx in the caller's job. A job
+that builds and then runs the image keeps its shape:
+
+```yaml
+      - uses: mlorentedev/ci-workflows/.github/actions/docker-build@<40-hex-sha> # vX.Y.Z
+        with:
+          image: dotfiles-integration
+          file: tests/integration/Dockerfile
+          load: "true"
+      - run: docker run --rm dotfiles-integration make test-integration
+```
+
+- **Cache.** `type=gha`, scoped by default to the image name, so two images in one repository never
+  overwrite each other's cache. The default scope is the name with every character but letters, digits,
+  `.`, `_` and `-` turned into a dash, plus 8 hex characters of the name's hash: `ghcr.io/o/a/b` and
+  `ghcr.io/o/a-b` sanitize alike, and the hash keeps them apart. `cache-scope` overrides the scope and is
+  sanitized the same way, without the hash. An image name that leaves no scope fails the build, rather
+  than falling back to buildx's shared default. `cache-from` and `cache-to` take a list, one entry a line.
+- **Cache size.** GitHub keeps 10 GB of cache per repository and evicts the least recently used entries.
+  `cache-mode: max` (the default) caches every layer and can approach that on a multi-platform build;
+  `min` caches only the final image's layers.
+- **Gitea.** `type=gha` needs GitHub's cache service, and Gitea's runner cache is unverified with it. Pass
+  `cache-from` and `cache-to`, e.g. `type=registry,ref=<image>:buildcache`.
+- **Load or push.** `load` puts the image in the runner's docker; `push` pushes its tags (log in first);
+  `push-by-digest` pushes it untagged. They are exclusive.
+- **Outputs.** `digest`, `imageid` and `cache-scope`.
+
+**`.github/workflows/docker-publish.yml`** publishes. It never tags an image before the image is scanned:
+
+1. `build` pushes the image by digest, with no tag;
+2. `scan` runs Trivy on that digest once per platform. It uploads each SARIF report under
+   `<sarif-category>-<platform>` and fails on a CRITICAL finding. A scanner that cannot scan fails too;
+3. `tag` applies `tags` to the digest with `docker buildx imagetools create`.
+
+```yaml
+jobs:
+  publish:
+    permissions:
+      contents: read
+      security-events: write
+    uses: mlorentedev/ci-workflows/.github/workflows/docker-publish.yml@<40-hex-sha> # vX.Y.Z
+    with:
+      image: docker.io/owner/app
+      tags: ${{ needs.docker_tags.outputs.tags }}
+      sarif-category: trivy-app
+    secrets:
+      REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      REGISTRY_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+```
+
+- **Required inputs.** `image` (with its registry, without a tag), `tags` (without the image name) and
+  `sarif-category`. Optional inputs: `registry`, `context`, `file`, `platforms` (default `linux/amd64`),
+  `build-args`, `cache-scope` and `cache-mode`.
+- **Secrets.** `REGISTRY_USERNAME` and `REGISTRY_TOKEN`, by name. Never `secrets: inherit`.
+- **Output.** `digest`. Promote by it, never by a tag.
+- **Failure.** A CRITICAL finding leaves an untagged digest in the registry, and nothing a consumer pulls
+  by tag.
+- **Out of scope.** Tag computation and release promotion stay in the caller.
+
+`tests/fixtures/docker-callers/` holds the web and kubelab publish shapes and the dotfiles build-then-run
+shape. `tests/docker-callers.bats` checks each against the interface.
+
 ## release
 
 `.github/workflows/release.yml` runs

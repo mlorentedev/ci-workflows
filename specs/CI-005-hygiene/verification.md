@@ -13,9 +13,12 @@ owner: manu
 
 Map every acceptance criterion from `proposal.md` to concrete proof (commit hash, test name, or observed behavior).
 
-- [ ] Criterion 1 -> commit `<hash>` / test `<name>`
-- [ ] Criterion 2 -> commit `<hash>` / test `<name>`
-- [ ] Criterion 3 -> commit `<hash>` / test `<name>`
+- [ ] AC1: pending.
+- [x] AC2: `smoke-hygiene` on main, push run 43173027029 at `e8977f2`, job 131031182732, with dotf 0.79.0. The lessons step on this repository ended `outcome=success`. The step on `tests/fixtures/lessons/duplicate-number` ended `outcome=failure` with "lesson number 001 is used twice: …/lesson-001-first-fixture.md and …/lesson-001-same-number.md", and the job passed because the fixture failed naming the file.
+- [ ] AC3: pending (dotf v0.80.0 carries fleet/sha-pin).
+- [ ] AC4: GitHub side shown by the run above; Gitea pending (IDP-036 session).
+- [ ] AC5: pending (adoption PRs).
+- [ ] AC6: pending (dotfiles side).
 
 ## Test status
 

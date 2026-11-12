@@ -89,6 +89,14 @@ guard_skips_a_cancelled_run() {
   cond=$(steps_running "$1" 'dotf pr guard' | yq '.if')
   [ -n "${cond}" ] && [ "${cond}" != "null" ] &&
     grep -qF '!cancelled()' <<<"${cond}" && ! grep -qF 'always()' <<<"${cond}"
+# dotf pr triage-queue classifies findings from inline review comments only, and
+# PR-Agent publishes inline findings only with inline_key_issues on (#92). Every
+# PR-Agent step sets it, so no adopter has to carry it in .pr_agent.toml.
+inline_findings_on_every_review_step() {
+  local all inline
+  all=$(yq '[.jobs[].steps[]? | select((.uses // "") | test("^docker://pragent/pr-agent"))] | length' "$1")
+  inline=$(yq '[.jobs[].steps[]? | select((.uses // "") | test("^docker://pragent/pr-agent")) | select((.env.PR_REVIEWER__INLINE_KEY_ISSUES // "") | tostring == "true")] | length' "$1")
+  [ "${all}" -gt 0 ] && [ "${all}" = "${inline}" ]
 }
 
 assert_rule() {
@@ -113,3 +121,4 @@ assert_rule() {
 @test "the dotf install verifies a checksum" { assert_rule verifies_checksum; }
 @test "the push gate is the action, pinned by full SHA" { assert_rule uses_pinned_push_gate; }
 @test "the publish guard does not run in a cancelled run" { assert_rule guard_skips_a_cancelled_run; }
+@test "every PR-Agent step publishes its findings inline" { assert_rule inline_findings_on_every_review_step; }
