@@ -31,8 +31,9 @@ Map every acceptance criterion from `proposal.md` to concrete proof (commit hash
 ## Decisions made during implementation
 
 - `docker-publish.yml` calls the composite as `mlorentedev/ci-workflows/.github/actions/docker-build@<sha>`, not `./`.
-  Inside a reusable workflow, `./` is the caller's checkout. Until a release ships the composite, the pin is #102's
-  head; it is repointed at the release.
+  Inside a reusable workflow, `./` is the caller's checkout. The pin is #102's
+  merge commit on main (4591d9e). While #102 was open it named a branch commit, which a squash merge leaves off
+  main, so it was repointed right after the merge and before the first release that ships the workflow.
 - The composite gained `push-by-digest`, which pushes the image untagged, so `docker-publish.yml` names no tag before
   its gate. It lands with the composite in #102: pinned at a commit without it, the input would be ignored and the
   build would push nothing, leaving the scan an empty digest.

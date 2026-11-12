@@ -11,7 +11,7 @@ jobs:
         with:
           persist-credentials: false
       - id: image
-        uses: mlorentedev/ci-workflows/.github/actions/docker-build@8ed7a7dfd6414cbee35602adbf8af155ad4b1b38
+        uses: mlorentedev/ci-workflows/.github/actions/docker-build@4591d9ec08f777d37f87737266688f7822a7f37c
         with:
           image: dotfiles-integration
           file: tests/integration/Dockerfile
