@@ -27,6 +27,8 @@ jobs:
       - if: inputs.declare_unreviewed
         run: dotf pr declare-unreviewed --diff "$DIFF"
       - run: dotf pr preflight --model "$DECLARED_MODEL"
+      - if: always() && steps.credential.outcome != 'failure'
+        run: dotf pr guard
   nested:
     uses: ./.github/workflows/other.yml
     secrets: inherit

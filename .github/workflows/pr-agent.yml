@@ -332,8 +332,12 @@ jobs:
           github_action_config.auto_improve: "false"
           github_action_config.fail_on_tool_errors: "true"
       - name: Fail if no review was published
+        # !cancelled(), not always(): a run that a newer push superseded is
+        # cancelled, and on always() the guard read that as a failed review and
+        # turned the stale SHA red (#85, hive#503). A failed step above still
+        # runs the guard, which is how a credential or publish failure surfaces.
         if: >
-          always() && steps.credential.outcome != 'failure'
+          !cancelled() && steps.credential.outcome != 'failure'
             && steps.reviewable.outcome != 'failure'
             && steps.reviewable.outputs.reviewable != 'false'
             && steps.push_gate.outputs.run != 'false'

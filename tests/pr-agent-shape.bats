@@ -81,6 +81,16 @@ uses_pinned_push_gate() {
     grep -Eq '^mlorentedev/ci-workflows/\.github/actions/push-gate@[0-9a-f]{40}$'
 }
 
+# A run a newer push superseded is cancelled, not failed. On always() the guard
+# still ran there and turned the stale SHA red, indistinguishable from a NaN or
+# credential failure (#85, hive#503). !cancelled() still runs it after a failed step.
+guard_skips_a_cancelled_run() {
+  local cond
+  cond=$(steps_running "$1" 'dotf pr guard' | yq '.if')
+  [ -n "${cond}" ] && [ "${cond}" != "null" ] &&
+    grep -qF '!cancelled()' <<<"${cond}" && ! grep -qF 'always()' <<<"${cond}"
+}
+
 assert_rule() {
   run "$1" "${WORKFLOW}"
   [ "${status}" -eq 0 ]
@@ -102,3 +112,4 @@ assert_rule() {
 @test "the skip runs before the credential check" { assert_rule skips_before_the_credential_check; }
 @test "the dotf install verifies a checksum" { assert_rule verifies_checksum; }
 @test "the push gate is the action, pinned by full SHA" { assert_rule uses_pinned_push_gate; }
+@test "the publish guard does not run in a cancelled run" { assert_rule guard_skips_a_cancelled_run; }
