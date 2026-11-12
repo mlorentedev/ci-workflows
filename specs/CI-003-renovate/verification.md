@@ -27,9 +27,10 @@ owner: manu
       the preset's window. The first scheduled run (42582312694, 2026-11-09) started 6.5 hours late, after the Monday 00:00-06:59 window had closed, and opened nothing; #48 widened the window to all of Monday. The preset-tag manager waits for the first tag.
 - [x] AC5 -> kubelab#3271 (b78d171): kubelab's `renovate.yml` and `tests/test_renovate_engine_version.py` are gone from
       master, `ci.renovate.image` survives only in the text of its IDP-036 spec, and its `renovate.json` extends the preset.
-- [x] AC6 -> eight repositories carry a `renovate.json` extending `renovate/default#v0.6.0`, read from each default
+- [ ] AC6 -> partial. Eight repositories carry a `renovate.json` extending `renovate/default#v0.6.0`, read from each default
       branch on 2026-11-12; per repository in tasks.md. Seven have no `dependabot.yml`; kubelab keeps its own by design.
-      dotfiles is out of the wave (dotfiles#3313).
+      dotfiles is out of the wave (dotfiles#3313). Both contradict AC6 as written, so it stays open until the
+      owner amends it or they adopt.
 - [x] AC7 -> ADR-001 decision 6 amended; README `## renovate`.
 
 ## Test status
