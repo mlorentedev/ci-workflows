@@ -111,6 +111,12 @@ assert_rule() {
 
 # One run a week: an hourly cap defers the overflow to next Monday (#73).
 # prConcurrentLimit still bounds the open PRs.
+@test "Poetry lock files get no refresh, which no release age could cover" {
+  # Poetry has no exclude-newer, so a poetry.lock refresh would pull a release
+  # published minutes earlier into a CI run with the repository's secrets (#86).
+  [ "$(jq -r '.poetry.lockFileMaintenance.enabled // false' "${PRESET}")" = "false" ]
+}
+
 @test "no hourly PR limit, and a concurrent one" {
   [ "$(jq -r '.prHourlyLimit' "${PRESET}")" = "0" ]
   jq -e '.prConcurrentLimit > 0' "${PRESET}"

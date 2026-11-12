@@ -585,9 +585,16 @@ file. Dependabot is not used: it does not exist on Gitea.
   actions pinned by digest, a weekly `uv.lock` refresh through lock file
   maintenance (a `>=` bound gets no update PR of its own), a three-day wait on
   new npm, PyPI and Go releases (a Renovate branch runs CI with the repository's
-  secrets; the uv lock refresh does not apply it yet, #81), at most three open PRs and no hourly cap (one run a week would defer
+  secrets), at most three open PRs and no hourly cap (one run a week would defer
   the rest by a week), a Dependency Dashboard, and no automerge. It is plain JSON
   with no GitHub-only option, so the Gitea run extends it too.
+- **The release age of a lock refresh** lives in each uv adopter, not in the
+  preset. The engine runs `uv lock --upgrade` with no cutoff, so an adopter adds
+  `[tool.uv] exclude-newer = "3 days"` to its `pyproject.toml`. uv records the
+  cutoff in `uv.lock`, so it cannot be set in the runner's environment alone: a
+  lock written that way fails `uv sync --locked` everywhere else (#81,
+  lesson-012). Poetry has no such cutoff, so `poetry.lock` gets no refresh
+  (#86): its transitive dependencies move when a direct one is bumped.
 - **The engine pin**, `renovate/engine.json`, is the Renovate image and version.
   The run here and the Gitea run both read it, and this repository's own
   Renovate bumps it.
