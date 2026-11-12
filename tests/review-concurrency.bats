@@ -32,8 +32,15 @@ associations_in() { grep -o "fromJSON('\[[^]]*\]')" | head -n 1; }
 }
 
 @test "a comment the shared job skips gets a group of its own" {
-  group_of "${CALLER}" | grep -Fq "!(startsWith(github.event.comment.body, '/')"
   group_of "${CALLER}" | grep -Fq "format('-{0}', github.event.comment.id)"
+}
+
+# Only /review shares the review group (#91). A trusted comment that merely
+# starts with a slash (a path, or /improve) would otherwise cancel an in-flight
+# /review, and the run replacing it publishes no Guide.
+@test "only a /review command shares the comment group" {
+  group_of "${CALLER}" | grep -Fq "!(startsWith(github.event.comment.body, '/review')"
+  [ -z "$(group_of "${CALLER}" | grep -F "startsWith(github.event.comment.body, '/')")" ]
 }
 
 @test "a bot's push gets a group of its own" {
