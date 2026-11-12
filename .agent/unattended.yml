@@ -1,0 +1,47 @@
+version: 1
+run_id: "ciw-20261112T0745Z-pra"
+armed_by: manu
+armed_at: 2026-11-12T07:15:00Z
+expires_at: 2026-11-12T19:05:00Z
+objective: "Open one draft PR each for ci-workflows #85, #91, #92 and #88 (which also resolves #87): the owner's fixes for the shared PR-Agent workflow, each tested and triaged, and none merged."
+scope:
+  write_paths:
+    - ".github/workflows/pr-agent.yml"
+    - ".github/workflows/review.yml"
+    - "specs/CI-007-fleet-pr-agent/**"
+    - "tests/review-concurrency.bats"
+    - "tests/class-guard.bats"
+    - "tests/pr-agent*.bats"
+    - "docs/lessons/lesson-013-*.md"
+    - ".agent/**"
+  frozen_paths:
+    - ".github/merge-grant.yml"
+    - ".github/workflows/release*.yml"
+    - ".github/actions/**"
+    - "tests/hygiene*.bats"
+    - "tests/toolchain-smokes.bats"
+    - "tests/renovate-shape.bats"
+    - "renovate/**"
+    - "specs/CI-003-renovate/**"
+    - "specs/CI-005-hygiene/**"
+    - "specs/CI-006-pages/**"
+    - "**/AGENTS.md"
+  max_files: 8
+  max_loc: 300
+  coordination: "Agreed 2026-11-12 with ci-workflows-34 (Renovate, #74; lesson 014) and chore-autopilot-ciw-20261102t0550z-7f (CI-005 and CI-006; lesson 015). This run owns lesson 013."
+allowed_commands: [dotf, gh, git, bats, yq, jq, python3, actionlint, shellcheck, make, sed, grep, awk]
+queue:
+  source: bitacora
+  filter: "ci-workflows #85, #91, #92, #88 (+#87), in that order; owner decisions recorded 2026-11-12 (#92 option A; #88 option A with the step bound raised)"
+  max_items: 4
+budget:
+  max_iterations: 6
+  max_minutes_per_iteration: 45
+  max_consecutive_failures: 2
+authority:
+  merge: never            # merge-grant.yml excludes path:.github/, and every item touches it
+  push: true
+  open_pr: true
+  advisor_tier: top
+host:
+  wake_lock: "pmset sleep 0, and caffeinate -i -t 43200 already running at arming"
