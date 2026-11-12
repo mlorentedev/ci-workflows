@@ -20,10 +20,11 @@ jobs with `if: github.actor != 'dependabot[bot]'`.
 Renovate pushes its branch into the repository with the owner's token. Its
 pull request is a same-repository run, its actor is the token owner, and it
 reads the repository's Actions secrets and whatever `GITHUB_TOKEN` scope the
-workflow grants. Neither protection fires. In the #74 inventory, kubelab's
-`call-publish` still pushed a Docker Hub image from a Renovate branch, and its
-test jobs ran dependency code with a write token granted at workflow level
-(kubelab#3344).
+workflow grants. Neither protection fires. The #74 inventory found two such
+paths in kubelab's workflows at 3e8adfd, read from the workflow files rather
+than observed in a run: `call-publish` lets a Renovate branch that changes an
+app push a Docker Hub image, and the test jobs run dependency code with a write
+token granted at workflow level (kubelab#3344).
 
 ## Solution
 
