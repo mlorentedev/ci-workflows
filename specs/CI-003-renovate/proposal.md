@@ -96,9 +96,9 @@ engine version and the GitHub workflow.
       `renovate.yml`, no `ci.renovate.image` and no engine test.
 6. [ ] Every non-archived GitHub repository with dependencies it maintains carries a `renovate.json` that
       extends the preset, and none carries a `dependabot.yml`. Tracked per repository in tasks.md. Amended
-      2026-11-12 by the owner. These repositories are exempt:
-      - kubelab keeps its `dependabot.yml`: Renovate runs only `custom.regex` and `ansible-galaxy` there, and
-        Dependabot keeps the ecosystems it already covered;
+      2026-11-12 by the owner. kubelab is exempt from the `dependabot.yml` clause only: it extends the preset, but
+      Renovate runs only `custom.regex` and `ansible-galaxy` there, so its `dependabot.yml` keeps the ecosystems
+      it already covered. These repositories are exempt from the whole criterion:
       - dotfiles is out of this wave (dotfiles#3313);
       - coursework kept as a record, not maintained: cloud-architecture-coursework, embedded-systems-coursework;
       - repositories with no package manifest, lock file or Dockerfile, whose only pinned dependencies are
