@@ -26,8 +26,8 @@ PR 1, the composite:
 PR 2, the publish workflow; PR 3, its callers and README:
 
 - [x] [AC2] (PR 2) Failing tests in `tests/docker-publish-shape.bats`: secrets declared by name, no `secrets: inherit`, `security-events: write` only on the job, push by digest with no tag before the gate, one scan and one gate per platform, the SARIF category an input suffixed by platform, the tags applied last. `tests/secrets-contract.bats` picks the workflow up. Then implement.
-- [ ] [AC4] (PR 3) Caller fixtures for web, kubelab and dotfiles under `tests/fixtures/docker-callers/`, with `tests/docker-callers.bats`. Not under `tests/fixtures/callers/`, which `tests/callers.bats` reads as pr-agent callers only.
-- [ ] (PR 3) README section, with the cache-size and Gitea notes.
+- [x] [AC4] (PR 3) Caller fixtures for web, kubelab and dotfiles under `tests/fixtures/docker-callers/`, with `tests/docker-callers.bats`. Not under `tests/fixtures/callers/`, which `tests/callers.bats` reads as pr-agent callers only.
+- [x] (PR 3) README section, with the cache-size and Gitea notes.
 
 PR 4..n, adoption (one per repository, merged by the owner):
 
