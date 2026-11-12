@@ -94,8 +94,16 @@ engine version and the GitHub workflow.
 4. [ ] This repository's Renovate opens a PR when `renovate/engine.json` is behind the latest engine.
 5. [ ] After the kubelab PR merges, kubelab's dashboard and PRs come from the central run. kubelab has no
       `renovate.yml`, no `ci.renovate.image` and no engine test.
-6. [ ] Every non-archived GitHub repository carries a `renovate.json` that extends the preset, and none
-      carries a `dependabot.yml`. Tracked per repository in tasks.md.
+6. [ ] Every non-archived GitHub repository with dependencies it maintains carries a `renovate.json` that
+      extends the preset, and none carries a `dependabot.yml`. Tracked per repository in tasks.md. Amended
+      2026-11-12 by the owner. These repositories are exempt:
+      - kubelab keeps its `dependabot.yml`: Renovate runs only `custom.regex` and `ansible-galaxy` there, and
+        Dependabot keeps the ecosystems it already covered;
+      - dotfiles is out of this wave (dotfiles#3313);
+      - coursework kept as a record, not maintained: cloud-architecture-coursework, embedded-systems-coursework;
+      - repositories with no package manifest, lock file or Dockerfile, whose only pinned dependencies are
+        the shared board workflows: boilerplates, emva1288-sensor-characterization, mlorentedev,
+        telecom-engineering, vicon-fpga-face-detection.
 7. [ ] ADR-001 §6 is amended: Renovate bumps the pins, not Dependabot.
 
 ## References
