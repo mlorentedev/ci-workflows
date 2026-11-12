@@ -22,7 +22,7 @@ owner: manu
 - [x] Kit written: `kit/class-paragraph.txt` (byte-identical to the first paragraph of this repository's
       `extra_instructions`) and `kit/classification.json` (the block each registry gains).
 - [x] Fork 2b decided by the owner (2026-11-12): (A2), one guard in the shared `pr-agent.yml`, built in #82.
-- [ ] Coordinated with the session opening the day-T Renovate and hygiene PRs: no file overlap
+- [x] Coordinated with the session opening the day-T Renovate and hygiene PRs: no file overlap
       (`renovate.json`, `.github/dependabot.yml`, `repo-hygiene.yml`, `scripts/check-lessons.sh`,
       `docs/lessons/**`). Re-check on T+1 before opening, with `gh pr list` in each adopter.
 
@@ -30,30 +30,32 @@ owner: manu
 
 Per adopter, one draft PR from `chore/adopt-shared-pr-agent`, in its own worktree:
 
-- [ ] [AC1] Replace `.github/workflows/pr-agent.yml` with `kit/pr-agent.yml`: hive's `pr-agent-shared.yml`
-      shape, pinned to v0.5.0 (`04f2d0a…`). Carry over any trigger or input the old file had for a reason
+- [x] [AC1] Replace `.github/workflows/pr-agent.yml` with `kit/pr-agent.yml`: hive's `pr-agent-shared.yml`
+      shape, pinned by full SHA. The PRs opened on v0.5.0 (`04f2d0a…`) and merged on v0.6.0 (`2355330…`). Carry over any trigger or input the old file had for a reason
       (read its comments first). In hive, delete both old files and keep only this caller.
-- [ ] [AC2] No `The-PR-Agent/pr-agent` left in any workflow (`grep -r` in the worktree).
-- [ ] [AC3] Trim `.pr_agent.toml` to what differs from the base, and put `kit/class-paragraph.txt` first in
+- [x] [AC2] No `The-PR-Agent/pr-agent` left in any workflow (`grep -r` in the worktree).
+- [x] [AC3] Trim `.pr_agent.toml` to what differs from the base, and put `kit/class-paragraph.txt` first in
       `extra_instructions`, byte for byte. In svqtriana.github.io, replace its existing backtick paragraph;
       its `scripts/check-harness.mjs` checks substrings `Class: <name>`, which the kit paragraph still contains.
-- [ ] [AC3] Add `classification` from `kit/classification.json` to `harness/review-attestation.json`
+- [x] [AC3] Add `classification` from `kit/classification.json` to `harness/review-attestation.json`
       (svqtriana.github.io already has it: leave it, or align `why`).
-- [ ] [AC3] No per-adopter guard: (A2) puts it in the shared workflow (#82), reached through the pin bump.
-- [ ] Run the repository's own checks locally before pushing.
+- [x] [AC3] No per-adopter guard: (A2) puts it in the shared workflow (#82), reached through the pin bump.
+- [x] Run the repository's own checks locally before pushing.
 
 Then, in order:
 
-- [ ] One dotfiles PR adds the twelve as `ci:` consumers of `PR_AGENT_ANTHROPIC_API_KEY` in
+- [x] One dotfiles PR adds the twelve as `ci:` consumers of `PR_AGENT_ANTHROPIC_API_KEY` in
       `secrets/registry.yaml`, with the guard list in `tests/pr-agent-config.bats`, as dotfiles#3210 did.
       Its body links the twelve open drafts, which is what satisfies the consumer rule.
-- [ ] Owner merges it and runs `dotf secrets sync ci` for the twelve.
-- [ ] [AC4] `gh pr ready` four adopters at a time. Start the next four only once each of the previous
+- [x] Owner merges it and runs `dotf secrets sync ci` for the twelve.
+- [x] [AC4] `gh pr ready` four adopters at a time. Start the next four only once each of the previous
       four has a PR-Agent review and no other review is running in the fleet.
-- [ ] Triage each PR (`## Review triage`); the owner merges (adopter workflows are always-human).
+- [x] Triage each PR (`## Review triage`); the owner merges (adopter workflows are always-human).
 - [ ] [AC3] After each adopter merges, confirm the classification on its next PR-Agent review with findings:
       the shared workflow reads `.pr_agent.toml` and the registry from the default branch, so the adopter
       PR's own review cannot exercise the paragraph it adds. Record the link in `verification.md`.
+      Nine of twelve recorded on 2026-11-12; leaving-denver, pollex and svqtriana.github.io have had no
+      review with findings yet.
 
 ## Closing
 
