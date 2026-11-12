@@ -85,7 +85,7 @@ Three forks for the owner to decide before any fleet PR opens. Forks 1 and 2 are
      - (C) A base file through `EXTRA_CONFIG_URL`, with repositories putting their extras under a different key.
    - Before (C) is chosen, check that the image the shared workflow pins (`pragent/pr-agent@sha256:80edef7…`)
      supports `EXTRA_CONFIG_URL`.
-   - **2b, open: where the guard runs.** (A) assumed each adopter could carry a test like #61's. The
+   - **2b, decided 2026-11-12: (A2), the guard in the shared workflow (#82).** (A) assumed each adopter could carry a test like #61's. The
      inventory below says otherwise: eleven of the twelve have no bats, and only ts-bridge runs it in CI.
      - (A1) A per-repository guard, as svqtriana.github.io already has in `scripts/check-harness.mjs`.
        Drift fails the adopter's own PR. Costs a CI step in eleven adopters (`.github/workflows/` touched in
@@ -95,8 +95,8 @@ Three forks for the owner to decide before any fleet PR opens. Forks 1 and 2 are
        implementation, nothing added to adopter CI. Drift fails the next review run, not the drifting PR.
        It is a change to the shared workflow, so it is its own PR here, and it reaches the adopters only
        through a release and a bump of each caller's SHA pin (Renovate's, once #30 is adopted).
-     - Recommended: (A2). Neither blocks T+1: the paragraph and the registry block land first, and the
-       guard follows. f3's "a `.bats` file holds the test" clause follows this decision.
+     - Decided: (A2), by the owner. It does not block T+1: the paragraph and the registry block land
+       first, and the guard follows through #82, a release and each adopter's next pin bump.
 3. **Batch order and size.** ci-workflows-34 opens every Renovate and hygiene adopter PR on day T, when
    v0.5.0 is tagged; the owner chose not to stagger (2026-11-10). The adopter PRs here therefore start on T+1,
    in any order.
@@ -132,7 +132,7 @@ still contains.
 - [ ] Every adopting repository (the twelve in Why) calls the shared workflow pinned by full SHA.
 - [ ] No adopter keeps a copy of the review steps (`The-PR-Agent/pr-agent` appears in no adopter's workflows).
 - [ ] Each adopter's `.pr_agent.toml` holds only what differs from the base, and asks for the `Class:` line
-      in the paragraph fork 2 (A) decides, guarded by a test against its own registry.
+      in the paragraph fork 2 (A) decides, guarded against its own registry by the shared workflow (2b, #82).
 - [ ] Every adopter PR gets a PR-Agent review from the shared workflow. No batch loses a review to NaN's slot
       limit.
 
