@@ -5,9 +5,9 @@ armed_at: 2026-11-12T07:08:14Z
 expires_at: 2026-11-12T19:08:14Z
 objective: "Record the #74 secret-exposure inventory, close CI-003 AC6 with exceptions plus adoption PRs, then implement CI-010 docker-build."
 scope:
-  write_paths: ["specs/CI-003-renovate/**", "specs/CI-010-docker-build/**", "renovate/**", "tests/renovate-shape.bats", "tests/docker-build*.bats", "tests/fixtures/docker-build/**", ".github/workflows/docker-build.yml", "README.md", "docs/lessons/lesson-014-*.md", ".agent/**"]
-  frozen_paths: [".github/merge-grant.yml", ".github/workflows/pr-agent.yml", ".github/workflows/review.yml", ".github/actions/**", "specs/CI-005-hygiene/**", "specs/CI-006-pages/**", "specs/CI-007-fleet-pr-agent/**", "**/AGENTS.md"]
-  max_files: 8
+  write_paths: ["specs/CI-003-renovate/**", "specs/CI-010-docker-build/**", "renovate/**", "tests/renovate-shape.bats", ".github/actions/docker-build/**", ".github/workflows/docker-publish.yml", ".github/workflows/lint.yml", "tests/docker*.bats", "tests/gate.bats", "tests/fixtures/docker-callers/**", "tests/fixtures/docker-build/**", "README.md", "docs/lessons/lesson-014-*.md", ".agent/**"]
+  frozen_paths: [".github/merge-grant.yml", ".github/workflows/pr-agent.yml", ".github/workflows/review.yml", ".github/actions/hygiene/**", ".github/actions/gate/**", ".github/actions/push-gate/**", ".github/actions/setup-*/**", ".github/actions/changes/**", "specs/CI-005-hygiene/**", "specs/CI-006-pages/**", "specs/CI-007-fleet-pr-agent/**", "**/AGENTS.md"]
+  max_files: 10
   max_loc: 300
   cross_repo: "adopter PRs add renovate.json and remove .github/dependabot.yml only; never merged by the run"
 allowed_commands: [dotf, gh, git, make, bats, jq, docker, actionlint]
@@ -24,6 +24,8 @@ authority:
   push: true
   open_pr: true
   advisor_tier: top
+widened:
+  - "2026-11-12T07:50Z by manu: CI-010 paths added (composite .github/actions/docker-build, docker-publish.yml, lint.yml smoke jobs, docker tests and fixtures); .github/actions/** frozen narrowed to the existing composites"
 peers:
   - "feat-issue-15-release-please-50: #85 #91 #92, pr-agent/review workflows, CI-007, lesson 013"
   - "chore-autopilot-ciw-20261102t0550z-7f (ciw-20261112T0702Z): CI-005, CI-006, hygiene composite, lesson 015"
