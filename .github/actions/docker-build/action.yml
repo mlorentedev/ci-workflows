@@ -1,0 +1,118 @@
+# Build an image with buildx and a layer cache scoped to it (spec CI-010, issue #11).
+#
+# Runs in the caller's job, so a job that builds and then runs the image keeps its
+# shape. It never logs in: a caller that pushes logs in first, or uses
+# docker-publish.yml.
+#
+# The cache is GitHub's (`type=gha`), scoped by default to the image name, so two
+# images built in one repository never overwrite each other's cache. Gitea's
+# runner cache is unverified with `type=gha`; there, pass cache-from and cache-to
+# (for example `type=registry`).
+name: docker-build
+description: Build an image with buildx and a per-image gha layer cache.
+
+inputs:
+  image:
+    description: Image name, without a tag. The cache scope defaults to it.
+    required: true
+  context:
+    description: Build context.
+    default: "."
+  file:
+    description: Dockerfile path. Empty means the context's Dockerfile.
+    default: ""
+  tags:
+    description: Tags, one per line or comma-separated. Empty means the image name alone.
+    default: ""
+  build-args:
+    description: Build arguments, one KEY=value per line.
+    default: ""
+  platforms:
+    description: Target platforms, comma-separated. Empty means the runner's.
+    default: ""
+  load:
+    description: Load the image into the runner's docker, to run it in a later step. Excludes push.
+    default: "false"
+  push:
+    description: Push the image. The caller logs in first. Excludes load.
+    default: "false"
+  cache-scope:
+    description: Cache scope. Empty means one derived from the image name.
+    default: ""
+  cache-mode:
+    description: gha cache-to mode, max (every layer) or min (the final image's). max can approach the 10 GB per-repository cache on multi-platform builds.
+    default: max
+  cache-from:
+    description: Overrides the gha cache source, for example type=registry,ref=<image>:cache.
+    default: ""
+  cache-to:
+    description: Overrides the gha cache destination.
+    default: ""
+
+outputs:
+  digest:
+    description: Image digest.
+    value: ${{ steps.build.outputs.digest }}
+  imageid:
+    description: Image ID.
+    value: ${{ steps.build.outputs.imageid }}
+  cache-scope:
+    description: The cache scope used.
+    value: ${{ steps.resolve.outputs.scope }}
+
+runs:
+  using: composite
+  steps:
+    - id: resolve
+      shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
+        CACHE_SCOPE: ${{ inputs.cache-scope }}
+        CACHE_MODE: ${{ inputs.cache-mode }}
+        CACHE_FROM: ${{ inputs.cache-from }}
+        CACHE_TO: ${{ inputs.cache-to }}
+        LOAD: ${{ inputs.load }}
+        PUSH: ${{ inputs.push }}
+      run: |
+        if [ "${LOAD}" = "true" ] && [ "${PUSH}" = "true" ]; then
+          echo "::error::docker-build: load and push are exclusive; a loaded image is never pushed"
+          exit 1
+        fi
+        case "${CACHE_MODE}" in
+          max | min) ;;
+          *)
+            echo "::error::docker-build: cache-mode must be max or min, not '${CACHE_MODE}'"
+            exit 1
+            ;;
+        esac
+        # The scope: the explicit one if it has any text, else the image name with
+        # every character a scope should not carry turned into a dash.
+        scope=$(tr -d '[:space:]' <<<"${CACHE_SCOPE}")
+        if [ -z "${scope}" ]; then
+          scope=$(tr -d '[:space:]' <<<"${IMAGE}" | tr -c 'A-Za-z0-9._\n-' '-' | sed -e 's/^-*//' -e 's/-*$//')
+        fi
+        if [ -z "${scope}" ]; then
+          echo "::error::docker-build: no cache scope; the image name '${IMAGE}' leaves none, so pass cache-scope"
+          exit 1
+        fi
+        {
+          echo "scope=${scope}"
+          echo "cache-from=${CACHE_FROM:-type=gha,scope=${scope}}"
+          echo "cache-to=${CACHE_TO:-type=gha,scope=${scope},mode=${CACHE_MODE}}"
+        } >>"${GITHUB_OUTPUT}"
+
+    - id: buildx
+      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+    - id: build
+      uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.file }}
+        tags: ${{ inputs.tags || inputs.image }}
+        build-args: ${{ inputs.build-args }}
+        platforms: ${{ inputs.platforms }}
+        load: ${{ inputs.load }}
+        push: ${{ inputs.push }}
+        cache-from: ${{ steps.resolve.outputs.cache-from }}
+        cache-to: ${{ steps.resolve.outputs.cache-to }}
