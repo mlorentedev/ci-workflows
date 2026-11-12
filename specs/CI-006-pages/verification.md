@@ -15,7 +15,7 @@ owner: manu
 - [x] Criterion 2. `pages-shape.bats`: build reads only, deploy asks for pages and id-token, timeouts, credentials, pull request skips upload and deploy, optional check, inputs through env, `page_url`.
 - [x] Criterion 3. `pages-callers.bats`, 5 tests over `fixtures/pages-callers/{hive,ts-bridge}.yml`, each rule failing on `fixtures/pages-caller-shape-bad.yml`.
 - [x] Criterion 4. README `## pages`.
-- [ ] Criterion 5. After release: the first consumer's migration PR and its deploy run.
+- [x] Criterion 5. ts-bridge#741 calls `pages.yml@2355330` (v0.6.0) from its `pages` job. It merged as `9c9d70b` on 2026-11-12. Push run [43288112747](https://github.com/mlorentedev/ts-bridge/actions/runs/43288112747) ran `pages / build` (job 131426819277) and `pages / deploy` (job 131427043625), both success. `https://mlorentedev.github.io/ts-bridge/` answers 200 afterwards. The caller fixture `tests/fixtures/pages-callers/ts-bridge.yml` matches the merged file's `jobs:` block, except for the pin, which the fixture spells as a placeholder.
 
 ## Test status
 

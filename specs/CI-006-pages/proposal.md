@@ -62,7 +62,7 @@ A fix to one copy reaches no other.
       Both set `timeout-minutes`. `deploy` is skipped on pull requests.
 3. [x] The hive and ts-bridge caller fixtures pass only declared inputs and grant what each job asks for.
 4. [x] The README documents the inputs, the output, the grant and a caller.
-5. [ ] After release, one of the five repositories calls the workflow and its deploy stays green (issue #32's
+5. [x] After release, one of the five repositories calls the workflow and its deploy stays green (issue #32's
       criterion, verified in that repository's migration pull request).
 
 ## References
