@@ -36,6 +36,9 @@ Map every acceptance criterion from `proposal.md` to concrete proof (commit hash
 - The composite gained `push-by-digest`, which pushes the image untagged, so `docker-publish.yml` names no tag before
   its gate. It lands with the composite in #102: pinned at a commit without it, the input would be ignored and the
   build would push nothing, leaving the scan an empty digest.
+- The derived cache scope carries a hash of the image name, and an explicit scope is sanitized too (review on #102).
+  Sanitizing alone maps `ghcr.io/o/a/b` and `ghcr.io/o/a-b` to one scope; the hash costs readability in the cache
+  list and buys a scope per image. The composite's `cache-scope` output names the scope in use.
 - Secrets are `REGISTRY_USERNAME` and `REGISTRY_TOKEN`, the repository's uppercase convention (`RELEASE_TOKEN`).
   The proposal's lowercase names refer to the same secrets.
 

@@ -499,8 +499,11 @@ that builds and then runs the image keeps its shape:
 ```
 
 - **Cache.** `type=gha`, scoped by default to the image name, so two images in one repository never
-  overwrite each other's cache. `cache-scope` overrides the scope. An image name that leaves no scope fails
-  the build, rather than falling back to buildx's shared default.
+  overwrite each other's cache. The default scope is the name with every character but letters, digits,
+  `.`, `_` and `-` turned into a dash, plus 8 hex characters of the name's hash: `ghcr.io/o/a/b` and
+  `ghcr.io/o/a-b` sanitize alike, and the hash keeps them apart. `cache-scope` overrides the scope and is
+  sanitized the same way, without the hash. An image name that leaves no scope fails the build, rather
+  than falling back to buildx's shared default. `cache-from` and `cache-to` take a list, one entry a line.
 - **Cache size.** GitHub keeps 10 GB of cache per repository and evicts the least recently used entries.
   `cache-mode: max` (the default) caches every layer and can approach that on a multi-platform build;
   `min` caches only the final image's layers.
