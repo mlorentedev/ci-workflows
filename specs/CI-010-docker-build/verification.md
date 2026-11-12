@@ -13,21 +13,30 @@ owner: manu
 
 Map every acceptance criterion from `proposal.md` to concrete proof (commit hash, test name, or observed behavior).
 
-- [ ] Criterion 1 -> commit `<hash>` / test `<name>`
-- [ ] Criterion 2 -> commit `<hash>` / test `<name>`
-- [ ] Criterion 3 -> commit `<hash>` / test `<name>`
-- [ ] Criterion 4 -> commit `<hash>` / test `<name>`
+- [ ] AC1 -> #102: `tests/docker-build.bats`, which asserts the scope defaults to the image and that no input
+      value leaves it empty. Checked when #102 merges.
+- [ ] AC2 -> `tests/docker-publish-shape.bats`, which asserts push by digest, one scan and gate per platform, no tag before
+      the gate, and secrets by name. `tests/secrets-contract.bats` picks the workflow up. Checked when the second PR merges.
+- [ ] AC3 -> #102, run on 1c41729 (2026-11-12): `smoke-docker-build-warm` rebuilt the fixture in 7 s on a fresh runner,
+      after `importing cache manifest from gha`, and read the cold job's stamp. The stamp was a seconds timestamp then,
+      since busybox `date` has no `%N`; 2b4a6b5 switched it to a random id. Checked when #102 merges.
+- [ ] AC4 -> `tests/docker-callers.bats` over the web, kubelab and dotfiles fixtures. Checked when the third PR merges.
 - [ ] Criterion 5 -> per adopter: the PR, and the build time or cache restore measured
 
 ## Test status
 
-- Test suite: `<command> -> <output / coverage %>`
-- Manual smoke test: what was exercised, what was observed
-- No regressions in existing test suite: yes / no (if no, document)
+- `bats tests/`: 303 tests, 0 failures. `actionlint`: clean.
+- No regressions in the existing suite.
 
 ## Decisions made during implementation
 
-Brief log of non-obvious trade-offs or course corrections taken during the work. Routine choices belong in commit messages, not here.
+- `docker-publish.yml` calls the composite as `mlorentedev/ci-workflows/.github/actions/docker-build@<sha>`, not `./`.
+  Inside a reusable workflow, `./` is the caller's checkout. Until a release ships the composite, the pin is #102's
+  head; it is repointed at the release.
+- The composite gained `push-by-digest`, which pushes the image untagged, so `docker-publish.yml` names no tag before
+  its gate.
+- Secrets are `REGISTRY_USERNAME` and `REGISTRY_TOKEN`, the repository's uppercase convention (`RELEASE_TOKEN`).
+  The proposal's lowercase names refer to the same secrets.
 
 -
 -

@@ -36,6 +36,9 @@ inputs:
   push:
     description: Push the image. The caller logs in first. Excludes load.
     default: "false"
+  push-by-digest:
+    description: Push the image under its name with no tag, for a caller that tags the digest later (docker-publish.yml scans it first). Excludes load and push.
+    default: "false"
   cache-scope:
     description: Cache scope. Empty means one derived from the image name.
     default: ""
@@ -73,10 +76,19 @@ runs:
         CACHE_TO: ${{ inputs.cache-to }}
         LOAD: ${{ inputs.load }}
         PUSH: ${{ inputs.push }}
+        PUSH_BY_DIGEST: ${{ inputs.push-by-digest }}
       run: |
         if [ "${LOAD}" = "true" ] && [ "${PUSH}" = "true" ]; then
           echo "::error::docker-build: load and push are exclusive; a loaded image is never pushed"
           exit 1
+        fi
+        outputs=""
+        if [ "${PUSH_BY_DIGEST}" = "true" ]; then
+          if [ "${LOAD}" = "true" ] || [ "${PUSH}" = "true" ]; then
+            echo "::error::docker-build: push-by-digest excludes load and push, which name a tag"
+            exit 1
+          fi
+          outputs="type=image,name=${IMAGE},push-by-digest=true,name-canonical=true,push=true"
         fi
         case "${CACHE_MODE}" in
           max | min) ;;
@@ -96,6 +108,7 @@ runs:
           exit 1
         fi
         {
+          echo "outputs=${outputs}"
           echo "scope=${scope}"
           echo "cache-from=${CACHE_FROM:-type=gha,scope=${scope}}"
           echo "cache-to=${CACHE_TO:-type=gha,scope=${scope},mode=${CACHE_MODE}}"
@@ -109,10 +122,11 @@ runs:
       with:
         context: ${{ inputs.context }}
         file: ${{ inputs.file }}
-        tags: ${{ inputs.tags || inputs.image }}
+        tags: ${{ inputs.push-by-digest != 'true' && (inputs.tags || inputs.image) || '' }}
         build-args: ${{ inputs.build-args }}
         platforms: ${{ inputs.platforms }}
         load: ${{ inputs.load }}
         push: ${{ inputs.push }}
+        outputs: ${{ steps.resolve.outputs.outputs }}
         cache-from: ${{ steps.resolve.outputs.cache-from }}
         cache-to: ${{ steps.resolve.outputs.cache-to }}
