@@ -1,0 +1,184 @@
+# Publish an image: build, scan every platform, then tag (spec CI-010, issue #11).
+#
+# 1. build pushes the image by digest only, so no tag points at it yet.
+# 2. scan runs Trivy on that digest once per platform, uploads each SARIF report
+#    under the caller's category plus the platform, and fails on CRITICAL.
+# 3. tag applies the caller's tags to the digest, and only after every scan passed.
+#
+# A CRITICAL finding or a Trivy outage leaves an untagged digest in the registry:
+# nothing a consumer pulls by tag. Registry credentials are passed by name; a
+# caller never uses `secrets: inherit`. Tag computation and release promotion
+# stay in the caller.
+name: docker-publish
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: Image name with its registry and no tag, e.g. docker.io/owner/app.
+        type: string
+        required: true
+      tags:
+        description: Tags to apply once the scans pass, one per line or comma-separated, without the image name.
+        type: string
+        required: true
+      sarif-category:
+        description: Code scanning category for the Trivy reports; each platform's report adds its platform.
+        type: string
+        required: true
+      registry:
+        description: Registry to log in to.
+        type: string
+        default: docker.io
+      context:
+        description: Build context.
+        type: string
+        default: "."
+      file:
+        description: Dockerfile path. Empty means the context's Dockerfile.
+        type: string
+        default: ""
+      platforms:
+        description: Target platforms, comma-separated.
+        type: string
+        default: linux/amd64
+      build-args:
+        description: Build arguments, one KEY=value per line.
+        type: string
+        default: ""
+      cache-scope:
+        description: Cache scope. Empty means one derived from the image name.
+        type: string
+        default: ""
+      cache-mode:
+        description: gha cache-to mode, max or min.
+        type: string
+        default: max
+    secrets:
+      REGISTRY_USERNAME:
+        required: true
+      REGISTRY_TOKEN:
+        required: true
+    outputs:
+      digest:
+        description: The published digest. Promote by it, never by a tag.
+        value: ${{ jobs.build.outputs.digest }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      platforms: ${{ steps.platforms.outputs.list }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: platforms
+        env:
+          PLATFORMS: ${{ inputs.platforms }}
+        run: echo "list=$(tr ',' '\n' <<<"${PLATFORMS}" | tr -d '[:blank:]' | sed '/^$/d' | jq -Rnc '[inputs]')" >>"${GITHUB_OUTPUT}"
+      - if: contains(inputs.platforms, 'arm') || contains(inputs.platforms, 's390x') || contains(inputs.platforms, 'ppc64le')
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+      - id: build
+        # Repointed at the release that ships the composite (#102); the head of
+        # #102 until then.
+        uses: mlorentedev/ci-workflows/.github/actions/docker-build@8ed7a7dfd6414cbee35602adbf8af155ad4b1b38
+        with:
+          image: ${{ inputs.image }}
+          context: ${{ inputs.context }}
+          file: ${{ inputs.file }}
+          platforms: ${{ inputs.platforms }}
+          build-args: ${{ inputs.build-args }}
+          push-by-digest: "true"
+          cache-scope: ${{ inputs.cache-scope }}
+          cache-mode: ${{ inputs.cache-mode }}
+
+  scan:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(needs.build.outputs.platforms) }}
+    steps:
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+      - id: platform-key
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: echo "key=${PLATFORM//\//-}" >>"${GITHUB_OUTPUT}"
+      # Reports CRITICAL and HIGH to the Security tab; a scanner failure here
+      # does not fail the job, the gate below does.
+      - id: report
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        continue-on-error: true
+        env:
+          TRIVY_PLATFORM: ${{ matrix.platform }}
+        with:
+          image-ref: ${{ inputs.image }}@${{ needs.build.outputs.digest }}
+          format: sarif
+          output: ${{ runner.temp }}/trivy.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+      - id: upload
+        if: hashFiles(format('{0}/trivy.sarif', runner.temp)) != ''
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        continue-on-error: true
+        with:
+          sarif_file: ${{ runner.temp }}/trivy.sarif
+          category: ${{ inputs.sarif-category }}-${{ steps.platform-key.outputs.key }}
+      # Fails closed: a CRITICAL finding, or a scanner that cannot scan.
+      - id: gate
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_PLATFORM: ${{ matrix.platform }}
+        with:
+          image-ref: ${{ inputs.image }}@${{ needs.build.outputs.digest }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+  tag:
+    needs: [build, scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - env:
+          IMAGE: ${{ inputs.image }}
+          DIGEST: ${{ needs.build.outputs.digest }}
+          TAGS: ${{ inputs.tags }}
+        run: |
+          args=()
+          while IFS= read -r tag; do
+            [ -n "${tag}" ] && args+=(-t "${IMAGE}:${tag}")
+          done < <(tr ',' '\n' <<<"${TAGS}" | tr -d '[:blank:]')
+          if [ "${#args[@]}" -eq 0 ]; then
+            echo "::error::docker-publish: no tags to apply"
+            exit 1
+          fi
+          docker buildx imagetools create "${args[@]}" "${IMAGE}@${DIGEST}"
