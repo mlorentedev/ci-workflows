@@ -1,0 +1,14 @@
+# Breaks the build-then-run rule: the image is pushed, not loaded, and the
+# composite is pinned by branch.
+on:
+  pull_request:
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - id: image
+        uses: mlorentedev/ci-workflows/.github/actions/docker-build@main
+        with:
+          image: app
+          push: "true"
+      - run: docker run --rm app
