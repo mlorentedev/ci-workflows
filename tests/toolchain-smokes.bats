@@ -32,8 +32,10 @@ job() { yq ".jobs.$1.$2" "${WORKFLOW}"; }
 }
 
 @test "the smokes' run steps avoid bash 4 case expansions, which macOS bash 3.2 rejects" {
-  local smoke
+  local smoke steps
   for smoke in ${SMOKES}; do
+    steps=$(yq ".jobs.${smoke}.steps[].run | select(. != null)" "${WORKFLOW}")
+    [ -n "${steps}" ]
     run bash -c "yq '.jobs.${smoke}.steps[].run | select(. != null)' '${WORKFLOW}' | grep -E '[,^]{1,2}\}'"
     [ "$status" -ne 0 ]
   done
@@ -52,4 +54,31 @@ job() { yq ".jobs.$1.$2" "${WORKFLOW}"; }
   version=$(jq -r '.dependencies["@playwright/test"]' "${NODE_FIXTURE}/package.json")
   [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
   [ "$(jq -r '.packages["node_modules/@playwright/test"].version' "${NODE_FIXTURE}/package-lock.json")" = "${version}" ]
+}
+
+# The node smoke's key guard, run the way the runner runs it. /bin/bash is
+# what macOS gives a run step, so the guard must hold under that bash too.
+node_key_check() {
+  yq '.jobs.smoke-setup-node.steps[] | select(.name == "Report the cache") | .run' "${WORKFLOW}" >"${BATS_TEST_TMPDIR}/node-key.sh"
+  RUNNER_ARCH="$1" RUNNER_OS="$2" KEY="$3" HIT=true PLAYWRIGHT_HIT=true \
+    run "${4:-bash}" --noprofile --norc -e "${BATS_TEST_TMPDIR}/node-key.sh"
+}
+
+@test "the node smoke accepts a key naming the runner's platform and arch" {
+  node_key_check ARM64 macOS node-cache-macOS-arm64-npm-abc
+  [ "$status" -eq 0 ]
+  node_key_check X64 Linux node-cache-linux-x64-npm-abc
+  [ "$status" -eq 0 ]
+  node_key_check ARM64 macOS node-cache-macOS-arm64-npm-abc /bin/bash
+  [ "$status" -eq 0 ]
+}
+
+@test "the node smoke fails a key without the platform and the arch" {
+  node_key_check ARM64 macOS node-cache-macOS-npm-abc
+  [ "$status" -ne 0 ]
+  node_key_check X64 Linux node-cache-macOS-x64-npm-abc
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"does not start with node-cache-Linux-X64-npm-"* ]]
+  node_key_check ARM64 macOS node-cache-macOS-npm-abc /bin/bash
+  [ "$status" -ne 0 ]
 }
