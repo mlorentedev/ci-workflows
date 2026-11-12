@@ -36,3 +36,8 @@ Armed 2026-11-12T07:06:00Z, expires 19:06:00Z. `merge: never`: every PR below wa
 
 - The frontmatter-only check must compare hunk ranges with the frontmatter's closing `---` on both sides; a line-number heuristic missed ts-bridge's H1.
 - A fresh worktree of a uv project needs `uv sync --all-groups` before a commit whose hooks run mypy.
+
+## Close
+
+- Every opened PR passes `dotf pr triage-queue --pr N` (exit 0); ci-workflows#98 was behind and its branch was updated again.
+- Board status for #31 and #32 not set: GraphQL rate limit exceeded at close. Both should read In Progress.
