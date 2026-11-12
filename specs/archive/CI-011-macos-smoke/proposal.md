@@ -1,7 +1,7 @@
 ---
 id: "CI-011-macos-smoke"
 type: spec
-status: verifying # draft | implementing | verifying | archived
+status: archived # draft | implementing | verifying | archived
 created: "2026-11-11"
 issue: "mlorentedev/ci-workflows#71"   # repo#NNN — GitHub issue / Project item that tracks this spec
 tags: [spec, proposal, ci, toolchains, macos, cache]
@@ -52,3 +52,5 @@ Option (B), a scheduled job outside `gate`, was rejected: it finds a regression 
 - Fleet rule: mlorentedev/dotfiles#3147
 - ADR: `docs/adr/adr-001-*.md` (the single `gate` job)
 - Lessons: `docs/lessons/lesson-009-a-cache-hit-is-proved-by-rerunning-the-same-job.md`, `docs/lessons/lesson-010-a-carriage-return-in-ifs-splits-differently-across-bash-versions.md`
+
+<!-- archived 2026-11-11 — PR: https://github.com/mlorentedev/ci-workflows/pull/79 -->
