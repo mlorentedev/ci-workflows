@@ -1,7 +1,7 @@
 ---
 id: "CI-010-docker-build"
 type: spec
-status: draft # draft | implementing | verifying | archived
+status: implementing # draft | implementing | verifying | archived
 created: "2026-11-11"
 issue: "mlorentedev/ci-workflows#11"   # repo#NNN — GitHub issue / Project item that tracks this spec
 tags: [spec, proposal, ci, docker, cache, runner-wait]
