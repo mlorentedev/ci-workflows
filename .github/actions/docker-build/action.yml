@@ -40,7 +40,7 @@ inputs:
     description: Push the image under its name with no tag, for a caller that tags the digest later (docker-publish.yml scans it first). Excludes load and push.
     default: "false"
   cache-scope:
-    description: Cache scope. Empty means one derived from the image name.
+    description: Cache scope, with any character but letters, digits, dot, underscore and dash turned into a dash. Empty means the image name treated the same way, plus 8 hex characters of its hash.
     default: ""
   cache-mode:
     description: gha cache-to mode, max (every layer) or min (the final image's). max can approach the 10 GB per-repository cache on multi-platform builds.
