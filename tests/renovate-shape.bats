@@ -86,6 +86,46 @@ assert_rule() {
   [ "$(jq -c '.schedule' "${PRESET}")" = '["* * * * 1"]' ]
 }
 
+# The Actions prefix is `ci(deps):`, which release-please does not release. In a
+# group that also held an application update, that title would hide the update
+# from the release (#73), so Actions minor and patch updates group on their own,
+# in a rule after the general group so it wins.
+@test "GitHub Actions updates group apart from application updates" {
+  local general actions
+  general=$(jq '[.packageRules[] | .groupName == "minor and patch updates"] | index(true)' "${PRESET}")
+  actions=$(jq '[.packageRules[] | (.matchManagers == ["github-actions"] and (.groupName // "") != "" and .groupName != "minor and patch updates")] | index(true)' "${PRESET}")
+  [ "${general}" != "null" ] && [ "${actions}" != "null" ]
+  [ "${actions}" -gt "${general}" ]
+  [ "$(jq -c ".packageRules[${actions}].matchUpdateTypes" "${PRESET}")" = "$(jq -c ".packageRules[${general}].matchUpdateTypes" "${PRESET}")" ]
+}
+
+# PEP 621 has no lockfile-only update: a `>=` bound a new version satisfies gets
+# no PR, so uv.lock went stale where Dependabot refreshed it (#73).
+@test "PEP 621 lock files are refreshed by lock file maintenance" {
+  [ "$(jq -r '.pep621.lockFileMaintenance.enabled' "${PRESET}")" = "true" ]
+  # The engine's own lockFileMaintenance schedule is "before 4am on monday",
+  # which replaces the preset's. A run that starts late (lesson-007) would skip
+  # the refresh for a week, so the block repeats the preset's window.
+  [ "$(jq -c '.pep621.lockFileMaintenance.schedule' "${PRESET}")" = "$(jq -c '.schedule' "${PRESET}")" ]
+}
+
+# One run a week: an hourly cap defers the overflow to next Monday (#73).
+# prConcurrentLimit still bounds the open PRs.
+@test "no hourly PR limit, and a concurrent one" {
+  [ "$(jq -r '.prHourlyLimit' "${PRESET}")" = "0" ]
+  jq -e '.prConcurrentLimit > 0' "${PRESET}"
+}
+
+# A Renovate branch runs CI with the repository's secrets, where Dependabot's
+# had none (#74). Packages whose install or tests execute code wait until a
+# compromised release has usually been pulled.
+@test "npm, PyPI and Go releases wait three days before they are proposed" {
+  local r
+  r=$(jq -c '.packageRules[] | select(.minimumReleaseAge != null)' "${PRESET}")
+  [ "$(jq -r '.minimumReleaseAge' <<<"${r}")" = "3 days" ]
+  [ "$(jq -c '.matchDatasources | sort' <<<"${r}")" = '["go","npm","pypi"]' ]
+}
+
 @test "one manager reads every dotf version default as one dependency" {
   local m
   m=$(jq -c '.customManagers[] | select(.depNameTemplate == "mlorentedev/dotfiles")' "${ROOT}/renovate.json")
