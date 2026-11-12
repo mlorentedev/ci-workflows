@@ -55,6 +55,9 @@ jobs:
               - ".github/actions/hygiene/**"
               - "tests/fixtures/lessons/**"
               - "docs/lessons/**"
+            docker:
+              - ".github/actions/docker-build/**"
+              - "tests/fixtures/docker-build/**"
 
   lint:
     needs: changes
@@ -266,6 +269,66 @@ jobs:
             exit 1
           }
 
+  # docker-build (CI-010 AC3). The cold job builds the fixture into a scope no
+  # earlier run wrote, then the warm job, on a fresh runner and builder, rebuilds
+  # it from that cache. The fixture's stamp layer proves the restore: a rebuilt
+  # layer carries a new stamp.
+  smoke-docker-build:
+    needs: changes
+    if: contains(fromJSON(needs.changes.outputs.areas), 'docker')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      stamp: ${{ steps.stamp.outputs.stamp }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: build
+        uses: ./.github/actions/docker-build
+        with:
+          image: ci-workflows-smoke
+          context: tests/fixtures/docker-build
+          load: "true"
+          cache-scope: smoke-${{ github.run_id }}-${{ github.run_attempt }}
+      - id: stamp
+        run: echo "stamp=$(docker run --rm ci-workflows-smoke)" >>"${GITHUB_OUTPUT}"
+
+  smoke-docker-build-warm:
+    needs: [changes, smoke-docker-build]
+    if: contains(fromJSON(needs.changes.outputs.areas), 'docker')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: start
+        run: echo "at=$(date +%s)" >>"${GITHUB_OUTPUT}"
+      - id: build
+        uses: ./.github/actions/docker-build
+        with:
+          image: ci-workflows-smoke
+          context: tests/fixtures/docker-build
+          load: "true"
+          cache-scope: smoke-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: The warm build is under 30 s and restored the cold build's layer
+        env:
+          STARTED: ${{ steps.start.outputs.at }}
+          COLD_STAMP: ${{ needs.smoke-docker-build.outputs.stamp }}
+        run: |
+          took=$(( $(date +%s) - STARTED ))
+          stamp=$(docker run --rm ci-workflows-smoke)
+          echo "warm build: ${took} s; stamp ${stamp}, cold ${COLD_STAMP}"
+          if [ -z "${COLD_STAMP}" ] || [ "${stamp}" != "${COLD_STAMP}" ]; then
+            echo "::error::the warm build ran the stamp step again instead of restoring it from the cache"
+            exit 1
+          fi
+          if [ "${took}" -gt 30 ]; then
+            echo "::error::the warm build took ${took} s, over the 30 s objective"
+            exit 1
+          fi
+
   smoke-setup-python-poetry:
     needs: changes
     if: contains(fromJSON(needs.changes.outputs.areas), 'toolchains')
@@ -385,7 +448,7 @@ jobs:
   # The one check branch protection will require (ADR-001 decision 3), once it
   # has reported on main. `if: always()` keeps a failed need from skipping it.
   gate:
-    needs: [changes, lint, test, renovate-config, smoke-setup-node, smoke-hygiene, smoke-setup-python-poetry, smoke-setup-python-uv, smoke-setup-go-lint]
+    needs: [changes, lint, test, renovate-config, smoke-setup-node, smoke-hygiene, smoke-docker-build, smoke-docker-build-warm, smoke-setup-python-poetry, smoke-setup-python-uv, smoke-setup-go-lint]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2

@@ -32,7 +32,7 @@ PR 1, the composite (this branch):
 - [x] [AC2] In `lint.yml`: a `hygiene` area in `changes` (the composite, the fixtures, `docs/lessons/**`), a `smoke-hygiene` job that runs the composite on this repository and on the duplicate fixture, and fails unless the fixture fails naming `lesson-001-same-number.md`; `gate` needs it.
 - [x] [AC1] Raise `tests/composites-shellcheck.bats`'s minimum step count for the two new `run:` steps.
 - [x] README: a `## hygiene` section.
-- [ ] [AC2] After merge, record the `smoke-hygiene` run on main in `verification.md`.
+- [x] [AC2] After merge, record the `smoke-hygiene` run on main in `verification.md`.
 
 Adoption, one PR per repository, in batches of 4 (dotfiles#3188), after a tag carries the composite:
 

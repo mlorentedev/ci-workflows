@@ -254,7 +254,10 @@ jobs:
         if: >
           !cancelled() && (steps.route.outputs.first == 'nan'
             || steps.published_after_anthropic.outputs.published == 'false')
-        timeout-minutes: 12
+        # The longest chain a caller may declare (the model and two fallbacks) at
+        # CONFIG__AI_TIMEOUT each, plus two minutes to start the image: 3 x 300 s +
+        # 120 s = 17 min. tests/pr-agent-budget.bats keeps the three in step (#87).
+        timeout-minutes: 17
         continue-on-error: true
         uses: docker://pragent/pr-agent@sha256:80edef71baa3df28c129d858d4b53784abfc14704c235efb32b6c461d5399a6d  # v0.48.0
         env:
@@ -263,7 +266,18 @@ jobs:
           OPENAI__API_BASE: https://api.nan.builders/v1
           CONFIG__MODEL: ${{ steps.route.outputs.nan_model }}
           CONFIG__FALLBACK_MODELS: ${{ steps.route.outputs.nan_fallbacks }}
+          # Capacity is what the model accepts; MAX_MODEL_TOKENS is the prompt
+          # budget PR-Agent clips the diff to. The budget must sit below the
+          # capacity, or a whole oversized diff goes out and every model times out
+          # (svqtriana.github.io run 42562380120). Both, and the call timeout, are
+          # set here, above any caller's .pr_agent.toml (#88).
           CONFIG__CUSTOM_MODEL_MAX_TOKENS: "200000"
+          CONFIG__MAX_MODEL_TOKENS: "32000"
+          CONFIG__AI_TIMEOUT: "300"
+          # No client retries: each would add a full timeout per model and break
+          # the step bound above (PR-Agent v0.48.0 multiplies num_retries into
+          # its own attempts).
+          CONFIG__NUM_RETRIES: "0"
           LITELLM__CUSTOM_LLM_PROVIDER: openai
           LITELLM__FORCE_STREAMING_CUSTOM_LLM_PROVIDER: openai
           LITELLM__FORCE_STREAMING_API_BASE_SUBSTRINGS: '["api.nan.builders"]'
