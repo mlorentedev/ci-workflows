@@ -23,4 +23,4 @@ owner: manu
 
 ## After merge
 
-- [ ] [AC5] Release, then migrate one consumer in its own PR and record its deploy here
+- [x] [AC5] Release, then migrate one consumer in its own PR and record its deploy here
