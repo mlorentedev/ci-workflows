@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.0](https://github.com/mlorentedev/ci-workflows/compare/v0.5.0...v0.6.0) (2026-11-12)
+
+
+### Features
+
+* **ci:** smoke the toolchain composites on macOS ([#79](https://github.com/mlorentedev/ci-workflows/issues/79)) ([c99cf9a](https://github.com/mlorentedev/ci-workflows/commit/c99cf9acbc2e92efaa5deb157e9604d41b1792f1))
+
+
+### Bug Fixes
+
+* **renovate:** group action updates apart, refresh uv locks, wait three days on new releases ([#80](https://github.com/mlorentedev/ci-workflows/issues/80)) ([4a9a883](https://github.com/mlorentedev/ci-workflows/commit/4a9a88320c3f34da8df3803e30ac60b5d7256360))
+* **review:** keep comments and bot pushes from cancelling a PR-Agent review ([#78](https://github.com/mlorentedev/ci-workflows/issues/78)) ([0b4742d](https://github.com/mlorentedev/ci-workflows/commit/0b4742db0fa5bfa09083edbd7cced195d92c2e2c))
+* **setup-node, setup-python-uv:** cache Playwright at one path on every OS and read CRLF version files ([#69](https://github.com/mlorentedev/ci-workflows/issues/69)) ([57b3b59](https://github.com/mlorentedev/ci-workflows/commit/57b3b5930e760f99e8ac6abdb606d1b00ea8179f))
+
 ## [0.5.0](https://github.com/mlorentedev/ci-workflows/compare/v0.4.0...v0.5.0) (2026-11-11)
 
 
