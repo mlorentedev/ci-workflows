@@ -44,7 +44,7 @@ PR 2 (kubelab, owner merges):
 
 Fleet adoption, in batches of four:
 
-- [ ] [AC6] Per repository: add `renovate.json`, remove `dependabot.yml`; one line per repository here as it lands. Partial: eight adopted; kubelab keeps `dependabot.yml` and dotfiles is out of the wave, both against AC6 as written, so it stays open until the owner amends AC6 or they adopt. Fourteen non-archived repositories carry no `renovate.json` yet (2026-11-12): boilerplates, cloud-architecture-coursework, dotfiles, embedded-systems-coursework, emva1288-sensor-characterization, iris, kasa-provisioner, mail2markdown, mlorentedev, nan-video-pipeline, pdf-modifier, svqtriana.github.io, telecom-engineering, vicon-fpga-face-detection
+- [ ] [AC6] Per repository: add `renovate.json`, remove `dependabot.yml`; one line per repository here as it lands. The exemptions are listed in AC6 of proposal.md (amended 2026-11-12). Six repositories remain in scope; their adoption PRs are open.
   - kubelab: kubelab#3271 (b78d171, 2026-11-11). Renovate keeps `enabledManagers: ["custom.regex", "ansible-galaxy"]`, and Dependabot keeps the ecosystems it covered, so `dependabot.yml` stays.
   - web: web#643 (41ef534, 2026-11-11)
   - ts-bridge: ts-bridge#718 (5f76145, 2026-11-12)
@@ -55,6 +55,12 @@ Fleet adoption, in batches of four:
   - yt-metrics-cli: yt-metrics-cli#114 (fdee012, 2026-11-12)
   - dotfiles: out of this wave (dotfiles#3313)
   - All eight pinned to v0.6.0 on 2026-11-12, before the first scheduled run: garsync#161, leaving-denver#278, hive#577, pollex#128, ts-bridge#727, kubelab#3315, web#651, yt-metrics-cli#118 (#73)
+  - iris: iris#62 (open)
+  - kasa-provisioner: kasa-provisioner#16 (open)
+  - mail2markdown: mail2markdown#32 (open). Poetry, so the preset refreshes no lock (#86)
+  - nan-video-pipeline: nan-video-pipeline#15 (open). It runs no CI on pull requests
+  - pdf-modifier: pdf-modifier#238 (open). `backend/pyproject.toml` sets the uv cutoff (#81)
+  - svqtriana.github.io: svqtriana.github.io#41 (open)
 
 ## Verification
 
