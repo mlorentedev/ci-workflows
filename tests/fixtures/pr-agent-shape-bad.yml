@@ -27,6 +27,9 @@ jobs:
       - if: inputs.declare_unreviewed
         run: dotf pr declare-unreviewed --diff "$DIFF"
       - run: dotf pr preflight --model "$DECLARED_MODEL"
+      - uses: docker://pragent/pr-agent@sha256:0000000000000000000000000000000000000000000000000000000000000000
+        env:
+          CONFIG__PUBLISH_OUTPUT_PROGRESS: false
   nested:
     uses: ./.github/workflows/other.yml
     secrets: inherit

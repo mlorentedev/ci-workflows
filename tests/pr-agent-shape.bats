@@ -81,6 +81,16 @@ uses_pinned_push_gate() {
     grep -Eq '^mlorentedev/ci-workflows/\.github/actions/push-gate@[0-9a-f]{40}$'
 }
 
+# dotf pr triage-queue classifies findings from inline review comments only, and
+# PR-Agent publishes inline findings only with inline_key_issues on (#92). Every
+# PR-Agent step sets it, so no adopter has to carry it in .pr_agent.toml.
+inline_findings_on_every_review_step() {
+  local all inline
+  all=$(yq '[.jobs[].steps[]? | select((.uses // "") | test("^docker://pragent/pr-agent"))] | length' "$1")
+  inline=$(yq '[.jobs[].steps[]? | select((.uses // "") | test("^docker://pragent/pr-agent")) | select((.env.PR_REVIEWER__INLINE_KEY_ISSUES // "") | tostring == "true")] | length' "$1")
+  [ "${all}" -gt 0 ] && [ "${all}" = "${inline}" ]
+}
+
 assert_rule() {
   run "$1" "${WORKFLOW}"
   [ "${status}" -eq 0 ]
@@ -102,3 +112,4 @@ assert_rule() {
 @test "the skip runs before the credential check" { assert_rule skips_before_the_credential_check; }
 @test "the dotf install verifies a checksum" { assert_rule verifies_checksum; }
 @test "the push gate is the action, pinned by full SHA" { assert_rule uses_pinned_push_gate; }
+@test "every PR-Agent step publishes its findings inline" { assert_rule inline_findings_on_every_review_step; }

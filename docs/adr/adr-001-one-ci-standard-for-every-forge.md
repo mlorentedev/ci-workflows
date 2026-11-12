@@ -49,7 +49,9 @@ composite actions and only a limited form of reusable workflow, which holds a ru
 5. **Every rule is checked by `dotf lint`, and adoption is applied by `dotf fleet apply`.** The checker reads
    `.github/workflows`, `.gitea/workflows` and, later, `.gitlab-ci.yml`. A practice a repository lacks is a
    lint finding; `dotf fleet apply` turns it into a pull request in that repository. Nobody hand-edits a fleet
-   of copies again.
+   of copies again. The checker is `dotf lint fleet` (dotfiles 0.80.0); its rules, exceptions file and CI
+   usage are in dotfiles'
+   [`docs/runbooks/guide-fleet-lint.md`](https://github.com/mlorentedev/dotfiles/blob/main/docs/runbooks/guide-fleet-lint.md).
 6. **Versioning.** This repository releases with release-please and semver tags. Consumers pin by full SHA
    with the tag as a comment, and Renovate bumps the pins (amended 2026-11-06, CI-003: Renovate replaces
    Dependabot on both forges, since Gitea has no Dependabot). Removing or renaming an input, an output, a
