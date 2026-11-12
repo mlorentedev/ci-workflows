@@ -1,0 +1,20 @@
+# web's release build: publish the site image, tagged by commit (web build-image.yml).
+on:
+  push:
+    branches: [master]
+jobs:
+  publish:
+    permissions:
+      contents: read
+      security-events: write
+    uses: mlorentedev/ci-workflows/.github/workflows/docker-publish.yml@2b4a6b56701e533ebb6fbf53656ee136a8a5a6fd
+    with:
+      image: docker.io/mlorentedev/kubelab-web
+      tags: sha-${{ github.sha }}
+      sarif-category: trivy-web
+      platforms: linux/amd64,linux/arm64
+      build-args: |
+        SITE_COMMIT=${{ github.sha }}
+    secrets:
+      REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      REGISTRY_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

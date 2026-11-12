@@ -1,0 +1,32 @@
+# kubelab's release: its own docker_tags step computes the tags, and each app
+# publishes into its own cache scope (kubelab release.yml, without secrets: inherit).
+on:
+  release:
+    types: [published]
+jobs:
+  docker_tags:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tags: ${{ steps.tags.outputs.tags }}
+    steps:
+      - id: tags
+        run: echo "tags=${GITHUB_REF_NAME#v}" >>"${GITHUB_OUTPUT}"
+  publish:
+    needs: docker_tags
+    strategy:
+      matrix:
+        app: [api, web, errors]
+    permissions:
+      contents: read
+      security-events: write
+    uses: mlorentedev/ci-workflows/.github/workflows/docker-publish.yml@2b4a6b56701e533ebb6fbf53656ee136a8a5a6fd
+    with:
+      image: docker.io/mlorentedev/kubelab-${{ matrix.app }}
+      tags: ${{ needs.docker_tags.outputs.tags }}
+      sarif-category: trivy-${{ matrix.app }}
+      context: apps/${{ matrix.app }}
+    secrets:
+      REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      REGISTRY_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

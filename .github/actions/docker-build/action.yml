@@ -1,0 +1,143 @@
+# Build an image with buildx and a layer cache scoped to it (spec CI-010, issue #11).
+#
+# Runs in the caller's job, so a job that builds and then runs the image keeps its
+# shape. It never logs in: a caller that pushes logs in first, or uses
+# docker-publish.yml.
+#
+# The cache is GitHub's (`type=gha`), scoped by default to the image name, so two
+# images built in one repository never overwrite each other's cache. Gitea's
+# runner cache is unverified with `type=gha`; there, pass cache-from and cache-to
+# (for example `type=registry`).
+name: docker-build
+description: Build an image with buildx and a per-image gha layer cache.
+
+inputs:
+  image:
+    description: Image name, without a tag. The cache scope defaults to it.
+    required: true
+  context:
+    description: Build context.
+    default: "."
+  file:
+    description: Dockerfile path. Empty means the context's Dockerfile.
+    default: ""
+  tags:
+    description: Tags, one per line or comma-separated. Empty means the image name alone.
+    default: ""
+  build-args:
+    description: Build arguments, one KEY=value per line.
+    default: ""
+  platforms:
+    description: Target platforms, comma-separated. Empty means the runner's.
+    default: ""
+  load:
+    description: Load the image into the runner's docker, to run it in a later step. Excludes push.
+    default: "false"
+  push:
+    description: Push the image. The caller logs in first. Excludes load.
+    default: "false"
+  push-by-digest:
+    description: Push the image under its name with no tag, for a caller that tags the digest later (docker-publish.yml scans it first). Excludes load and push.
+    default: "false"
+  cache-scope:
+    description: Cache scope, with any character but letters, digits, dot, underscore and dash turned into a dash. Empty means the image name treated the same way, plus 8 hex characters of its hash.
+    default: ""
+  cache-mode:
+    description: gha cache-to mode, max (every layer) or min (the final image's). max can approach the 10 GB per-repository cache on multi-platform builds.
+    default: max
+  cache-from:
+    description: Overrides the gha cache source, for example type=registry,ref=<image>:cache.
+    default: ""
+  cache-to:
+    description: Overrides the gha cache destination.
+    default: ""
+
+outputs:
+  digest:
+    description: Image digest.
+    value: ${{ steps.build.outputs.digest }}
+  imageid:
+    description: Image ID.
+    value: ${{ steps.build.outputs.imageid }}
+  cache-scope:
+    description: The cache scope used.
+    value: ${{ steps.resolve.outputs.scope }}
+
+runs:
+  using: composite
+  steps:
+    - id: resolve
+      shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
+        CACHE_SCOPE: ${{ inputs.cache-scope }}
+        CACHE_MODE: ${{ inputs.cache-mode }}
+        CACHE_FROM: ${{ inputs.cache-from }}
+        CACHE_TO: ${{ inputs.cache-to }}
+        LOAD: ${{ inputs.load }}
+        PUSH: ${{ inputs.push }}
+        PUSH_BY_DIGEST: ${{ inputs.push-by-digest }}
+      run: |
+        # build-push-action reads a boolean trimmed and in any case, so the guard does too.
+        is_true() { [ "$(tr -d '[:space:]' <<<"$1" | tr '[:upper:]' '[:lower:]')" = "true" ]; }
+        if is_true "${LOAD}" && is_true "${PUSH}"; then
+          echo "::error::docker-build: load and push are exclusive; a loaded image is never pushed"
+          exit 1
+        fi
+        by_digest=false
+        outputs=""
+        if is_true "${PUSH_BY_DIGEST}"; then
+          if is_true "${LOAD}" || is_true "${PUSH}"; then
+            echo "::error::docker-build: push-by-digest excludes load and push, which name a tag"
+            exit 1
+          fi
+          by_digest=true
+          outputs="type=image,name=${IMAGE},push-by-digest=true,name-canonical=true,push=true"
+        fi
+        case "${CACHE_MODE}" in
+          max | min) ;;
+          *)
+            echo "::error::docker-build: cache-mode must be max or min, not '${CACHE_MODE}'"
+            exit 1
+            ;;
+        esac
+        # Every character a scope should not carry becomes a dash, in an explicit
+        # scope too. A scope derived from the image also gets a hash of the name,
+        # since ghcr.io/o/a/b and ghcr.io/o/a-b would otherwise share one.
+        sanitize() { tr -d '[:space:]' <<<"$1" | tr -c 'A-Za-z0-9._\n-' '-' | sed -e 's/^-*//' -e 's/-*$//'; }
+        scope=$(sanitize "${CACHE_SCOPE}")
+        if [ -z "${scope}" ]; then
+          scope=$(sanitize "${IMAGE}")
+          [ -z "${scope}" ] || scope="${scope}-$(printf '%s' "${IMAGE}" | tr -d '[:space:]' | sha256sum | cut -c1-8)"
+        fi
+        if [ -z "${scope}" ]; then
+          echo "::error::docker-build: no cache scope; the image name '${IMAGE}' leaves none, so pass cache-scope"
+          exit 1
+        fi
+        # cache-from and cache-to may be lists, one entry a line: a delimited
+        # output keeps every line.
+        delim="EOF_$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')"
+        {
+          echo "by-digest=${by_digest}"
+          echo "outputs=${outputs}"
+          echo "scope=${scope}"
+          printf 'cache-from<<%s\n%s\n%s\n' "${delim}" "${CACHE_FROM:-type=gha,scope=${scope}}" "${delim}"
+          printf 'cache-to<<%s\n%s\n%s\n' "${delim}" "${CACHE_TO:-type=gha,scope=${scope},mode=${CACHE_MODE}}" "${delim}"
+        } >>"${GITHUB_OUTPUT}"
+
+    - id: buildx
+      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+    - id: build
+      uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.file }}
+        tags: ${{ steps.resolve.outputs.by-digest != 'true' && (inputs.tags || inputs.image) || '' }}
+        build-args: ${{ inputs.build-args }}
+        platforms: ${{ inputs.platforms }}
+        load: ${{ inputs.load }}
+        push: ${{ inputs.push }}
+        outputs: ${{ steps.resolve.outputs.outputs }}
+        cache-from: ${{ steps.resolve.outputs.cache-from }}
+        cache-to: ${{ steps.resolve.outputs.cache-to }}
