@@ -25,8 +25,13 @@ owner: manu
 - [ ] AC4 -> half done. The `renovate/engine.json` manager works: #44 lists `ghcr.io/renovatebot/renovate 44.199.2
       -> 44.221.4` under Awaiting Schedule, grouped in `renovate/minor-and-patch-updates`. The PR itself opens in
       the preset's window. The first scheduled run (42582312694, 2026-11-09) started 6.5 hours late, after the Monday 00:00-06:59 window had closed, and opened nothing; #48 widened the window to all of Monday. The preset-tag manager waits for the first tag.
-- [ ] AC5 -> the kubelab PR.
-- [ ] AC6 -> fleet adoption, per repository in tasks.md.
+- [x] AC5 -> kubelab#3271 (b78d171): kubelab's `renovate.yml` and `tests/test_renovate_engine_version.py` are gone from
+      master, `ci.renovate.image` survives only in the text of its IDP-036 spec, and its `renovate.json` extends the preset.
+- [ ] AC6 -> partial. Eight repositories carry a `renovate.json` extending `renovate/default#v0.6.0`, read from each default
+      branch on 2026-11-12; per repository in tasks.md. Seven have no `dependabot.yml`; kubelab keeps its own by design.
+      dotfiles is out of the wave (dotfiles#3313). Both contradict AC6 as written, so it stays open until the
+      owner amends it or they adopt. Fourteen non-archived repositories carry no `renovate.json` yet; tasks.md
+      lists them.
 - [x] AC7 -> ADR-001 decision 6 amended; README `## renovate`.
 
 ## Test status
