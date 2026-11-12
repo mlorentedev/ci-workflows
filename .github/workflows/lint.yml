@@ -189,8 +189,12 @@ jobs:
   smoke-setup-node:
     needs: changes
     if: contains(fromJSON(needs.changes.outputs.areas), 'toolchains')
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -199,20 +203,32 @@ jobs:
         uses: ./.github/actions/setup-node
         with:
           working-directory: tests/fixtures/toolchains/node
+          playwright: "true"
+      # Chromium only, and without --with-deps: the smoke proves the cached
+      # browsers path, which macOS got wrong before #69, not a browser launch.
       - name: Install the fixture
         working-directory: tests/fixtures/toolchains/node
-        run: npm ci --ignore-scripts --no-audit --no-fund
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npx playwright install chromium
+          ls -d "${PLAYWRIGHT_BROWSERS_PATH}"/chromium-* || {
+            echo "::error::no chromium-* under PLAYWRIGHT_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH}, the path setup-node caches"
+            exit 1
+          }
       # A key without the platform and the arch would let one runner restore
-      # another's binaries (CI-004 AC5).
+      # another's binaries (CI-004 AC5). tr, not ${KEY,,}: macOS runs bash 3.2.
       - name: Report the cache
         env:
           HIT: ${{ steps.node.outputs.cache-hit }}
           KEY: ${{ steps.node.outputs.cache-primary-key }}
+          PLAYWRIGHT_HIT: ${{ steps.node.outputs.playwright-cache-hit }}
         run: |
           echo "cache-hit=${HIT}"
           echo "cache-primary-key=${KEY}"
-          case "${KEY,,}" in
-            "node-cache-${RUNNER_OS,,}-${RUNNER_ARCH,,}-npm-"*) ;;
+          echo "playwright-cache-hit=${PLAYWRIGHT_HIT}"
+          lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
+          case "$(lower "${KEY}")" in
+            "node-cache-$(lower "${RUNNER_OS}")-$(lower "${RUNNER_ARCH}")-npm-"*) ;;
             *) echo "::error::the npm cache key '${KEY}' does not start with node-cache-${RUNNER_OS}-${RUNNER_ARCH}-npm-: either it lost the platform, or actions/setup-node changed its key format"; exit 1 ;;
           esac
 
@@ -253,8 +269,12 @@ jobs:
   smoke-setup-python-poetry:
     needs: changes
     if: contains(fromJSON(needs.changes.outputs.areas), 'toolchains')
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -286,8 +306,12 @@ jobs:
   smoke-setup-python-uv:
     needs: changes
     if: contains(fromJSON(needs.changes.outputs.areas), 'toolchains')
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -326,8 +350,12 @@ jobs:
   smoke-setup-go-lint:
     needs: changes
     if: contains(fromJSON(needs.changes.outputs.areas), 'toolchains')
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
