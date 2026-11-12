@@ -81,6 +81,25 @@ uses_pinned_push_gate() {
     grep -Eq '^mlorentedev/ci-workflows/\.github/actions/push-gate@[0-9a-f]{40}$'
 }
 
+# A run a newer push superseded is cancelled, not failed. On always() the guard
+# still ran there and turned the stale SHA red, indistinguishable from a NaN or
+# credential failure (#85, hive#503). !cancelled() still runs it after a failed step.
+# Only the final guard counts: the --probe steps that measure each attempt also
+# run `dotf pr guard`, and their conditions say nothing about this one. The
+# guard must still run after a failed step, so success() is as wrong as always().
+final_guard() { # $1 = workflow, $2 = a yq tail applied to the matching steps
+  yq "[.jobs[].steps[]? | select((.run // \"\") | test(\"^dotf pr guard\\s*$\"))]$2" "$1"
+}
+
+guard_skips_a_cancelled_run() {
+  local cond
+  [ "$(final_guard "$1" ' | length')" = "1" ] || return 1
+  cond=$(final_guard "$1" '[0].if')
+  [ -n "${cond}" ] && [ "${cond}" != "null" ] &&
+    grep -qF '!cancelled()' <<<"${cond}" &&
+    ! grep -qE 'always\(\)|success\(\)' <<<"${cond}"
+}
+
 # dotf pr triage-queue classifies findings from inline review comments only, and
 # PR-Agent publishes inline findings only with inline_key_issues on (#92). Every
 # PR-Agent step sets it, so no adopter has to carry it in .pr_agent.toml.
@@ -112,4 +131,17 @@ assert_rule() {
 @test "the skip runs before the credential check" { assert_rule skips_before_the_credential_check; }
 @test "the dotf install verifies a checksum" { assert_rule verifies_checksum; }
 @test "the push gate is the action, pinned by full SHA" { assert_rule uses_pinned_push_gate; }
+@test "the publish guard does not run in a cancelled run" { assert_rule guard_skips_a_cancelled_run; }
+@test "the publish guard still runs after a failed step" {
+  copy="${BATS_TEST_TMPDIR}/success-guard.yml"
+  yq '(.jobs.review.steps[] | select(.run == "dotf pr guard") | .if) |= "success() && " + .' "${WORKFLOW}" >"${copy}"
+  run guard_skips_a_cancelled_run "${copy}"
+  [ "${status}" -ne 0 ]
+}
+@test "a probe's condition does not stand in for the publish guard's" {
+  copy="${BATS_TEST_TMPDIR}/no-guard.yml"
+  yq 'del(.jobs.review.steps[] | select(.run == "dotf pr guard"))' "${WORKFLOW}" >"${copy}"
+  run guard_skips_a_cancelled_run "${copy}"
+  [ "${status}" -ne 0 ]
+}
 @test "every PR-Agent step publishes its findings inline" { assert_rule inline_findings_on_every_review_step; }
