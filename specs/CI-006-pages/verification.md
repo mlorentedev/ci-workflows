@@ -31,6 +31,15 @@ owner: manu
 
 ## Promotion candidates
 
-- [ ] Lesson for the repo's `docs/lessons/`? <answer at archive>
-- [ ] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? <answer at archive>
-- [ ] New pattern candidate for `00_meta/patterns/`? <answer at archive>
+- [x] Lesson for the repo's `docs/lessons/`? no: the first consumer went in as planned; nothing failed that a lesson would prevent
+- [x] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? no: the build/deploy split and the caller-owned triggers are recorded in the proposal and the README
+- [x] New pattern candidate for `00_meta/patterns/`? no: a reusable Pages workflow is one instance of the existing reusable-workflow contract (AGENTS.md rules 1-4)
+
+## Review dispositions
+
+The review (`review.md`) returned PASS with three Minor findings and a question.
+
+- `features.json` f5 still pending: applied. Its `state` and `evidence` now carry the ts-bridge run; the `verification` string is unchanged, so the review's digest holds.
+- A whitespace-only `check_command` runs as a no-op: declined. The input belongs to the caller, in the caller's own repository, and the empty case, which is the documented way to skip the check, is tested.
+- `pins_every_action` checks the SHA and comment shape, not that the SHA is the tag: declined. The pins were checked with `git ls-remote` at review time, and any pin change is a PR a human reads.
+- Issue #32 open: closed by the PR that archives this spec.

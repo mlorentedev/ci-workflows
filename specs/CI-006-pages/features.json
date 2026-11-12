@@ -31,7 +31,7 @@
     "id": "CI-006-pages-f5",
     "behavior": "After release, one of the five repositories calls the workflow and its deploy stays green.",
     "verification": "echo 'verified in the first consumer migration PR' && exit 1",
-    "state": "pending",
-    "evidence": ""
+    "state": "passing",
+    "evidence": "ts-bridge#741 merged 9c9d70b; push run 43288112747: pages / build and pages / deploy success"
   }
 ]
