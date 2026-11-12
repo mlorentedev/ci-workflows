@@ -30,7 +30,8 @@ owner: manu
 - [ ] AC6 -> partial. Eight repositories carry a `renovate.json` extending `renovate/default#v0.6.0`, read from each default
       branch on 2026-11-12; per repository in tasks.md. Seven have no `dependabot.yml`; kubelab keeps its own by design.
       dotfiles is out of the wave (dotfiles#3313). Both contradict AC6 as written, so it stays open until the
-      owner amends it or they adopt.
+      owner amends it or they adopt. Fourteen non-archived repositories carry no `renovate.json` yet; tasks.md
+      lists them.
 - [x] AC7 -> ADR-001 decision 6 amended; README `## renovate`.
 
 ## Test status

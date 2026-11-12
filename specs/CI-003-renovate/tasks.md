@@ -44,7 +44,7 @@ PR 2 (kubelab, owner merges):
 
 Fleet adoption, in batches of four:
 
-- [ ] [AC6] Per repository: add `renovate.json`, remove `dependabot.yml`; one line per repository here as it lands. Partial: eight adopted; kubelab keeps `dependabot.yml` and dotfiles is out of the wave, both against AC6 as written, so it stays open until the owner amends AC6 or they adopt
+- [ ] [AC6] Per repository: add `renovate.json`, remove `dependabot.yml`; one line per repository here as it lands. Partial: eight adopted; kubelab keeps `dependabot.yml` and dotfiles is out of the wave, both against AC6 as written, so it stays open until the owner amends AC6 or they adopt. Fourteen non-archived repositories carry no `renovate.json` yet (2026-11-12): boilerplates, cloud-architecture-coursework, dotfiles, embedded-systems-coursework, emva1288-sensor-characterization, iris, kasa-provisioner, mail2markdown, mlorentedev, nan-video-pipeline, pdf-modifier, svqtriana.github.io, telecom-engineering, vicon-fpga-face-detection
   - kubelab: kubelab#3271 (b78d171, 2026-11-11). Renovate keeps `enabledManagers: ["custom.regex", "ansible-galaxy"]`, and Dependabot keeps the ecosystems it covered, so `dependabot.yml` stays.
   - web: web#643 (41ef534, 2026-11-11)
   - ts-bridge: ts-bridge#718 (5f76145, 2026-11-12)
