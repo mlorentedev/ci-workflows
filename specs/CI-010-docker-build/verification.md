@@ -34,7 +34,8 @@ Map every acceptance criterion from `proposal.md` to concrete proof (commit hash
   Inside a reusable workflow, `./` is the caller's checkout. Until a release ships the composite, the pin is #102's
   head; it is repointed at the release.
 - The composite gained `push-by-digest`, which pushes the image untagged, so `docker-publish.yml` names no tag before
-  its gate.
+  its gate. It lands with the composite in #102: pinned at a commit without it, the input would be ignored and the
+  build would push nothing, leaving the scan an empty digest.
 - Secrets are `REGISTRY_USERNAME` and `REGISTRY_TOKEN`, the repository's uppercase convention (`RELEASE_TOKEN`).
   The proposal's lowercase names refer to the same secrets.
 

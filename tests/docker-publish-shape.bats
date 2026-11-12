@@ -4,7 +4,6 @@
 # digest, scans every platform by digest, and tags only after the gate passed.
 
 WORKFLOW="${BATS_TEST_DIRNAME}/../.github/workflows/docker-publish.yml"
-ACTION="${BATS_TEST_DIRNAME}/../.github/actions/docker-build/action.yml"
 
 job() { yq ".jobs.$1.$2" "${WORKFLOW}"; }
 jstep() { yq ".jobs.$1.steps[] | select(.id == \"$2\") | .$3" "${WORKFLOW}"; }
@@ -78,39 +77,4 @@ jstep() { yq ".jobs.$1.steps[] | select(.id == \"$2\") | .$3" "${WORKFLOW}"; }
 @test "the scan and tag jobs never check out the caller's code" {
   run bash -c "yq '.jobs.scan.steps[].uses, .jobs.tag.steps[].uses' '${WORKFLOW}' | grep checkout"
   [ "$status" -ne 0 ]
-}
-
-# The composite's push-by-digest mode, which the workflow relies on.
-
-resolve() { run bash --noprofile --norc -eo pipefail "${BATS_TEST_TMPDIR}/resolve.sh"; }
-output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
-
-setup() {
-  export GITHUB_OUTPUT="${BATS_TEST_TMPDIR}/output"
-  : >"${GITHUB_OUTPUT}"
-  yq '.runs.steps[] | select(.id == "resolve") | .run' "${ACTION}" >"${BATS_TEST_TMPDIR}/resolve.sh"
-  export IMAGE=docker.io/owner/app CACHE_SCOPE="" CACHE_MODE=max CACHE_FROM="" CACHE_TO="" LOAD=false PUSH=false PUSH_BY_DIGEST=false
-}
-
-@test "push-by-digest pushes the image under its name and no tag" {
-  PUSH_BY_DIGEST=true resolve
-  [ "$status" -eq 0 ]
-  [ "$(output_of outputs)" = "type=image,name=docker.io/owner/app,push-by-digest=true,name-canonical=true,push=true" ]
-}
-
-@test "push-by-digest excludes load and push, which would name a tag" {
-  PUSH_BY_DIGEST=true LOAD=true resolve
-  [ "$status" -ne 0 ]
-  PUSH_BY_DIGEST=true PUSH=true resolve
-  [ "$status" -ne 0 ]
-}
-
-@test "without push-by-digest the composite names no output" {
-  resolve
-  [ "$(output_of outputs)" = "" ]
-}
-
-@test "the composite passes the resolved output and drops tags when it pushes by digest" {
-  [ "$(yq '.runs.steps[] | select(.id == "build") | .with.outputs' "${ACTION}")" = '${{ steps.resolve.outputs.outputs }}' ]
-  [ "$(yq '.runs.steps[] | select(.id == "build") | .with.tags' "${ACTION}")" = "\${{ inputs.push-by-digest != 'true' && (inputs.tags || inputs.image) || '' }}" ]
 }

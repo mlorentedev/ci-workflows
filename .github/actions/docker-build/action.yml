@@ -78,16 +78,20 @@ runs:
         PUSH: ${{ inputs.push }}
         PUSH_BY_DIGEST: ${{ inputs.push-by-digest }}
       run: |
-        if [ "${LOAD}" = "true" ] && [ "${PUSH}" = "true" ]; then
+        # build-push-action reads a boolean trimmed and in any case, so the guard does too.
+        is_true() { [ "$(tr -d '[:space:]' <<<"$1" | tr '[:upper:]' '[:lower:]')" = "true" ]; }
+        if is_true "${LOAD}" && is_true "${PUSH}"; then
           echo "::error::docker-build: load and push are exclusive; a loaded image is never pushed"
           exit 1
         fi
+        by_digest=false
         outputs=""
-        if [ "${PUSH_BY_DIGEST}" = "true" ]; then
-          if [ "${LOAD}" = "true" ] || [ "${PUSH}" = "true" ]; then
+        if is_true "${PUSH_BY_DIGEST}"; then
+          if is_true "${LOAD}" || is_true "${PUSH}"; then
             echo "::error::docker-build: push-by-digest excludes load and push, which name a tag"
             exit 1
           fi
+          by_digest=true
           outputs="type=image,name=${IMAGE},push-by-digest=true,name-canonical=true,push=true"
         fi
         case "${CACHE_MODE}" in
@@ -97,21 +101,28 @@ runs:
             exit 1
             ;;
         esac
-        # The scope: the explicit one if it has any text, else the image name with
-        # every character a scope should not carry turned into a dash.
-        scope=$(tr -d '[:space:]' <<<"${CACHE_SCOPE}")
+        # Every character a scope should not carry becomes a dash, in an explicit
+        # scope too. A scope derived from the image also gets a hash of the name,
+        # since ghcr.io/o/a/b and ghcr.io/o/a-b would otherwise share one.
+        sanitize() { tr -d '[:space:]' <<<"$1" | tr -c 'A-Za-z0-9._\n-' '-' | sed -e 's/^-*//' -e 's/-*$//'; }
+        scope=$(sanitize "${CACHE_SCOPE}")
         if [ -z "${scope}" ]; then
-          scope=$(tr -d '[:space:]' <<<"${IMAGE}" | tr -c 'A-Za-z0-9._\n-' '-' | sed -e 's/^-*//' -e 's/-*$//')
+          scope=$(sanitize "${IMAGE}")
+          [ -z "${scope}" ] || scope="${scope}-$(printf '%s' "${IMAGE}" | tr -d '[:space:]' | sha256sum | cut -c1-8)"
         fi
         if [ -z "${scope}" ]; then
           echo "::error::docker-build: no cache scope; the image name '${IMAGE}' leaves none, so pass cache-scope"
           exit 1
         fi
+        # cache-from and cache-to may be lists, one entry a line: a delimited
+        # output keeps every line.
+        delim="EOF_$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')"
         {
+          echo "by-digest=${by_digest}"
           echo "outputs=${outputs}"
           echo "scope=${scope}"
-          echo "cache-from=${CACHE_FROM:-type=gha,scope=${scope}}"
-          echo "cache-to=${CACHE_TO:-type=gha,scope=${scope},mode=${CACHE_MODE}}"
+          printf 'cache-from<<%s\n%s\n%s\n' "${delim}" "${CACHE_FROM:-type=gha,scope=${scope}}" "${delim}"
+          printf 'cache-to<<%s\n%s\n%s\n' "${delim}" "${CACHE_TO:-type=gha,scope=${scope},mode=${CACHE_MODE}}" "${delim}"
         } >>"${GITHUB_OUTPUT}"
 
     - id: buildx
@@ -122,7 +133,7 @@ runs:
       with:
         context: ${{ inputs.context }}
         file: ${{ inputs.file }}
-        tags: ${{ inputs.push-by-digest != 'true' && (inputs.tags || inputs.image) || '' }}
+        tags: ${{ steps.resolve.outputs.by-digest != 'true' && (inputs.tags || inputs.image) || '' }}
         build-args: ${{ inputs.build-args }}
         platforms: ${{ inputs.platforms }}
         load: ${{ inputs.load }}

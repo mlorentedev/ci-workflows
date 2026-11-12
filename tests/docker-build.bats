@@ -18,7 +18,15 @@ setup() {
 
 resolve() { run bash --noprofile --norc -eo pipefail "${BATS_TEST_TMPDIR}/resolve.sh"; }
 
-output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
+# Reads an output in either form GitHub accepts: name=value, or name<<DELIM
+# followed by lines up to DELIM. The last write of a name wins.
+output_of() {
+  awk -v k="$1" '
+    d != "" { if ($0 == d) { d = ""; v[k] = buf; found = 1 } else { buf = buf (buf == "" ? "" : "\n") $0 }; next }
+    index($0, k "<<") == 1 { d = substr($0, length(k) + 3); buf = ""; next }
+    index($0, k "=") == 1 { v[k] = substr($0, length(k) + 2); found = 1 }
+    END { if (found) print v[k] }' "${GITHUB_OUTPUT}"
+}
 
 # Shape (AC1)
 
@@ -54,7 +62,8 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
   [ "$(step build with.load)" = '${{ inputs.load }}' ]
   [ "$(step build with.push)" = '${{ inputs.push }}' ]
   [ "$(step build with.context)" = '${{ inputs.context }}' ]
-  [ "$(step build with.tags)" = "\${{ inputs.push-by-digest != 'true' && (inputs.tags || inputs.image) || '' }}" ]
+  [ "$(step build with.tags)" = "\${{ steps.resolve.outputs.by-digest != 'true' && (inputs.tags || inputs.image) || '' }}" ]
+  [ "$(step build with.outputs)" = '${{ steps.resolve.outputs.outputs }}' ]
 }
 
 @test "the composite never logs in" {
@@ -70,12 +79,20 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
 
 # Cache scope (AC1)
 
-@test "the cache scope defaults to the image name" {
+@test "the cache scope defaults to the image name and a hash of it" {
   resolve
   [ "$status" -eq 0 ]
-  [ "$(output_of scope)" = "app" ]
-  [ "$(output_of cache-from)" = "type=gha,scope=app" ]
-  [ "$(output_of cache-to)" = "type=gha,scope=app,mode=max" ]
+  [ "$(output_of scope)" = "app-a172cedc" ]
+  [ "$(output_of cache-from)" = "type=gha,scope=app-a172cedc" ]
+  [ "$(output_of cache-to)" = "type=gha,scope=app-a172cedc,mode=max" ]
+}
+
+@test "two image names that sanitize alike still get two scopes" {
+  IMAGE=ghcr.io/owner/a/b resolve
+  local first; first=$(output_of scope)
+  : >"${GITHUB_OUTPUT}"
+  IMAGE=ghcr.io/owner/a-b resolve
+  [ "${first}" != "$(output_of scope)" ]
 }
 
 @test "two images in one repository get two scopes" {
@@ -89,12 +106,18 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
 @test "a registry path becomes a scope with no slash or colon" {
   IMAGE=ghcr.io/owner/app resolve
   [ "$status" -eq 0 ]
-  [ "$(output_of scope)" = "ghcr.io-owner-app" ]
+  [[ "$(output_of scope)" =~ ^ghcr\.io-owner-app-[0-9a-f]{8}$ ]]
 }
 
-@test "an explicit scope wins over the image" {
+@test "an explicit scope wins over the image, as given" {
   CACHE_SCOPE=smoke-1 resolve
   [ "$(output_of scope)" = "smoke-1" ]
+}
+
+@test "an explicit scope is sanitized like a derived one" {
+  CACHE_SCOPE="owner/app:1" resolve
+  [ "$status" -eq 0 ]
+  [ "$(output_of scope)" = "owner-app-1" ]
 }
 
 @test "no input value leaves the scope empty" {
@@ -103,7 +126,7 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
     : >"${GITHUB_OUTPUT}"
     CACHE_SCOPE="${value}" resolve
     [ "$status" -eq 0 ]
-    [ "$(output_of scope)" = "app" ]
+    [ "$(output_of scope)" = "app-a172cedc" ]
   done
   for value in "" " " "/" ":"; do
     : >"${GITHUB_OUTPUT}"
@@ -115,7 +138,7 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
 
 @test "the cache mode is passed through, and an unknown mode fails" {
   CACHE_MODE=min resolve
-  [ "$(output_of cache-to)" = "type=gha,scope=app,mode=min" ]
+  [ "$(output_of cache-to)" = "type=gha,scope=app-a172cedc,mode=min" ]
   CACHE_MODE=all resolve
   [ "$status" -ne 0 ]
 }
@@ -127,6 +150,15 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
   [ "$(output_of cache-to)" = "type=registry,ref=r/app:cache,mode=max" ]
 }
 
+@test "a cache list, one entry a line, reaches the build whole" {
+  CACHE_FROM=$'type=registry,ref=r/app:cache\ntype=gha,scope=app' CACHE_TO=$'type=gha,scope=app,mode=max\ntype=inline' resolve
+  [ "$status" -eq 0 ]
+  [ "$(output_of cache-from)" = $'type=registry,ref=r/app:cache\ntype=gha,scope=app' ]
+  [ "$(output_of cache-to)" = $'type=gha,scope=app,mode=max\ntype=inline' ]
+  run grep -c '^type=' "${GITHUB_OUTPUT}"
+  [ "$output" -eq 4 ]
+}
+
 # load and push
 
 @test "load and push together fail, since a loaded image is never pushed" {
@@ -135,11 +167,43 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
   [[ "$output" == *"load"* && "$output" == *"push"* ]]
 }
 
+@test "load and push are read the way build-push-action reads them" {
+  local l p
+  for l in True TRUE " true "; do
+    for p in true " True"; do
+      LOAD="${l}" PUSH="${p}" resolve
+      [ "$status" -ne 0 ]
+    done
+  done
+}
+
 @test "load alone and push alone pass" {
   LOAD=true resolve
   [ "$status" -eq 0 ]
   LOAD=false PUSH=true resolve
   [ "$status" -eq 0 ]
+}
+
+# push-by-digest, which docker-publish.yml relies on
+
+@test "push-by-digest pushes the image under its name and no tag" {
+  IMAGE=docker.io/owner/app PUSH_BY_DIGEST=" True" resolve
+  [ "$status" -eq 0 ]
+  [ "$(output_of by-digest)" = "true" ]
+  [ "$(output_of outputs)" = "type=image,name=docker.io/owner/app,push-by-digest=true,name-canonical=true,push=true" ]
+}
+
+@test "push-by-digest excludes load and push, which would name a tag" {
+  PUSH_BY_DIGEST=true LOAD=true resolve
+  [ "$status" -ne 0 ]
+  PUSH_BY_DIGEST=true PUSH=TRUE resolve
+  [ "$status" -ne 0 ]
+}
+
+@test "without push-by-digest the composite names no output and keeps its tags" {
+  resolve
+  [ "$(output_of by-digest)" = "false" ]
+  [ "$(output_of outputs)" = "" ]
 }
 
 # Smoke (AC3)
