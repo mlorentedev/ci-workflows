@@ -41,3 +41,10 @@ Armed 2026-11-12T07:06:00Z, expires 19:06:00Z. `merge: never`: every PR below wa
 
 - Every opened PR passes `dotf pr triage-queue --pr N` (exit 0); ci-workflows#98 was behind and its branch was updated again.
 - Board: #31 and #32 read In Progress (set after the GraphQL limit reset).
+
+## After the window (interactive, owner present)
+
+- Parked adopters, option A per the owner: garsync#165, ts-bridge#755, web#661, svqtriana.github.io#43, all green and triaged. kubelab left out.
+- CI-006: review PASS; ci-workflows#110 archives the spec and closes #32, green and triaged.
+- Filed: dotfiles#3415, `dotf lessons fmt --check` passes a lesson whose filename it does not recognise (raised on svqtriana.github.io#43).
+- Each PR above passes `dotf pr triage-queue --pr N` (exit 0). CodeRabbit hit its free limit on #110 and on the last push of garsync#165 and web#661; the triage comments say so.
