@@ -35,7 +35,10 @@ inside it (#87).
   caller's toml.
 - Derive the step bound from the chain: the longest chain a caller may declare
   (three models) times the call timeout, plus the image start. 3 x 300 s +
-  120 s is 17 minutes.
+  120 s is 17 minutes. That holds only with one attempt per model, so the
+  step also pins `CONFIG__NUM_RETRIES: "0"` and keeps
+  `CONFIG__RETRY_SAME_MODEL_ON_TIMEOUT: "false"`; a caller's `num_retries`
+  would otherwise multiply every timeout.
 - Keep the arithmetic in a test (`tests/pr-agent-budget.bats`) that reads the
   numbers from the workflow, so raising a timeout without the bound fails CI.
 - When a tool takes a size setting for a model, check whether it also takes a

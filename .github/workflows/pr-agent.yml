@@ -272,6 +272,10 @@ jobs:
           CONFIG__CUSTOM_MODEL_MAX_TOKENS: "200000"
           CONFIG__MAX_MODEL_TOKENS: "32000"
           CONFIG__AI_TIMEOUT: "300"
+          # No client retries: each would add a full timeout per model and break
+          # the step bound above (PR-Agent v0.48.0 multiplies num_retries into
+          # its own attempts).
+          CONFIG__NUM_RETRIES: "0"
           LITELLM__CUSTOM_LLM_PROVIDER: openai
           LITELLM__FORCE_STREAMING_CUSTOM_LLM_PROVIDER: openai
           LITELLM__FORCE_STREAMING_API_BASE_SUBSTRINGS: '["api.nan.builders"]'

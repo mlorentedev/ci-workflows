@@ -27,12 +27,18 @@ budget_below_capacity() {
   [[ "${budget}" =~ ^[0-9]+$ && "${capacity}" =~ ^[0-9]+$ ]] && [ "${budget}" -lt "${capacity}" ]
 }
 
+# Each model in the chain makes one call plus its client retries; a timed-out
+# call is retried on the same model only when retry_same_model_on_timeout is on,
+# which the arithmetic does not allow for, so it must be off.
 chain_fits_the_step() {
-  local timeout minutes
+  local timeout minutes retries same
   timeout=$(nan_env "$1" CONFIG__AI_TIMEOUT)
   minutes=$(step_minutes "$1" pr_agent)
-  [[ "${timeout}" =~ ^[0-9]+$ && "${minutes}" =~ ^[0-9]+$ ]] &&
-    [ $((MAX_CHAIN * timeout + SETUP_SECONDS)) -le $((minutes * 60)) ]
+  retries=$(nan_env "$1" CONFIG__NUM_RETRIES)
+  same=$(nan_env "$1" CONFIG__RETRY_SAME_MODEL_ON_TIMEOUT)
+  [[ "${timeout}" =~ ^[0-9]+$ && "${minutes}" =~ ^[0-9]+$ && "${retries}" =~ ^[0-9]+$ ]] &&
+    [ "${same}" = "false" ] &&
+    [ $((MAX_CHAIN * (1 + retries) * timeout + SETUP_SECONDS)) -le $((minutes * 60)) ]
 }
 
 # At most two PR-Agent steps run: the drawn one and the other provider after it.
@@ -75,6 +81,18 @@ NAN='.jobs.review.steps[] | select(.id == "pr_agent")'
 
 @test "the NaN call timeout is set, not left to the caller" {
   assert_rule chain_fits_the_step "del((${NAN}).env.CONFIG__AI_TIMEOUT)"
+}
+
+@test "the NaN client retries are set, not left to the caller" {
+  assert_rule chain_fits_the_step "del((${NAN}).env.CONFIG__NUM_RETRIES)"
+}
+
+@test "a client retry counts against the step bound" {
+  assert_rule chain_fits_the_step "(${NAN}).env.CONFIG__NUM_RETRIES = \"1\""
+}
+
+@test "a timed-out call is not retried on the same model" {
+  assert_rule chain_fits_the_step "(${NAN}).env.CONFIG__RETRY_SAME_MODEL_ON_TIMEOUT = \"true\""
 }
 
 @test "the review job outlasts its two longest PR-Agent steps" {
