@@ -13,7 +13,7 @@ setup() {
   export GITHUB_OUTPUT="${BATS_TEST_TMPDIR}/output"
   : >"${GITHUB_OUTPUT}"
   step resolve run >"${BATS_TEST_TMPDIR}/resolve.sh"
-  export IMAGE=app CACHE_SCOPE="" CACHE_MODE=max CACHE_FROM="" CACHE_TO="" LOAD=false PUSH=false
+  export IMAGE=app CACHE_SCOPE="" CACHE_MODE=max CACHE_FROM="" CACHE_TO="" LOAD=false PUSH=false PUSH_BY_DIGEST=false
 }
 
 resolve() { run bash --noprofile --norc -eo pipefail "${BATS_TEST_TMPDIR}/resolve.sh"; }
@@ -54,7 +54,7 @@ output_of() { sed -n "s/^$1=//p" "${GITHUB_OUTPUT}" | tail -1; }
   [ "$(step build with.load)" = '${{ inputs.load }}' ]
   [ "$(step build with.push)" = '${{ inputs.push }}' ]
   [ "$(step build with.context)" = '${{ inputs.context }}' ]
-  [ "$(step build with.tags)" = '${{ inputs.tags || inputs.image }}' ]
+  [ "$(step build with.tags)" = "\${{ inputs.push-by-digest != 'true' && (inputs.tags || inputs.image) || '' }}" ]
 }
 
 @test "the composite never logs in" {
