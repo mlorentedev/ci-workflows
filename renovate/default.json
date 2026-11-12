@@ -9,11 +9,14 @@
   "timezone": "Europe/Madrid",
   "schedule": ["* * * * 1"],
   "prConcurrentLimit": 3,
-  "prHourlyLimit": 2,
+  "prHourlyLimit": 0,
   "labels": ["dependencies", "renovate"],
   "commitMessagePrefix": "fix(deps):",
   "dependencyDashboard": true,
   "automerge": false,
+  "pep621": {
+    "lockFileMaintenance": { "enabled": true, "schedule": ["* * * * 1"] }
+  },
   "packageRules": [
     {
       "description": "Minor and patch updates of a repository go in one weekly PR. Majors stay individual: the review question is different, and a major buried in a group merges unread.",
@@ -24,6 +27,17 @@
       "description": "An action bump changes CI, not the shipped code, so it must not cut a fix release through release-please.",
       "matchManagers": ["github-actions"],
       "commitMessagePrefix": "ci(deps):"
+    },
+    {
+      "description": "Action updates get a group of their own. Sharing the general group, an application update took the ci(deps): prefix, which release-please does not release, so it shipped without a release (#73).",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "groupName": "github actions"
+    },
+    {
+      "description": "A Renovate branch runs CI with the repository's secrets, which a Dependabot branch never had (#74). Packages whose install or tests run code wait three days, the window in which a compromised release is usually pulled. Vulnerability fixes skip the wait: Renovate clears minimumReleaseAge for them.",
+      "matchDatasources": ["npm", "pypi", "go"],
+      "minimumReleaseAge": "3 days"
     }
   ]
 }
