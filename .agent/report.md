@@ -8,9 +8,9 @@ touches `.github/workflows/`, which the merge grant excludes.
 | Issue | PR | Change | Local evidence |
 |---|---|---|---|
 | #85 | #94 | publish guard `if:` uses `!cancelled()` instead of `always()` | bats 265/265 |
-| #91 | #96 | caller and kit share the comment group only for `/review` | bats 265/265 |
+| #91 | #96 | caller and kit share the comment group only for `/review` as a whole word (09cca66 after review) | bats 0 failures |
 | #92 | #97 | `PR_REVIEWER__INLINE_KEY_ISSUES: true` on all three PR-Agent steps | bats 265/265 |
-| #88 + #87 | #100 | NaN step: `MAX_MODEL_TOKENS` 32000, `AI_TIMEOUT` 300, step bound 17 min, budget test; lesson 013 | bats 269/269, actionlint |
+| #88 + #87 | #100 | NaN step: `MAX_MODEL_TOKENS` 32000, `AI_TIMEOUT` 300, step bound 17 min, `NUM_RETRIES` 0, budget test; lesson 013 (14343e8 after review) | bats 0 failures, actionlint |
 
 ## For the owner
 
@@ -31,3 +31,16 @@ touches `.github/workflows/`, which the merge grant excludes.
   reset.
 - A rebase of #100 onto main was declined (force-push). Main gained only a docs
   commit (#95), so the branch stays behind without a conflict.
+
+## Review outcome
+
+- #94, #97: PR-Agent, no findings. Triage posted.
+- #96: two THEORETICAL findings (`/reviewed` still in the group). Fixed in
+  09cca66; the re-review marks both resolved.
+- #100: one THEORETICAL finding (`num_retries` multiplies the chain). Fixed in
+  14343e8; the re-review marks it resolved.
+- An author push is not reviewed automatically; the re-reviews came from a
+  `/review` comment.
+- Filed #103: roll the new `/review` key out to the 12 adopters.
+- `dotf pr triage-queue`: exit 0. All four PRs are ready, green, and waiting for
+  the owner's merge.
