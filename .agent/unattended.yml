@@ -1,27 +1,68 @@
 version: 1
-run_id: "ciw-20261111T0750Z"
+run_id: "ciw-20261112T0702Z"
 armed_by: manu
-armed_at: 2026-11-11T07:43:00Z
-expires_at: 2026-11-11T19:43:00Z
-objective: "Open the ci-workflows PR fixing #67 (setup-node's Playwright cache path on every OS, setup-python-uv's CRLF version file), green and triaged, and file the follow-up tickets CI-004 left as prose (fleet adoption of the toolchain composites, a macOS smoke); leave every PR for the owner."
-worktree: /Users/manu/Projects/worktrees/ci-workflows/fix-issue-67-toolchain-edge-cases
-branch: fix/issue-67-toolchain-edge-cases
+armed_at: "2026-11-12T07:06:00Z"
+expires_at: "2026-11-12T19:06:00Z"
+objective: "Finish the ci-workflows hygiene and pages lines: CI-006 (#32) gets its first consumer, ts-bridge, on pages.yml; CI-005 (#31) records its smoke run, gains the pinned-actions input on dotf v0.80.0's fleet/sha-pin, and opens one adoption PR per hygiene adopter. Every PR is green and triaged, and every merge is left to the owner."
+worktree: per item, created with dotf worktree add and removed once its PR merges
 scope:
-  write_paths: [".github/actions/setup-node/**", ".github/actions/setup-python-uv/**", "tests/**", "README.md", "docs/lessons/**", "specs/**", ".agent/runs/ciw-20261111T0750Z/**"]
-  frozen_paths: [".github/merge-grant.yml", ".github/workflows/**", ".github/actions/gate/**", ".github/actions/changes/**", ".github/actions/push-gate/**", ".github/actions/hygiene/**", "renovate.json", "harness/**", "**/AGENTS.md", ".agent/unattended.yml"]
-  max_files: 10
+  write_paths:
+    - "specs/CI-006-pages/**"
+    - "specs/CI-005-hygiene/**"
+    - ".github/actions/hygiene/**"
+    - ".github/workflows/lint.yml" # smoke-hygiene job only; the owner merges any PR touching it
+    - "tests/hygiene*.bats"
+    - "tests/fixtures/lessons/**"
+    - "tests/fixtures/hygiene/**"
+    - "README.md" # the hygiene and pages sections only
+    - "docs/lessons/lesson-015-*.md" # 013 feat-issue-15, 014 ci-workflows-34; ask the peers before 016
+    - ".agent/runs/ciw-20261112T0702Z/**"
+    # Cross-repo: pull requests only, never merged by the run.
+    - "ts-bridge:.github/workflows/pages.yml"
+    - "ts-bridge:.github/workflows/site-pr.yml"
+    - "<adopter>:.github/workflows/repo-hygiene.yml"
+    - "<adopter>:docs/lessons/**"
+    - "<adopter>:scripts/check-lessons.sh"
+    - "<adopter>:<every reader of docs/lessons/_index.md, changed in the same PR>"
+  adopters: [garsync, hive, iris, kubelab, mail2markdown, pdf-modifier, pollex, svqtriana.github.io, ts-bridge, web, yt-metrics-cli]
+  frozen_paths:
+    - ".agent/unattended.yml"
+    - ".github/merge-grant.yml"
+    - ".github/workflows/pr-agent.yml" # feat-issue-15
+    - ".github/workflows/review.yml" # feat-issue-15
+    - "specs/CI-007-fleet-pr-agent/**" # feat-issue-15
+    - "specs/CI-003-renovate/**" # ci-workflows-34
+    - "renovate/**" # ci-workflows-34
+    - "tests/renovate-shape.bats" # ci-workflows-34
+    - ".github/actions/setup-*/**"
+    - ".github/actions/gate/**"
+    - ".github/actions/changes/**"
+    - "harness/**"
+    - "**/AGENTS.md"
+    - "<adopter>:scripts/check-actions-pinned.sh" # stays until a hygiene release carries pinned-actions
+  max_files: 12
   max_loc: 300
-allowed_commands: [dotf, gh, git, bats, actionlint, shellcheck, yq, jq, caffeinate]
+allowed_commands: [dotf, gh, git, bats, actionlint, shellcheck, yq, jq, npm, caffeinate]
 queue:
   source: bitacora
-  filter: "Items, in order: (1) ci-workflows#67; (2) file follow-up tickets for the CI-004 toolchain composites that the archived spec left as prose: fleet adoption, a macOS smoke. Nothing else: not #11-#14, #30-#33, nor another repository."
-  max_items: 2
+  filter: "Items, in order: (1) ci-workflows#31: record the smoke-hygiene run on main in CI-005 verification.md; (2) ci-workflows#32 AC5: a ts-bridge PR calling pages.yml@v0.6.0 by SHA, its build green on the PR; (3) ci-workflows#31 AC5: adoption PRs for pdf-modifier, pollex, yt-metrics-cli, mail2markdown, iris; (4) ci-workflows#31 AC3: the pinned-actions input on dotf v0.80.0, parked only if releases/tags/v0.80.0 still has no assets when reached; (5) ci-workflows#31 AC5: adoption PRs for ts-bridge, garsync, svqtriana.github.io, web, hive, kubelab. Skip a repo with an open peer PR on .github/workflows. Nothing else: not #11-#14, #30, #33, #73-#92, nor a repository outside the adopters list."
+  max_items: 14
 budget:
-  max_iterations: 6
-  max_minutes_per_iteration: 90
+  max_iterations: 24
+  max_minutes_per_iteration: 60
   max_consecutive_failures: 2
 authority:
   merge: never
   push: true
   open_pr: true
   advisor_tier: top
+coordination:
+  peers: [ci-workflows-34, feat-issue-15-release-please-50]
+  lessons: "013 feat-issue-15; 014 ci-workflows-34; 015 this run; ask before 016"
+rules:
+  - 'An adoption PR keeps two commits apart: the output of dotf lessons fmt alone, then the change. The fmt commit is exempt from max_files and max_loc only if every hunk it holds lies inside a lesson frontmatter; otherwise park the adopter with the diff stat.'
+  - 'Never renumber or rename a lesson unattended. A duplicate number or another composite failure on the adopter parks it, with the composite output in the park comment on #31.'
+  - 'Readers of docs/lessons/_index.md: pointer stubs, docs and test fixtures change in the same PR; a reader in application code, or a test asserting its content, parks the adopter (hive and kubelab are the likely cases).'
+  - 'Keep the repo-hygiene job id where a branch protection or ruleset requires it (ts-bridge requires hygiene): replace only the lessons step, keep every other step.'
+  - Run dotf lint fleet (built from dotfiles main, or v0.80.0 once released) on each adopter before and after; the PR adds no new fleet finding, and its Verification shows both outputs.
+  - 'Read the ts-bridge required checks before the pages PR: none of test, lint, security, hygiene may disappear or be renamed.'
