@@ -78,3 +78,30 @@ jstep() { yq ".jobs.$1.steps[] | select(.id == \"$2\") | .$3" "${WORKFLOW}"; }
   run bash -c "yq '.jobs.scan.steps[].uses, .jobs.tag.steps[].uses' '${WORKFLOW}' | grep checkout"
   [ "$status" -ne 0 ]
 }
+
+@test "labels and the cache inputs pass straight through to the composite" {
+  local input
+  for input in labels cache-from cache-to; do
+    [ "$(yq ".on.workflow_call.inputs.${input}.default" "${WORKFLOW}")" = "" ]
+    [ "$(jstep build build with.${input})" = "\${{ inputs.${input} }}" ]
+  done
+  [ "$(yq '.on.workflow_call.inputs.cache-write.default' "${WORKFLOW}")" = "true" ]
+  [ "$(jstep build build with.cache-write)" = '${{ inputs.cache-write }}' ]
+}
+
+@test "the composite is pinned at a commit on main that has every input the workflow passes" {
+  local sha
+  sha=$(jstep build build uses | sed 's/.*@//')
+  local repo="${BATS_TEST_DIRNAME}/.."
+  git -C "${repo}" cat-file -e "${sha}^{commit}" 2>/dev/null || skip "pinned commit not in this clone"
+  # A commit from a pull request's branch is left off main by a squash merge.
+  if git -C "${repo}" rev-parse -q --verify origin/main >/dev/null; then
+    git -C "${repo}" merge-base --is-ancestor "${sha}" origin/main
+  fi
+  run bash -c "git -C '${BATS_TEST_DIRNAME}/..' show '${sha}:.github/actions/docker-build/action.yml' | yq '.inputs | keys | .[]'"
+  [ "$status" -eq 0 ]
+  local passed
+  for passed in $(jstep build build with | yq 'keys | .[]'); do
+    grep -qx "${passed}" <<<"$output"
+  done
+}

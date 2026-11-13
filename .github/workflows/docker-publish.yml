@@ -54,6 +54,22 @@ on:
         description: gha cache-to mode, max or min.
         type: string
         default: max
+      cache-from:
+        description: Overrides the gha cache source, for example type=registry,ref=<image>:buildcache.
+        type: string
+        default: ""
+      cache-to:
+        description: Overrides the gha cache destination. Excludes cache-write false.
+        type: string
+        default: ""
+      cache-write:
+        description: Write the layer cache. false reads it and writes nothing.
+        type: string
+        default: "true"
+      labels:
+        description: Image labels, one KEY=value per line.
+        type: string
+        default: ""
     secrets:
       REGISTRY_USERNAME:
         required: true
@@ -89,9 +105,9 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_TOKEN }}
       - id: build
-        # Repointed at the release that ships the composite (#102); the head of
-        # #102 until then.
-        uses: mlorentedev/ci-workflows/.github/actions/docker-build@4591d9ec08f777d37f87737266688f7822a7f37c
+        # A commit on main that has every input passed below: a composite change
+        # lands first, then this pin moves to its merge commit (lesson 017).
+        uses: mlorentedev/ci-workflows/.github/actions/docker-build@f515efc45c7f3e7ea632d33bb714352549e47d89
         with:
           image: ${{ inputs.image }}
           context: ${{ inputs.context }}
@@ -101,6 +117,10 @@ jobs:
           push-by-digest: "true"
           cache-scope: ${{ inputs.cache-scope }}
           cache-mode: ${{ inputs.cache-mode }}
+          cache-from: ${{ inputs.cache-from }}
+          cache-to: ${{ inputs.cache-to }}
+          cache-write: ${{ inputs.cache-write }}
+          labels: ${{ inputs.labels }}
 
   scan:
     needs: build

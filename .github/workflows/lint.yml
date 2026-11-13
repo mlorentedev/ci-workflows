@@ -97,6 +97,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Full history and origin/main, so tests/docker-publish-shape.bats can
+          # check that the composite pin is a commit on main.
+          fetch-depth: 0
       - name: Install bats
         run: |
           tarball="bats-${BATS_VERSION}.tar.gz"
