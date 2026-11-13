@@ -507,7 +507,7 @@ that builds and then runs the image keeps its shape:
 - **Cache size.** GitHub keeps 10 GB of cache per repository and evicts the least recently used entries.
   `cache-mode: max` (the default) caches every layer and can approach that on a multi-platform build;
   `min` caches only the final image's layers. `cache-write: false` reads the cache and writes none, for a
-  caller that writes only from its default branch (pass `${{ github.event_name == 'push' }}`); it excludes
+  caller that writes only from its default branch (pass `${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}`); it excludes
   `cache-to`, and any value but `true` or `false` fails.
 - **Gitea.** `type=gha` needs GitHub's cache service, and Gitea's runner cache is unverified with it. Pass
   `cache-from` and `cache-to`, e.g. `type=registry,ref=<image>:buildcache`.

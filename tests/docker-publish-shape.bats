@@ -93,7 +93,11 @@ jstep() { yq ".jobs.$1.steps[] | select(.id == \"$2\") | .$3" "${WORKFLOW}"; }
   local sha
   sha=$(jstep build build uses | sed 's/.*@//')
   local repo="${BATS_TEST_DIRNAME}/.."
-  git -C "${repo}" cat-file -e "${sha}^{commit}" 2>/dev/null || skip "pinned commit not in this clone"
+  if ! git -C "${repo}" cat-file -e "${sha}^{commit}" 2>/dev/null; then
+    # Only a shallow clone may lack it; with full history a missing pin is a bad pin.
+    [ "$(git -C "${repo}" rev-parse --is-shallow-repository)" = "true" ] || return 1
+    skip "pinned commit not in this shallow clone"
+  fi
   # A commit from a pull request's branch is left off main by a squash merge.
   if git -C "${repo}" rev-parse -q --verify origin/main >/dev/null; then
     git -C "${repo}" merge-base --is-ancestor "${sha}" origin/main
