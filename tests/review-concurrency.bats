@@ -104,6 +104,10 @@ classify() {
   [ "$(classify '/describe')" = "false" ]
   [ "$(classify '/ask what is this')" = "false" ]
   [ "$(classify '/src/review.go looks off')" = "false" ]
+  # shlex splits on space, tab, CR and LF only, so PR-Agent reads these as one
+  # unknown command.
+  [ "$(classify $'/review\fx')" = "false" ]
+  [ "$(classify $'/review\vx')" = "false" ]
 }
 
 @test "a bot's push gets a group of its own" {

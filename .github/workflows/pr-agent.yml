@@ -81,7 +81,8 @@ jobs:
           retention-days: 1
       # Whether this comment runs a review: its first word is one of the commands
       # PR-Agent maps to its reviewer (command2class at the audited ref), ended by
-      # any whitespace or the end of the body. PR-Agent lowercases the command, and
+      # what its shlex tokenizer splits on (space, tab, CR, LF; not form feed or
+      # vertical tab) or the end of the body. PR-Agent lowercases the command, and
       # so does this. Callers' concurrency keys match the same four (#113).
       - name: Classify the comment's command
         id: command
@@ -89,7 +90,7 @@ jobs:
         env:
           BODY: ${{ github.event.comment.body }}
         run: |
-          first=$(printf '%s' "${BODY%%[[:space:]]*}" | tr '[:upper:]' '[:lower:]')
+          first=$(printf '%s' "${BODY%%[$' \t\r\n']*}" | tr '[:upper:]' '[:lower:]')
           case "${first}" in
             /review | /review_pr | /auto_review | /answer) review=true ;;
             *) review=false ;;
