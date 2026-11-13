@@ -36,8 +36,8 @@ PR 1, the composite (this branch):
 
 Adoption, one PR per repository, in batches of 4 (dotfiles#3188), after a tag carries the composite:
 
-- [ ] Before each PR, grep the repository for readers of `docs/lessons/_index.md` (hive's code, kubelab's tests) and for pointer stubs that link it, and change them in the same PR.
-- [ ] [AC5] Each PR runs `dotf lessons fmt`, deletes `_index.md` and `check-lessons.sh`, and replaces the lessons step of `repo-hygiene.yml` with the composite at a pinned SHA. `check-actions-pinned.sh` stays until dotfiles#3147.
+- [x] Before each PR, grep the repository for readers of `docs/lessons/_index.md` (hive's code, kubelab's tests) and for pointer stubs that link it, and change them in the same PR.
+- [x] [AC5] Each PR runs `dotf lessons fmt`, deletes `_index.md` and `check-lessons.sh`, and replaces the lessons step of `repo-hygiene.yml` with the composite at a pinned SHA. `check-actions-pinned.sh` stays until dotfiles#3147. Ten adopters merged; kubelab excluded (see verification.md).
 - [ ] [AC4] Gitea: one Gitea repository runs the composite (owned by the IDP-036 session); record the run here.
 
 After dotfiles#3147:
