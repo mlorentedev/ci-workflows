@@ -29,8 +29,12 @@ PR 2, the publish workflow; PR 3, its callers and README:
 - [x] [AC4] (PR 3) Caller fixtures for web, kubelab and dotfiles under `tests/fixtures/docker-callers/`, with `tests/docker-callers.bats`. Not under `tests/fixtures/callers/`, which `tests/callers.bats` reads as pr-agent callers only.
 - [x] (PR 3) README section, with the cache-size and Gitea notes.
 
-PR 4..n, adoption (one per repository, merged by the owner):
+PR 4..n, adoption (one per repository, merged by the owner), after the amendment in the proposal:
 
-- [ ] [AC5] dotfiles and hive: the composite in the existing build-then-run job.
-- [ ] [AC5] web and kubelab: `docker-publish.yml` replaces `build-image.yml` and `ci-publish.yml`'s build. kubelab drops `secrets: inherit`.
-- [ ] [AC5] Record dotfiles' integration build time, and each kubelab app's cache restore, in `verification.md`.
+- [ ] hive: the composite at v0.7.0 in the existing build-then-run job (hive#584).
+- [ ] (PR A) The composite gains `cache-write` and `labels`, with tests. Spec amendment and lesson 017.
+- [ ] (PR B, after A merges) `docker-publish.yml` passes `labels`, `cache-from`, `cache-to` and `cache-write` through, pinned at A's merge commit. Then a release.
+- [ ] [AC5] dotfiles: the composite with `cache-write` false on pull requests, scope `integration` kept.
+- [ ] [AC5] kubelab: `docker-publish.yml` replaces `ci-publish.yml`'s build; `secrets: inherit` dropped. Say which parts of kubelab#3344 it closes.
+- [ ] [AC5] web: `docker-publish.yml` with `type=registry` cache for releases; the composite plus web's Trivy gate for pull requests.
+- [ ] [AC5] Record hive's and dotfiles' build times, and each kubelab app's cache restore, in `verification.md`.
