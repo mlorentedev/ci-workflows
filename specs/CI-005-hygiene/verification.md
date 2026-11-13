@@ -17,7 +17,23 @@ Map every acceptance criterion from `proposal.md` to concrete proof (commit hash
 - [x] AC2: `smoke-hygiene` on main, push run 43173027029 at `e8977f2`, job 131031182732, with dotf 0.79.0. The lessons step on this repository ended `outcome=success`. The step on `tests/fixtures/lessons/duplicate-number` ended `outcome=failure` with "lesson number 001 is used twice: …/lesson-001-first-fixture.md and …/lesson-001-same-number.md", and the job passed because the fixture failed naming the file.
 - [ ] AC3: pending (dotf v0.80.0 carries fleet/sha-pin).
 - [ ] AC4: GitHub side shown by the run above; Gitea pending (IDP-036 session).
-- [ ] AC5: pending (adoption PRs).
+- [ ] AC5: lessons half done, pinned-actions half pending. Ten adopters run the composite's lessons check at `2355330` (v0.6.0) and carry no `scripts/check-lessons.sh` and no committed `docs/lessons/_index.md` on their default branch. Each merged push ran `Repo hygiene` green:
+
+  | Adopter | PR | Merge | Repo hygiene run |
+  |---|---|---|---|
+  | pdf-modifier | #239 | `acc5b5c` | 43308384451 |
+  | pollex | #131 | `eb19d7e` | 43308420494 |
+  | yt-metrics-cli | #121 | `06c5a8e` | 43308699783 |
+  | mail2markdown | #34 | `85c0482` | 43308323156 |
+  | iris | #64 | `c2d3722` | 43308089242 |
+  | hive | #582 | `61202d6` | 43242348268 |
+  | garsync | #165 | `6dff638` | 43308004887 |
+  | ts-bridge | #755 | `d923fbc` | 43337177847 |
+  | web | #661 | `0a69c87` | 43308578791 |
+  | svqtriana.github.io | #43 | `b7921d2` | 43308483074 |
+
+  kubelab is excluded by the owner's decision (ci-workflows#31): its application code and tests read the lesson indexes, so it needs its own spec first. Every adopter still carries `scripts/check-actions-pinned.sh`; it goes once the composite has the pinned-actions input (AC3, waiting on dotfiles#3386). A lesson named outside `lesson-NNN-*.md` passes the check unseen: dotfiles#3415.
+
 - [ ] AC6: pending (dotfiles side).
 
 ## Test status
