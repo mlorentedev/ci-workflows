@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.0](https://github.com/mlorentedev/ci-workflows/compare/v0.6.0...v0.7.0) (2026-11-12)
+
+
+### Features
+
+* **docker-build:** add a composite that builds with a per-image gha layer cache ([#102](https://github.com/mlorentedev/ci-workflows/issues/102)) ([4591d9e](https://github.com/mlorentedev/ci-workflows/commit/4591d9ec08f777d37f87737266688f7822a7f37c))
+
+
+### Bug Fixes
+
+* **docker-publish:** pin the composite at its merge commit on main ([#109](https://github.com/mlorentedev/ci-workflows/issues/109)) ([36cc2f7](https://github.com/mlorentedev/ci-workflows/commit/36cc2f7be9298813a55e8da68873066f0746862e))
+* **pr-agent:** bound the NaN prompt and fit its chain in the step ([#100](https://github.com/mlorentedev/ci-workflows/issues/100)) ([4dffe65](https://github.com/mlorentedev/ci-workflows/commit/4dffe6581a30c65cd8614771e2e7f7d891f3c374))
+* **pr-agent:** publish review findings inline on every PR-Agent step ([#97](https://github.com/mlorentedev/ci-workflows/issues/97)) ([4934502](https://github.com/mlorentedev/ci-workflows/commit/49345029c38c0bffcdf6bd5c8f8dd10ff6144921))
+* **pr-agent:** share the comment group only for a /review command ([#96](https://github.com/mlorentedev/ci-workflows/issues/96)) ([b0a2958](https://github.com/mlorentedev/ci-workflows/commit/b0a295891d743a78151083af44f9a58ec19cdc01))
+* **pr-agent:** skip the publish guard in a run a push cancelled ([#94](https://github.com/mlorentedev/ci-workflows/issues/94)) ([e598a1d](https://github.com/mlorentedev/ci-workflows/commit/e598a1d6679fb860e3afc80b0c77dd358295ba82))
+
 ## [0.6.0](https://github.com/mlorentedev/ci-workflows/compare/v0.5.0...v0.6.0) (2026-11-12)
 
 
