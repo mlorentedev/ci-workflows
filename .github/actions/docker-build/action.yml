@@ -122,7 +122,18 @@ runs:
           exit 1
         fi
         cache_to="${CACHE_TO:-type=gha,scope=${scope},mode=${CACHE_MODE}}"
-        if ! is_true "${CACHE_WRITE:-true}"; then
+        # build-push-action never sees cache-write, so nothing else would reject a
+        # typo: a value that is neither true nor false fails here rather than
+        # leave the cache silently unwritten.
+        cache_write=$(tr -d '[:space:]' <<<"${CACHE_WRITE:-true}" | tr '[:upper:]' '[:lower:]')
+        case "${cache_write}" in
+          true | false) ;;
+          *)
+            echo "::error::docker-build: cache-write must be true or false, not '${CACHE_WRITE}'"
+            exit 1
+            ;;
+        esac
+        if [ "${cache_write}" = "false" ]; then
           if [ -n "${CACHE_TO}" ]; then
             echo "::error::docker-build: cache-write is false but cache-to names a destination; pass one or the other"
             exit 1

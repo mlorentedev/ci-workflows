@@ -170,6 +170,17 @@ output_of() {
   done
 }
 
+@test "a cache-write that is neither true nor false fails instead of skipping the write" {
+  local v
+  for v in ture yes on 1; do
+    CACHE_WRITE="${v}" resolve
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"cache-write"* ]]
+  done
+  CACHE_WRITE=" TRUE " resolve
+  [ "$status" -eq 0 ]
+}
+
 @test "cache-write false with a cache-to override fails, since the two disagree" {
   CACHE_WRITE=false CACHE_TO="type=registry,ref=r/app:cache" resolve
   [ "$status" -ne 0 ]
