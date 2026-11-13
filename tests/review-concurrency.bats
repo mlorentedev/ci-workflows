@@ -35,17 +35,75 @@ associations_in() { grep -o "fromJSON('\[[^]]*\]')" | head -n 1; }
   group_of "${CALLER}" | grep -Fq "format('-{0}', github.event.comment.id)"
 }
 
-# Only /review shares the review group (#91). A trusted comment that merely
-# starts with a slash (a path, or /improve) would otherwise cancel an in-flight
-# /review, and the run replacing it publishes no Guide.
-@test "only a /review command shares the comment group" {
-  group_of "${CALLER}" | grep -Fq "github.event.comment.body == '/review'"
-  group_of "${CALLER}" | grep -Fq "startsWith(github.event.comment.body, '/review ')"
-  [ -z "$(group_of "${CALLER}" | grep -F "startsWith(github.event.comment.body, '/')")" ]
+# The commands PR-Agent runs as a review: command2class at the audited ref maps
+# these four to its reviewer (#113). Only they share the review group (#91); any
+# other trusted comment, /improve or a path, would cancel an in-flight review.
+REVIEW_COMMANDS="/answer /auto_review /review /review_pr"
+
+# Each command the key names, as the sorted set of its "'/cmd '" literals.
+key_commands() {
+  group_of "$1" | grep -oE "'/[a-z_]+ '" | tr -d "' " | sort -u | tr '\n' ' ' | sed 's/ $//'
+}
+
+# The classification step of the shared job, and the commands its case names.
+classify_step() { yq '.jobs.review.steps[] | select(.id == "command")' "${SHARED}"; }
+step_commands() {
+  classify_step | yq '.run' | grep -E '^\s*/' | head -n 1 | sed 's/).*//' |
+    tr '|' '\n' | tr -d ' ' | sort -u | tr '\n' ' ' | sed 's/ $//'
+}
+
+# Runs the step's own script on a comment body and prints its decision.
+classify() {
+  local out
+  out="$(mktemp)"
+  BODY="$1" GITHUB_OUTPUT="${out}" bash -c "$(classify_step | yq '.run')"
+  sed -n 's/^review=//p' "${out}"
+}
+
+@test "the key shares the group for exactly PR-Agent's review commands" {
+  [ "$(key_commands "${CALLER}")" = "${REVIEW_COMMANDS}" ]
+}
+
+@test "the shared job classifies the same commands as the key" {
+  [ "$(step_commands)" = "${REVIEW_COMMANDS}" ]
+}
+
+@test "every review command is ended by a tab, a newline or a carriage return too" {
+  for cmd in ${REVIEW_COMMANDS}; do
+    for sep in 't' 'n' 'r'; do
+      group_of "${CALLER}" | grep -Fq "format('${cmd}{0}', fromJSON('\"\\${sep}\"'))"
+    done
+  done
 }
 
 @test "a word that only begins with /review, such as /reviewed, gets its own group" {
   [ -z "$(group_of "${CALLER}" | grep -F "startsWith(github.event.comment.body, '/review')")" ]
+  [ -z "$(group_of "${CALLER}" | grep -F "github.event.comment.body == ")" ]
+}
+
+@test "every publish gate reads the step, not the comment body" {
+  [ "$(yq '[.jobs.review.steps[] | select((.if // "") | test("steps.command.outputs.review == .true."))] | length' "${SHARED}")" = "4" ]
+  [ "$(yq '[.jobs.review.steps[] | select((.if // "") | test("comment.body"))] | length' "${SHARED}")" = "0" ]
+}
+
+@test "the step runs a review for every spelling PR-Agent accepts" {
+  [ "$(classify '/review')" = "true" ]
+  [ "$(classify '/review --pr_reviewer.extra_instructions=x')" = "true" ]
+  [ "$(classify $'/review\nplease look again')" = "true" ]
+  [ "$(classify $'/review\r\nsecond line')" = "true" ]
+  [ "$(classify $'/review\tx')" = "true" ]
+  [ "$(classify '/Review')" = "true" ]
+  [ "$(classify '/review_pr')" = "true" ]
+  [ "$(classify '/auto_review')" = "true" ]
+  [ "$(classify '/answer')" = "true" ]
+}
+
+@test "the step runs no review for anything else" {
+  [ "$(classify '/reviewed')" = "false" ]
+  [ "$(classify '/improve')" = "false" ]
+  [ "$(classify '/describe')" = "false" ]
+  [ "$(classify '/ask what is this')" = "false" ]
+  [ "$(classify '/src/review.go looks off')" = "false" ]
 }
 
 @test "a bot's push gets a group of its own" {

@@ -79,6 +79,22 @@ jobs:
           path: ${{ runner.temp }}/pr-number
           if-no-files-found: error
           retention-days: 1
+      # Whether this comment runs a review: its first word is one of the commands
+      # PR-Agent maps to its reviewer (command2class at the audited ref), ended by
+      # any whitespace or the end of the body. PR-Agent lowercases the command, and
+      # so does this. Callers' concurrency keys match the same four (#113).
+      - name: Classify the comment's command
+        id: command
+        if: github.event_name == 'issue_comment'
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          first=$(printf '%s' "${BODY%%[[:space:]]*}" | tr '[:upper:]' '[:lower:]')
+          case "${first}" in
+            /review | /review_pr | /auto_review | /answer) review=true ;;
+            *) review=false ;;
+          esac
+          echo "review=${review}" >> "$GITHUB_OUTPUT"
       # Before the first decision, which is dotf's: a draft or a skipped branch
       # costs one download.
       - name: Install dotf
@@ -114,8 +130,7 @@ jobs:
         if: >
           inputs.declare_unreviewed && steps.reviewable.outcome == 'success'
             && (github.event_name == 'pull_request'
-              || (github.event_name == 'issue_comment'
-                  && contains(github.event.comment.body, '/review')))
+              || steps.command.outputs.review == 'true')
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
@@ -240,8 +255,7 @@ jobs:
           !cancelled() && steps.route.outputs.first == 'anthropic'
             && steps.route.outputs.second == 'nan'
             && (github.event_name == 'pull_request'
-              || (github.event_name == 'issue_comment'
-                  && contains(github.event.comment.body, '/review')))
+              || steps.command.outputs.review == 'true')
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
@@ -305,8 +319,7 @@ jobs:
           !cancelled() && steps.route.outputs.first == 'nan'
             && steps.route.outputs.second == 'anthropic'
             && (github.event_name == 'pull_request'
-              || (github.event_name == 'issue_comment'
-                  && contains(github.event.comment.body, '/review')))
+              || steps.command.outputs.review == 'true')
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
@@ -362,8 +375,7 @@ jobs:
             && steps.reviewable.outputs.reviewable != 'false'
             && steps.push_gate.outputs.run != 'false'
             && (github.event_name == 'pull_request'
-              || (github.event_name == 'issue_comment'
-                  && contains(github.event.comment.body, '/review')))
+              || steps.command.outputs.review == 'true')
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
