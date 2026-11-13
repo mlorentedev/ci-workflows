@@ -42,6 +42,8 @@ Map every acceptance criterion from `proposal.md` to concrete proof (commit hash
   list and buys a scope per image. The composite's `cache-scope` output names the scope in use.
 - Secrets are `REGISTRY_USERNAME` and `REGISTRY_TOKEN`, the repository's uppercase convention (`RELEASE_TOKEN`).
   The proposal's lowercase names refer to the same secrets.
+- `cache-write: false` with a `cache-to` override fails rather than picking one, since the caller asked for both.
+  The composite takes the policy as an input instead of reading `github.event_name` (AGENTS.md rule 4).
 
 -
 -

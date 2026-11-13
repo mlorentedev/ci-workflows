@@ -27,6 +27,9 @@ inputs:
   build-args:
     description: Build arguments, one KEY=value per line.
     default: ""
+  labels:
+    description: Image labels, one KEY=value per line.
+    default: ""
   platforms:
     description: Target platforms, comma-separated. Empty means the runner's.
     default: ""
@@ -51,6 +54,9 @@ inputs:
   cache-to:
     description: Overrides the gha cache destination.
     default: ""
+  cache-write:
+    description: Write the layer cache. false reads it and writes nothing, for a caller that writes only from its default branch. Excludes cache-to.
+    default: "true"
 
 outputs:
   digest:
@@ -77,6 +83,7 @@ runs:
         LOAD: ${{ inputs.load }}
         PUSH: ${{ inputs.push }}
         PUSH_BY_DIGEST: ${{ inputs.push-by-digest }}
+        CACHE_WRITE: ${{ inputs.cache-write }}
       run: |
         # build-push-action reads a boolean trimmed and in any case, so the guard does too.
         is_true() { [ "$(tr -d '[:space:]' <<<"$1" | tr '[:upper:]' '[:lower:]')" = "true" ]; }
@@ -114,6 +121,14 @@ runs:
           echo "::error::docker-build: no cache scope; the image name '${IMAGE}' leaves none, so pass cache-scope"
           exit 1
         fi
+        cache_to="${CACHE_TO:-type=gha,scope=${scope},mode=${CACHE_MODE}}"
+        if ! is_true "${CACHE_WRITE:-true}"; then
+          if [ -n "${CACHE_TO}" ]; then
+            echo "::error::docker-build: cache-write is false but cache-to names a destination; pass one or the other"
+            exit 1
+          fi
+          cache_to=""
+        fi
         # cache-from and cache-to may be lists, one entry a line: a delimited
         # output keeps every line.
         delim="EOF_$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')"
@@ -122,7 +137,7 @@ runs:
           echo "outputs=${outputs}"
           echo "scope=${scope}"
           printf 'cache-from<<%s\n%s\n%s\n' "${delim}" "${CACHE_FROM:-type=gha,scope=${scope}}" "${delim}"
-          printf 'cache-to<<%s\n%s\n%s\n' "${delim}" "${CACHE_TO:-type=gha,scope=${scope},mode=${CACHE_MODE}}" "${delim}"
+          printf 'cache-to<<%s\n%s\n%s\n' "${delim}" "${cache_to}" "${delim}"
         } >>"${GITHUB_OUTPUT}"
 
     - id: buildx
@@ -135,6 +150,7 @@ runs:
         file: ${{ inputs.file }}
         tags: ${{ steps.resolve.outputs.by-digest != 'true' && (inputs.tags || inputs.image) || '' }}
         build-args: ${{ inputs.build-args }}
+        labels: ${{ inputs.labels }}
         platforms: ${{ inputs.platforms }}
         load: ${{ inputs.load }}
         push: ${{ inputs.push }}

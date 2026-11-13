@@ -17,7 +17,7 @@ owner: manu
 
 Image builds are the slowest steps in the fleet's pull request runs, and half of them start cold.
 
-- **No layer cache.** dotfiles builds its integration container with plain `docker build` (3.4 min p50, on every pull request that touches code), and so does hive.
+- **No layer cache.** dotfiles builds its integration container with plain `docker build` (3.4 min p50, on every pull request that touches code), and so does hive. (dotfiles has since added its own gha cache, CI-013 dotfiles#3149, read on every run and written only on push; see the amendment below.)
 - **A cache the builds overwrite.** kubelab's `ci-publish.yml` builds several apps (api, web, errors) with `cache-from: type=gha` and `cache-to: type=gha,mode=max` but no `scope`, so they all share buildx's default scope and each build overwrites the previous app's cache.
 - **Three copies of the same build.** web (`build-image.yml`) and kubelab (`ci-publish.yml`) keep two buildx and Trivy implementations that agree nearly line for line, and their pins drift apart: three different `login-action` SHAs, and two `upload-sarif` SHAs.
 
@@ -63,7 +63,17 @@ There are two layers, following ADR-001 §2: a composite by default, and a reusa
 2. [ ] `docker-publish.yml` pushes by digest, scans every published platform by digest, and fails on a CRITICAL finding in any of them before it applies a tag. Each SARIF report is uploaded under the caller's category and the platform. It reads registry secrets by name only, and `tests/secrets-contract.bats` covers it. Tests assert the order (no tag before the gate) and one scan per platform.
 3. [ ] A warm rebuild with no source change takes under 30 s in this repository's CI. A smoke job builds a fixture image, and a second job with a fresh builder rebuilds it from the `gha` cache. The test asserts the time and the cache hit.
 4. [ ] Caller fixtures for web and kubelab (publish, kubelab with its computed tags and no `secrets: inherit`) and dotfiles (build, then run), under `tests/fixtures/docker-callers/`, checked by their own test.
-5. [ ] After adoption, dotfiles' integration build time is recorded against its 3.4 min p50, and kubelab's apps each restore their own cache.
+5. [ ] After adoption, hive's and dotfiles' build times are recorded, and kubelab's apps each restore their own cache. dotfiles' baseline is its CI-013 cache, not the 3.4 min p50, which predates it; its adoption must keep the write-only-on-push policy.
+
+## Amendment (2026-11-12, after v0.7.0)
+
+Surveying the adopters against v0.7.0 found that only hive fits as shipped:
+
+- dotfiles writes its layer cache only on push, to keep the setup-go caches inside the 10 GB budget. The composite always wrote one, so it gains `cache-write` (false reads and writes nothing). The caller passes the policy; the composite does not read `github.event_name`.
+- kubelab and web set OCI labels, so the composite and `docker-publish.yml` gain `labels`.
+- web keeps its layer cache on a registry tag, not in the Actions cache (WEB-202: at 10 GB the gha cache evicted the npm and Playwright caches). `docker-publish.yml` passes `cache-from`, `cache-to` and `cache-write` through, so web's release path adopts it with `type=registry`. web's pull request builds load and scan without pushing, which `docker-publish.yml` does not do; that path uses the composite and keeps its own Trivy gate (WEB-119).
+
+The composite inputs land first, and `docker-publish.yml` passes them through in a second pull request pinned at the first one's merge commit, since a reusable workflow cannot pin a composite change in its own pull request (lesson 017).
 
 ## References
 

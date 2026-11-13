@@ -13,7 +13,7 @@ setup() {
   export GITHUB_OUTPUT="${BATS_TEST_TMPDIR}/output"
   : >"${GITHUB_OUTPUT}"
   step resolve run >"${BATS_TEST_TMPDIR}/resolve.sh"
-  export IMAGE=app CACHE_SCOPE="" CACHE_MODE=max CACHE_FROM="" CACHE_TO="" LOAD=false PUSH=false PUSH_BY_DIGEST=false
+  export IMAGE=app CACHE_SCOPE="" CACHE_MODE=max CACHE_FROM="" CACHE_TO="" LOAD=false PUSH=false PUSH_BY_DIGEST=false CACHE_WRITE=true
 }
 
 resolve() { run bash --noprofile --norc -eo pipefail "${BATS_TEST_TMPDIR}/resolve.sh"; }
@@ -157,6 +157,30 @@ output_of() {
   [ "$(output_of cache-to)" = $'type=gha,scope=app,mode=max\ntype=inline' ]
   run grep -c '^type=' "${GITHUB_OUTPUT}"
   [ "$output" -eq 4 ]
+}
+
+@test "cache-write false reads the cache and writes none" {
+  local v
+  for v in false " False" FALSE; do
+    : >"${GITHUB_OUTPUT}"
+    CACHE_WRITE="${v}" resolve
+    [ "$status" -eq 0 ]
+    [[ "$(output_of cache-from)" == type=gha,scope=app-* ]]
+    [ "$(output_of cache-to)" = "" ]
+  done
+}
+
+@test "cache-write false with a cache-to override fails, since the two disagree" {
+  CACHE_WRITE=false CACHE_TO="type=registry,ref=r/app:cache" resolve
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"cache-write"* ]]
+}
+
+@test "the composite passes the caller's labels and its cache-write input to the build" {
+  [ "$(yq '.inputs.cache-write.default' "${ACTION}")" = "true" ]
+  [ "$(yq '.inputs.labels.default' "${ACTION}")" = "" ]
+  [ "$(step resolve env.CACHE_WRITE)" = '${{ inputs.cache-write }}' ]
+  [ "$(step build with.labels)" = '${{ inputs.labels }}' ]
 }
 
 # load and push
