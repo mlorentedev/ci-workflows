@@ -152,6 +152,62 @@ jobs:
               "dotfiles/secrets/registry.yaml, then run: dotf secrets sync ci --repo ${GITHUB_REPOSITORY} NAN_API_KEY"
             exit 1
           fi
+      # The triage reads a finding's class from a line the caller's .pr_agent.toml
+      # asks the reviewer for, using the prefix and classes its registry names
+      # (CI-007, #82). If the two drift apart, every finding reaches a human
+      # unclassified, with no error, so a disagreement fails the run here. A
+      # repository with neither passes. Reads the default branch, the way the
+      # review reads the toml. A fetch that fails other than with 404 fails too.
+      - name: Check the class paragraph against the registry
+        id: class_guard
+        if: steps.reviewable.outputs.reviewable != 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          fetch() { # $1 = path, $2 = where to write it; leaves it empty when absent
+            local err="${RUNNER_TEMP}/class-guard.err" rc=0
+            gh api "repos/${GITHUB_REPOSITORY}/contents/$1?ref=${DEFAULT_BRANCH}" \
+              -H 'Accept: application/vnd.github.raw' >"$2" 2>"${err}" || rc=$?
+            if [ "${rc}" -ne 0 ]; then
+              if ! grep -q 'HTTP 404' "${err}"; then
+                echo "::error::Could not read $1 from ${DEFAULT_BRANCH}: $(cat "${err}")"
+                exit 1
+              fi
+              : >"$2"
+            fi
+          }
+          fetch .pr_agent.toml "${RUNNER_TEMP}/class-guard.toml"
+          fetch harness/review-attestation.json "${RUNNER_TEMP}/class-guard.json"
+          toml=$(cat "${RUNNER_TEMP}/class-guard.toml")
+          registry=$(cat "${RUNNER_TEMP}/class-guard.json")
+          instructions=""
+          if [ -n "${toml}" ]; then
+            instructions=$(yq -p toml -o yaml '.pr_reviewer.extra_instructions // ""' <<<"${toml}")
+          fi
+          classification=""
+          if [ -n "${registry}" ]; then
+            classification=$(jq -c '.classification // empty' <<<"${registry}")
+          fi
+          if [ -z "${classification}" ]; then
+            if grep -qF 'Class:' <<<"${instructions}"; then
+              echo "::error::.pr_agent.toml asks the reviewer for a Class: line, but" \
+                "harness/review-attestation.json has no classification block, so no triage reads it."
+              exit 1
+            fi
+            exit 0
+          fi
+          prefix=$(jq -r '.prefix' <<<"${classification}")
+          missing=""
+          while IFS= read -r class; do
+            grep -qF "${prefix}${class}" <<<"${instructions}" || missing="${missing} ${prefix}${class};"
+          done < <(jq -r '.classes[]' <<<"${classification}")
+          if [ -n "${missing}" ]; then
+            echo "::error::harness/review-attestation.json classifies findings, but" \
+              "pr_reviewer.extra_instructions in .pr_agent.toml does not ask for:${missing}" \
+              "Copy the paragraph from specs/CI-007-fleet-pr-agent/kit/class-paragraph.txt in ci-workflows."
+            exit 1
+          fi
       - name: Check out the caller's pool
         if: steps.reviewable.outputs.reviewable != 'false' && inputs.pool != 'embedded'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -191,6 +247,7 @@ jobs:
         id: route
         if: >
           !cancelled() && steps.credential.outcome == 'success'
+            && steps.class_guard.outcome == 'success'
             && steps.reviewable.outcome == 'success'
             && steps.reviewable.outputs.reviewable != 'false'
             && steps.push_gate.outputs.run != 'false'
@@ -372,6 +429,7 @@ jobs:
         # runs the guard, which is how a credential or publish failure surfaces.
         if: >
           !cancelled() && steps.credential.outcome != 'failure'
+            && steps.class_guard.outcome != 'failure'
             && steps.reviewable.outcome != 'failure'
             && steps.reviewable.outputs.reviewable != 'false'
             && steps.push_gate.outputs.run != 'false'

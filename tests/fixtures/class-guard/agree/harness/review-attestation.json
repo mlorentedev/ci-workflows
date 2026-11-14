@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "classification": {
+    "prefix": "Class: ",
+    "classes": [
+      "REAL",
+      "THEORETICAL",
+      "SPECULATIVE"
+    ],
+    "reviewers": [
+      "github-actions"
+    ]
+  }
+}
