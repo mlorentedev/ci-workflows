@@ -238,8 +238,9 @@ jobs:
             *) echo "::error::the npm cache key '${KEY}' does not start with node-cache-${RUNNER_OS}-${RUNNER_ARCH}-npm-: either it lost the platform, or actions/setup-node changed its key format"; exit 1 ;;
           esac
 
-  # The hygiene composite with the real dotf (spec CI-005): this repository's
-  # lessons pass, and a fixture with a lesson number used twice fails, naming it.
+  # The hygiene composite with the real dotf (spec CI-005): this repository
+  # passes, a fixture with a lesson number used twice fails naming it, and so do
+  # a workflow and a local action pinned by tag, naming each line.
   smoke-hygiene:
     needs: changes
     if: contains(fromJSON(needs.changes.outputs.areas), 'hygiene')
@@ -271,6 +272,37 @@ jobs:
             echo "::error::the lessons check did not report the fixture's duplicate number"
             exit 1
           }
+      # A workflow and a local composite action pinned by tag, planted in the
+      # runner's checkout only: committed, they would be Renovate's to update.
+      - name: Plant actions pinned by tag
+        run: |
+          mkdir -p .github/actions/zz-hygiene-smoke
+          printf '%s\n' 'on: push' 'jobs:' '  smoke:' '    runs-on: ubuntu-latest' '    steps:' \
+            '      - uses: actions/checkout@v4' >.github/workflows/zz-hygiene-smoke.yml
+          printf '%s\n' 'name: zz-hygiene-smoke' 'description: planted by smoke-hygiene' 'runs:' \
+            '  using: composite' '  steps:' '    - uses: actions/setup-node@v4' \
+            >.github/actions/zz-hygiene-smoke/action.yml
+      - id: tagged
+        continue-on-error: true
+        uses: ./.github/actions/hygiene
+        with:
+          lessons: "false"
+      - name: The tag pins fail and each line is named
+        env:
+          OUTCOME: ${{ steps.tagged.outcome }}
+        run: |
+          if [ "${OUTCOME}" != "failure" ]; then
+            echo "::error::actions pinned by tag passed the pinned-actions check (outcome ${OUTCOME})"
+            exit 1
+          fi
+          report="${RUNNER_TEMP}/hygiene-pinned-actions.txt"
+          cat "${report}"
+          for line in .github/workflows/zz-hygiene-smoke.yml:6: .github/actions/zz-hygiene-smoke/action.yml:6:; do
+            grep -qF "${line} fleet/sha-pin" "${report}" || {
+              echo "::error::the pinned-actions check did not name ${line}"
+              exit 1
+            }
+          done
 
   # docker-build (CI-010 AC3). The cold job builds the fixture into a scope no
   # earlier run wrote, then the warm job, on a fresh runner and builder, rebuilds

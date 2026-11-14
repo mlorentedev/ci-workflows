@@ -23,6 +23,7 @@ setup() {
   mkdir -p "${RUNNER_TEMP}" "${RELEASE}" "${BATS_TEST_TMPDIR}/stubs"
   step install run >"${BATS_TEST_TMPDIR}/install.sh"
   step lessons run >"${BATS_TEST_TMPDIR}/lessons.sh"
+  step pinned-actions run >"${BATS_TEST_TMPDIR}/pinned-actions.sh"
 
   # curl -fsSL --retry 3 -o <file> <url>: copy the URL's basename out of RELEASE.
   cat >"${BATS_TEST_TMPDIR}/stubs/curl" <<'STUB'
@@ -62,10 +63,11 @@ publish() {
   [[ "$(yq '.inputs.dotf-version.default' "${ACTION}")" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
   [ "$(yq '.inputs.lessons.default' "${ACTION}")" = "true" ]
   [ "$(yq '.inputs.lessons-dir.default' "${ACTION}")" = "docs/lessons" ]
+  [ "$(yq '.inputs.pinned-actions.default' "${ACTION}")" = "true" ]
 }
 
 @test "no input names a check the composite does not run" {
-  [ "$(yq '.inputs | keys | join(",")' "${ACTION}")" = "dotf-version,lessons,lessons-dir" ]
+  [ "$(yq '.inputs | keys | join(",")' "${ACTION}")" = "dotf-version,lessons,lessons-dir,pinned-actions" ]
 }
 
 @test "every step is a bash run step: no action, so nothing GitHub-only" {
@@ -76,6 +78,10 @@ publish() {
 
 @test "the lessons step runs only when lessons is 'true'" {
   [ "$(step lessons if)" = "inputs.lessons == 'true'" ]
+}
+
+@test "the pinned-actions step runs only when pinned-actions is 'true'" {
+  [ "$(step pinned-actions if)" = "inputs.pinned-actions == 'true'" ]
 }
 
 # Install (AC1)
@@ -146,7 +152,26 @@ publish() {
   grep -q "used twice" "${RUNNER_TEMP}/hygiene-lessons.txt"
 }
 
-# Smoke wiring (AC2)
+# Pinned actions (AC3)
+
+@test "the pinned-actions step runs only the SHA-pin rule over the workspace" {
+  printf '#!/bin/sh\necho "$@" >"%s/dotf.log"\n' "${BATS_TEST_TMPDIR}" >"${BATS_TEST_TMPDIR}/stubs/dotf"
+  chmod +x "${BATS_TEST_TMPDIR}/stubs/dotf"
+  GITHUB_WORKSPACE=/ws run_step pinned-actions
+  [ "$status" -eq 0 ]
+  [ "$(cat "${BATS_TEST_TMPDIR}/dotf.log")" = "lint fleet --dir /ws --rule fleet/sha-pin" ]
+}
+
+@test "the pinned-actions step fails when dotf does, and keeps the report" {
+  printf '#!/bin/sh\necho "ci.yml:6: fleet/sha-pin: actions/checkout@v4 is not pinned" >&2\nexit 1\n' >"${BATS_TEST_TMPDIR}/stubs/dotf"
+  chmod +x "${BATS_TEST_TMPDIR}/stubs/dotf"
+  GITHUB_WORKSPACE=/ws run_step pinned-actions
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"ci.yml:6: fleet/sha-pin"* ]]
+  grep -q "ci.yml:6: fleet/sha-pin" "${RUNNER_TEMP}/hygiene-pinned-actions.txt"
+}
+
+# Smoke wiring (AC2, AC3)
 
 @test "smoke-hygiene expects the duplicate-number fixture to fail" {
   local job=".jobs.smoke-hygiene"
@@ -155,9 +180,22 @@ publish() {
   yq "${job}.steps[].env.OUTCOME" "${WORKFLOW}" | grep -qx '${{ steps.duplicate.outcome }}'
   # The composite's own report, not a second dotf run that would pass even when
   # the fixture's install failed.
-  yq "${job}.steps[-1].run" "${WORKFLOW}" | grep -q 'RUNNER_TEMP}/hygiene-lessons.txt'
-  run yq "${job}.steps[-1].run" "${WORKFLOW}"
+  local check="${job}.steps[] | select(.env.OUTCOME == \"\${{ steps.duplicate.outcome }}\") | .run"
+  yq "${check}" "${WORKFLOW}" | grep -q 'RUNNER_TEMP}/hygiene-lessons.txt'
+  run yq "${check}" "${WORKFLOW}"
   [[ "${output}" != *"dotf lessons"* ]]
+}
+
+@test "smoke-hygiene expects a workflow and an action pinned by tag to fail, naming each line" {
+  local job=".jobs.smoke-hygiene"
+  [ "$(yq "${job}.steps[] | select(.id == \"tagged\") | .continue-on-error" "${WORKFLOW}")" = "true" ]
+  [ "$(yq "${job}.steps[] | select(.id == \"tagged\") | .with.lessons" "${WORKFLOW}")" = "false" ]
+  yq "${job}.steps[].env.OUTCOME" "${WORKFLOW}" | grep -qx '${{ steps.tagged.outcome }}'
+  run yq "${job}.steps[] | select(.env.OUTCOME == \"\${{ steps.tagged.outcome }}\") | .run" "${WORKFLOW}"
+  [[ "${output}" == *'RUNNER_TEMP}/hygiene-pinned-actions.txt'* ]]
+  [[ "${output}" == *"zz-hygiene-smoke.yml:"* ]]
+  [[ "${output}" == *"zz-hygiene-smoke/action.yml:"* ]]
+  [[ "${output}" != *"dotf lint"* ]]
 }
 
 @test "the gate needs smoke-hygiene" {

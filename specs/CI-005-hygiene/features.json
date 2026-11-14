@@ -15,8 +15,8 @@
   },
   {
     "id": "CI-005-hygiene-f3",
-    "behavior": "On a repository with an action pinned by tag the pinned-actions check is red, naming the line. Blocked on dotfiles#3147.",
-    "verification": "echo 'blocked on dotfiles#3147: dotf lint has no SHA-pin rule' && exit 1",
+    "behavior": "On a repository with an action pinned by tag, in a workflow or a local composite action, the pinned-actions check is red, naming the line.",
+    "verification": "bats tests/hygiene.bats --filter 'pinned-actions|pinned by tag'",
     "state": "pending",
     "evidence": ""
   },

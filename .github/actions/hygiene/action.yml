@@ -1,22 +1,25 @@
 # Repository hygiene checks run by dotf (spec CI-005). It installs dotf from its
 # public release with curl and checks the archive against the release's
 # checksums.txt, so it needs no GitHub-only tool or token and runs on Gitea too.
-# The caller checks the repository out first. The pinned-actions check joins as
-# an input once `dotf lint` has the rule (dotfiles#3147); until then adopters
-# keep their vendored check-actions-pinned.sh.
+# The caller checks the repository out first.
 name: hygiene
 description: Install a pinned dotf and run the repository hygiene checks.
 
 inputs:
   dotf-version:
     description: The dotf release to install, without the leading v.
-    default: "0.79.0"
+    default: "0.81.0"
   lessons:
     description: When 'true', run `dotf lessons fmt --check` on lessons-dir.
     default: "true"
   lessons-dir:
     description: The lessons directory, relative to the workspace.
     default: docs/lessons
+  pinned-actions:
+    description: >-
+      When 'true', fail on an action in a workflow or a local composite action
+      that is not pinned by a full commit SHA (`dotf lint fleet --rule fleet/sha-pin`).
+    default: "true"
 
 runs:
   using: composite
@@ -59,3 +62,13 @@ runs:
       run: |
         dotf lessons fmt --check --dir "${GITHUB_WORKSPACE:-.}/${LESSONS_DIR}" 2>&1 |
           tee "${RUNNER_TEMP:-/tmp}/hygiene-lessons.txt"
+
+    - id: pinned-actions
+      if: inputs.pinned-actions == 'true'
+      shell: bash
+      # Only the SHA-pin rule: the other fleet rules are not this check's
+      # business, and a lone rule needs no default branch, which a shallow
+      # actions/checkout clone does not know. The report is kept as above.
+      run: |
+        dotf lint fleet --dir "${GITHUB_WORKSPACE:-.}" --rule fleet/sha-pin 2>&1 |
+          tee "${RUNNER_TEMP:-/tmp}/hygiene-pinned-actions.txt"

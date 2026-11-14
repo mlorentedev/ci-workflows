@@ -26,7 +26,8 @@ the vendored scripts.
 - **A composite action `hygiene`** (`.github/actions/hygiene/action.yml`) that runs on both forges
   (ADR-001 §2). It installs `dotf` at a pinned version and runs two checks, each skippable by input:
   - **lessons**: `dotf lessons fmt --check`;
-  - **pinned actions**: the SHA-pin rule of `dotf lint` (dotfiles#3147).
+  - **pinned actions**: the SHA-pin rule of `dotf lint` (dotfiles#3147), run as
+    `dotf lint fleet --rule fleet/sha-pin` (dotfiles#3386, dotf 0.81.0).
 - **A caller of a few lines** in each repository replaces `repo-hygiene.yml`'s steps, and the vendored
   scripts are deleted in that repository's own PR.
 - **Tests** in `tests/hygiene.bats` and a smoke job in `lint.yml` that runs the composite on this
@@ -59,7 +60,8 @@ the vendored scripts.
 - **The pinned-actions rule does not exist yet.** `dotf lint` has only `powershell` in dotf 0.79.0. Until
   dotfiles#3147 lands, the composite ships with the lessons check alone, and adopters keep
   `check-actions-pinned.sh`. The composite declares no input for a check it does not run; the
-  pinned-actions input arrives with the rule. AC3 and AC6 wait for #3147.
+  pinned-actions input arrives with the rule. AC3 and AC6 wait for #3147. Resolved for AC3: dotf
+  0.80.0 shipped the rule, and 0.81.0 adds `--rule` and local composite actions (dotfiles#3386).
 - **Installing dotf on Gitea runners.** The composite needs a dotf release binary on both forges. The
   install step must not depend on a GitHub-only action. Resolved: dotfiles is public, so the step fetches
   the release archive and `checksums.txt` with `curl` and checks one against the other, with no token.
