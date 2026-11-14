@@ -261,6 +261,10 @@ skipped, and it names each job that did not.
   merge red.
 - **A job skipped by `changes` passes the gate, and a cancelled job fails it.**
   So does an empty `needs`: a gate that guards nothing must not pass.
+- **Name the job `gate`, unless another workflow already reports `gate`.**
+  Two workflows that report one context make the required check ambiguous, so
+  the second one is `<workflow>-gate`. dotfiles' `ci.yml` reports `ci-gate`
+  because its `spec-gate.yml` job is `gate` (ADR-001 decision 3, amended).
 - **`gate` sees only its direct needs.** Suppose a job that is listed is skipped
   because a job that is not listed failed. The gate then passes. List every job
   that must block the merge in the gate's own `needs`.
