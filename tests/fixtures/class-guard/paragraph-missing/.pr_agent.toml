@@ -1,0 +1,6 @@
+[pr_reviewer]
+extra_instructions = """
+Be terse.
+
+Look for vacuous tests.
+"""

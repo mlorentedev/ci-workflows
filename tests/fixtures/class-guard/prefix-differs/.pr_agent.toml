@@ -1,0 +1,9 @@
+[pr_reviewer]
+extra_instructions = """
+Classify each finding as REAL, THEORETICAL or SPECULATIVE. State the class as
+the first line of its issue_content, alone on that line and spelled exactly
+"Class: REAL", "Class: THEORETICAL" or "Class: SPECULATIVE". The triage reads
+only that line; a finding without it goes to a human unclassified.
+
+Look for vacuous tests.
+"""
