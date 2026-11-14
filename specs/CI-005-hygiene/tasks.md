@@ -43,7 +43,7 @@ Adoption, one PR per repository, in batches of 4 (dotfiles#3188), after a tag ca
 After dotfiles#3386 (dotf 0.81.0: `--rule`, and the pin check over local composite actions):
 
 - [x] [AC3] Add a `pinned-actions` input running the `dotf lint` SHA-pin rule, with a fixture pinned by tag that fails naming the line. The fixture is planted in the smoke job's checkout (a workflow and a local action), not committed, so Renovate never updates it.
-- [ ] [AC3] After merge, record the `smoke-hygiene` run on main in `verification.md`.
+- [x] [AC3] After merge, record the `smoke-hygiene` run on main in `verification.md`.
 - [ ] [AC5] Adopters delete `check-actions-pinned.sh`.
 - [ ] [AC6] `dotf lint` reports a repository that still carries a vendored script (dotfiles side).
 
