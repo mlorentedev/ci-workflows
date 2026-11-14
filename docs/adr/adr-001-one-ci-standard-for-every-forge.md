@@ -43,6 +43,10 @@ composite actions and only a limited form of reusable workflow, which holds a ru
    `gate` that requires its `needs` to have succeeded or been skipped. Branch protection requires `gate`
    (plus status contexts such as `review-attestation`). Jobs behind it can then be skipped by change
    detection or moved into this repository in one pull request, because their names are no longer contracts.
+   (Amended 2026-11-14, dotfiles#3447: the job is `gate` unless another workflow in the repository already
+   reports a `gate` context, as a `spec-gate.yml` whose job is `gate` does. It is then `<workflow>-gate`,
+   for example dotfiles' `ci-gate`, because two workflows reporting one context make the required check
+   ambiguous. The rule is one required aggregate per workflow, not one name.)
 4. **Pull requests run what they touch; the default branch runs everything.** Change detection decides which
    jobs run on a pull request. Push to the default branch and a nightly schedule run the full suite and the
    full OS matrix. The skip logic is tested like any other code.
@@ -70,7 +74,7 @@ composite actions and only a limited form of reusable workflow, which holds a ru
 - One improvement reaches every repository: it changes a `dotf` verb or a block here, and the pins move.
 - Gitea adoption depends on composite actions resolving from this repository on the Gitea runner. That is
   verified on one Gitea repository before any other adopts a block.
-- Repositories with several required checks need one migration to `gate`. After it, no further migration
+- Repositories with several required checks need one migration to their aggregate (`gate`, or `<workflow>-gate`). After it, no further migration
   renames a required check.
 - The fleet stops being configured by hand: anything not expressible as a lint rule plus an apply step does
   not belong to the standard.
