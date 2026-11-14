@@ -336,7 +336,7 @@ caller runs `npm ci` and the Playwright install.
 
 `.github/actions/hygiene` installs a pinned `dotf` and runs the repository
 hygiene checks in it (spec CI-005). It replaces the vendored
-`check-lessons.sh`.
+`check-lessons.sh` and `check-actions-pinned.sh`.
 
 ```yaml
     steps:
@@ -358,13 +358,21 @@ hygiene checks in it (spec CI-005). It replaces the vendored
   `dotf lessons index`, never committed. The report is also written to
   `$RUNNER_TEMP/hygiene-lessons.txt` for a later step. An adopter runs `dotf lessons fmt`
   and deletes `_index.md` in the PR that adopts the composite.
-- **Pinned actions** are not checked yet. That rule arrives with
-  `dotf lint` (dotfiles#3147); until then an adopter keeps its vendored
-  `check-actions-pinned.sh`.
+- **pinned-actions** (`pinned-actions: "true"`, on by default) runs
+  `dotf lint fleet --rule fleet/sha-pin` over the workspace. It fails on an
+  action in a workflow or in a local composite action
+  (`.github/actions/<name>/action.yml`) that is not pinned by a full commit
+  SHA, naming the file and line; an exception in `.github/lint-exceptions.yml`
+  silences one. No other fleet rule runs, and none needs a default branch. The
+  report is written to `$RUNNER_TEMP/hygiene-pinned-actions.txt`. It replaces
+  the vendored `check-actions-pinned.sh`, which an adopter deletes when it
+  moves to a tag carrying this input.
 - **This repository smokes it.** The `smoke-hygiene` job in `lint.yml` runs
   the composite on this repository's lessons, then on
   `tests/fixtures/lessons/duplicate-number/`, and fails unless that run's own
-  report names the duplicate file.
+  report names the duplicate file. It then plants a workflow and a local action
+  pinned by tag in its checkout and fails unless the pinned-actions report
+  names both lines.
 
 ## setup-python-poetry
 
