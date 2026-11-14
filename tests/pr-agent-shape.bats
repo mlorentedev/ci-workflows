@@ -50,7 +50,7 @@ declare_is_opt_in() {
   [ -n "${step}" ] &&
     yq '.if' <<<"${step}" | grep -q 'inputs.declare_unreviewed' &&
     yq '.if' <<<"${step}" | grep -q "steps.reviewable.outcome == 'success'" &&
-    yq '.if' <<<"${step}" | grep -qF "contains(github.event.comment.body, '/review')" &&
+    yq '.if' <<<"${step}" | grep -qF "steps.command.outputs.review == 'true'" &&
     [ "$(yq '.["continue-on-error"]' <<<"${step}")" = "true" ]
 }
 
