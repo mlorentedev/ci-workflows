@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.0](https://github.com/mlorentedev/ci-workflows/compare/v0.7.0...v0.8.0) (2026-11-14)
+
+
+### Features
+
+* **docker-build:** add cache-write and labels inputs ([#114](https://github.com/mlorentedev/ci-workflows/issues/114)) ([f515efc](https://github.com/mlorentedev/ci-workflows/commit/f515efc45c7f3e7ea632d33bb714352549e47d89))
+* **docker-publish:** pass labels and the cache inputs through to the composite ([#116](https://github.com/mlorentedev/ci-workflows/issues/116)) ([8853669](https://github.com/mlorentedev/ci-workflows/commit/8853669c3b675ba376bbbf45992a63664fed8651))
+* **pr-agent:** fail the review when the class paragraph and the registry disagree ([#118](https://github.com/mlorentedev/ci-workflows/issues/118)) ([a75736e](https://github.com/mlorentedev/ci-workflows/commit/a75736e898273501bf440631e0f03ecb9acb49f0))
+
+
+### Bug Fixes
+
+* **pr-agent:** match every command PR-Agent runs as a review ([#117](https://github.com/mlorentedev/ci-workflows/issues/117)) ([61f30e6](https://github.com/mlorentedev/ci-workflows/commit/61f30e6afec308e201cd1620d1c4708e98eeef5d))
+
 ## [0.7.0](https://github.com/mlorentedev/ci-workflows/compare/v0.6.0...v0.7.0) (2026-11-12)
 
 
