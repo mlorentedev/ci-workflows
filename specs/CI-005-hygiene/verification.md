@@ -15,7 +15,7 @@ Map every acceptance criterion from `proposal.md` to concrete proof (commit hash
 
 - [ ] AC1: pending.
 - [x] AC2: `smoke-hygiene` on main, push run 43173027029 at `e8977f2`, job 131031182732, with dotf 0.79.0. The lessons step on this repository ended `outcome=success`. The step on `tests/fixtures/lessons/duplicate-number` ended `outcome=failure` with "lesson number 001 is used twice: …/lesson-001-first-fixture.md and …/lesson-001-same-number.md", and the job passed because the fixture failed naming the file.
-- [ ] AC3: the `pinned-actions` input and its smoke are in place, on dotf 0.81.0; ticked once the `smoke-hygiene` run on main is recorded here.
+- [x] AC3: `smoke-hygiene` on main, push run 43650051835 at `2407d95` (#120), job 132616320003, with dotf 0.81.0 (`dotf_0.81.0_linux_amd64.tar.gz: OK`). The pinned-actions step on this repository printed `[OK] no fleet lint findings`. With a workflow and a local action pinned by tag planted in the checkout, the step failed naming both lines: `.github/workflows/zz-hygiene-smoke.yml:6: fleet/sha-pin: actions/checkout@v4 is not pinned by a full commit SHA` and `.github/actions/zz-hygiene-smoke/action.yml:6: fleet/sha-pin: actions/setup-node@v4 is not pinned by a full commit SHA`. The job passed because both were named.
 - [ ] AC4: GitHub side shown by the run above; Gitea pending (IDP-036 session).
 - [ ] AC5: lessons half done, pinned-actions half pending. Ten adopters run the composite's lessons check at `2355330` (v0.6.0) and carry no `scripts/check-lessons.sh` and no committed `docs/lessons/_index.md` on their default branch. Each merged push ran `Repo hygiene` green:
 
@@ -32,7 +32,7 @@ Map every acceptance criterion from `proposal.md` to concrete proof (commit hash
   | web | #661 | `0a69c87` | 43308578791 |
   | svqtriana.github.io | #43 | `b7921d2` | 43308483074 |
 
-  kubelab is excluded by the owner's decision (ci-workflows#31): its application code and tests read the lesson indexes, so it needs its own spec first. Every adopter still carries `scripts/check-actions-pinned.sh`; it goes once the composite has the pinned-actions input (AC3, waiting on dotfiles#3386). A lesson named outside `lesson-NNN-*.md` passes the check unseen: dotfiles#3415.
+  kubelab is excluded by the owner's decision (ci-workflows#31): its application code and tests read the lesson indexes, so it needs its own spec first. Every adopter still carries `scripts/check-actions-pinned.sh`; it goes once a ci-workflows release carries the pinned-actions input (AC3, #120). A lesson named outside `lesson-NNN-*.md` passes the check unseen: dotfiles#3415.
 
 - [ ] AC6: pending (dotfiles side).
 
