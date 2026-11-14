@@ -31,9 +31,9 @@ PR 2, the publish workflow; PR 3, its callers and README:
 
 PR 4..n, adoption (one per repository, merged by the owner), after the amendment in the proposal:
 
-- [ ] hive: the composite at v0.7.0 in the existing build-then-run job (hive#584).
-- [ ] (PR A) The composite gains `cache-write` and `labels`, with tests. Spec amendment and lesson 017.
-- [ ] (PR B, after A merges) `docker-publish.yml` passes `labels`, `cache-from`, `cache-to` and `cache-write` through, pinned at A's merge commit. Then a release.
+- [x] hive: the composite at v0.7.0 in the existing build-then-run job (hive#584).
+- [x] (PR A, #114) The composite gains `cache-write` and `labels`, with tests. Spec amendment and lesson 017.
+- [x] (PR B, after A merges) `docker-publish.yml` passes `labels`, `cache-from`, `cache-to` and `cache-write` through, pinned at A's merge commit. Then a release.
 - [ ] [AC5] dotfiles: the composite with `cache-write` false on pull requests, scope `integration` kept.
 - [ ] [AC5] kubelab: `docker-publish.yml` replaces `ci-publish.yml`'s build; `secrets: inherit` dropped. Say which parts of kubelab#3344 it closes.
 - [ ] [AC5] web: `docker-publish.yml` with `type=registry` cache for releases; the composite plus web's Trivy gate for pull requests.

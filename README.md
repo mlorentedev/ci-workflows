@@ -506,11 +506,14 @@ that builds and then runs the image keeps its shape:
   than falling back to buildx's shared default. `cache-from` and `cache-to` take a list, one entry a line.
 - **Cache size.** GitHub keeps 10 GB of cache per repository and evicts the least recently used entries.
   `cache-mode: max` (the default) caches every layer and can approach that on a multi-platform build;
-  `min` caches only the final image's layers.
+  `min` caches only the final image's layers. `cache-write: false` reads the cache and writes none, for a
+  caller that writes only from its default branch (pass `${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}`); it excludes
+  `cache-to`, and any value but `true` or `false` fails.
 - **Gitea.** `type=gha` needs GitHub's cache service, and Gitea's runner cache is unverified with it. Pass
   `cache-from` and `cache-to`, e.g. `type=registry,ref=<image>:buildcache`.
 - **Load or push.** `load` puts the image in the runner's docker; `push` pushes its tags (log in first);
   `push-by-digest` pushes it untagged. They are exclusive.
+- **Labels.** `labels`, one `KEY=value` a line, for OCI labels such as `org.opencontainers.image.source`.
 - **Outputs.** `digest`, `imageid` and `cache-scope`.
 
 **`.github/workflows/docker-publish.yml`** publishes. It never tags an image before the image is scanned:
@@ -538,7 +541,9 @@ jobs:
 
 - **Required inputs.** `image` (with its registry, without a tag), `tags` (without the image name) and
   `sarif-category`. Optional inputs: `registry`, `context`, `file`, `platforms` (default `linux/amd64`),
-  `build-args`, `cache-scope` and `cache-mode`.
+  `build-args`, `labels`, `cache-scope`, `cache-mode`, `cache-from`, `cache-to` and `cache-write`, passed
+  to the composite as described above. A repository that keeps its layer cache on a registry tag passes
+  `cache-from`/`cache-to` with `type=registry`.
 - **Secrets.** `REGISTRY_USERNAME` and `REGISTRY_TOKEN`, by name. Never `secrets: inherit`.
 - **Output.** `digest`. Promote by it, never by a tag.
 - **Failure.** A CRITICAL finding leaves an untagged digest in the registry, and nothing a consumer pulls
