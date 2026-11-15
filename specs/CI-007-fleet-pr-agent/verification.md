@@ -18,9 +18,9 @@ The secrets grant for the twelve is dotfiles#3366.
 
 - [x] Criterion 1 (pinned by full SHA) -> f1 exits 0 on 2026-11-12.
 - [x] Criterion 2 (no copy of the review steps) -> f2 exits 0 on 2026-11-12.
-- [ ] Criterion 3 (paragraph, registry and guard). f3 exits 0 on 2026-11-12 for the paragraph and the
-      registry. The guard is f5, which exits 1 until #82 ships in a release. `Class:` lines on the first
-      review with findings after each adoption merged:
+- [x] Criterion 3 (paragraph, registry and guard). f3 exits 0 on 2026-11-12 for the paragraph and the
+      registry. The guard is f5: it exited 1 until #82 shipped in v0.8.0, and exits 0 on 2026-11-15.
+      `Class:` lines on the first review with findings after each adoption merged:
 
       | Adopter | PR | Classes seen |
       |---|---|---|
@@ -33,7 +33,9 @@ The secrets grant for the twelve is dotfiles#3366.
       | ts-bridge | #755 | THEORETICAL |
       | web | #661 | THEORETICAL |
       | yt-metrics-cli | #121 | THEORETICAL |
-      | leaving-denver, pollex, svqtriana.github.io | none yet | no review with findings since adoption |
+      | leaving-denver | #282 | THEORETICAL |
+      | pollex | #132 | SPECULATIVE |
+      | svqtriana.github.io | #44 | SPECULATIVE |
 
 - [x] Criterion 4 (every adopter PR reviewed, no batch lost to the NaN slot limit) -> f4 exits 0 on
       2026-11-12. The PRs went ready in batches of four (hive, kubelab, garsync, iris first).
@@ -42,6 +44,10 @@ The secrets grant for the twelve is dotfiles#3366.
 
 - Test suite: `bash -c "$(jq -r '.[N].verification' features.json)"` for f1 to f5 on 2026-11-12:
   f1 0, f2 0, f3 0, f4 0, f5 1 (`Error: no matches found`: the guard step does not exist before #82).
+  Again on 2026-11-15, on main at 8427ebb: f1 0, f2 0, f3 0, f4 0, f5 0 (the last line of f5 is
+  `ok 13 this repository's own toml and registry agree`).
+- Caller rollout of v0.8.0 (#113): all twelve callers pin `pr-agent.yml@9b34f5b` with a
+  `concurrency.group` byte-identical to the kit's, checked on each default branch on 2026-11-15.
 - Manual smoke test: the first post-adoption reviews above carry `Class:` lines in each of the nine
   repositories, which is the paragraph read from the default branch.
 - No regressions in existing test suite: yes (`bats tests/*.bats` green on main).
