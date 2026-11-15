@@ -24,18 +24,18 @@ The secrets grant for the twelve is dotfiles#3366.
 
       | Adopter | PR | Classes seen |
       |---|---|---|
-      | garsync | #165 | REAL |
-      | hive | #582 | THEORETICAL |
-      | iris | #64 | THEORETICAL |
-      | kubelab | #3389 | THEORETICAL |
-      | mail2markdown | #34 | THEORETICAL |
-      | pdf-modifier | #239 | THEORETICAL, SPECULATIVE |
-      | ts-bridge | #755 | THEORETICAL |
-      | web | #661 | THEORETICAL |
-      | yt-metrics-cli | #121 | THEORETICAL |
-      | leaving-denver | #282 | THEORETICAL |
-      | pollex | #132 | SPECULATIVE |
-      | svqtriana.github.io | #44 | SPECULATIVE |
+      | garsync | [#165](https://github.com/mlorentedev/garsync/pull/165) | REAL |
+      | hive | [#582](https://github.com/mlorentedev/hive/pull/582) | THEORETICAL |
+      | iris | [#64](https://github.com/mlorentedev/iris/pull/64) | THEORETICAL |
+      | kubelab | [#3389](https://github.com/mlorentedev/kubelab/pull/3389) | THEORETICAL |
+      | mail2markdown | [#34](https://github.com/mlorentedev/mail2markdown/pull/34) | THEORETICAL |
+      | pdf-modifier | [#239](https://github.com/mlorentedev/pdf-modifier/pull/239) | THEORETICAL, SPECULATIVE |
+      | ts-bridge | [#755](https://github.com/mlorentedev/ts-bridge/pull/755) | THEORETICAL |
+      | web | [#661](https://github.com/mlorentedev/web/pull/661) | THEORETICAL |
+      | yt-metrics-cli | [#121](https://github.com/mlorentedev/yt-metrics-cli/pull/121) | THEORETICAL |
+      | leaving-denver | [#282](https://github.com/mlorentedev/leaving-denver/pull/282) | THEORETICAL |
+      | pollex | [#132](https://github.com/mlorentedev/pollex/pull/132) | SPECULATIVE |
+      | svqtriana.github.io | [#44](https://github.com/mlorentedev/svqtriana.github.io/pull/44) | SPECULATIVE |
 
 - [x] Criterion 4 (every adopter PR reviewed, no batch lost to the NaN slot limit) -> f4 exits 0 on
       2026-11-12. The PRs went ready in batches of four (hive, kubelab, garsync, iris first).
@@ -47,7 +47,10 @@ The secrets grant for the twelve is dotfiles#3366.
   Again on 2026-11-15, on main at 8427ebb: f1 0, f2 0, f3 0, f4 0, f5 0 (the last line of f5 is
   `ok 13 this repository's own toml and registry agree`).
 - Caller rollout of v0.8.0 (#113): all twelve callers pin `pr-agent.yml@9b34f5b` with a
-  `concurrency.group` byte-identical to the kit's, checked on each default branch on 2026-11-15.
+  `concurrency.group` byte-identical to the kit's, checked on each default branch on 2026-11-15:
+  for each adopter, fetch `.github/workflows/pr-agent.yml` with `gh api .../contents/...` (raw), require
+  `pr-agent.yml@9b34f5b2815a3090d77d7589ef8bcc5087045544` in it and compare `yq -r .concurrency.group`
+  with `kit/pr-agent.yml`'s. Output: one `<repo> ok` line per adopter, then `12/12`.
 - leaving-denver's `pr-agent` workflow was found `disabled_manually` (since 2026-11-13, after #282's review),
   so its v0.8.0 pin had never run. Re-enabled on 2026-11-15 (`state=active`); its next PR is the first
   run on v0.8.0, checked with the 2026-11-17 Renovate run.
