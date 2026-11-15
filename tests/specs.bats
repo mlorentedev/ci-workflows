@@ -47,3 +47,25 @@ broken() { printf '%s' "$1" >"${BATS_TEST_TMPDIR}/features.json" && echo "${BATS
   run ! valid_feature_list "$(broken '[{"id": "x", "verification": ""}]')"
   valid_feature_list "$(broken '[{"id": "x", "verification": "bats tests/x.bats"}]')"
 }
+
+# A spec folder moves to specs/archive/ when the spec closes, so a workflow or a
+# test that reads a file inside an active one breaks on the day it archives
+# (CI-007's kit, lesson 020). Durable files live outside specs/.
+active_spec_paths() {
+  grep -rnE 'specs/[A-Z]+-[0-9]+' "$@" 2>/dev/null
+}
+
+@test "no workflow or test reads a file inside an active spec folder" {
+  run active_spec_paths "${ROOT}/.github" "${ROOT}/tests"
+  [ "$status" -eq 1 ] || { printf '%s\n' "${output}"; false; }
+}
+
+@test "the active-spec check finds such a path" {
+  mkdir -p "${BATS_TEST_TMPDIR}/wf"
+  printf 'cat specs/%s/kit/a.txt\n' CI-099-x >"${BATS_TEST_TMPDIR}/wf/a.yml"
+  printf 'cat specs/archive/CI-004-x/features.json\n' >"${BATS_TEST_TMPDIR}/wf/b.yml"
+  run active_spec_paths "${BATS_TEST_TMPDIR}/wf"
+  [ "$status" -eq 0 ]
+  [ "${#lines[@]}" -eq 1 ]
+  [[ "${lines[0]}" == *"CI-099-x"* ]]
+}

@@ -205,7 +205,7 @@ jobs:
           if [ -n "${missing}" ]; then
             echo "::error::harness/review-attestation.json classifies findings, but" \
               "pr_reviewer.extra_instructions in .pr_agent.toml does not ask for:${missing}" \
-              "Copy the paragraph from specs/CI-007-fleet-pr-agent/kit/class-paragraph.txt in ci-workflows."
+              "Copy the paragraph from pr-agent/class-paragraph.txt in ci-workflows."
             exit 1
           fi
       - name: Check out the caller's pool

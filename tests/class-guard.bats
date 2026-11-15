@@ -107,7 +107,7 @@ guard() { REPO_DIR="$1" run bash -e -c "$(step | yq '.run')"; }
   mkdir -p "${repo}/harness"
   cp "${ROOT}/harness/review-attestation.json" "${repo}/harness/"
   printf '[pr_reviewer]\nextra_instructions = """\n%s\n"""\n' \
-    "$(cat "${ROOT}/specs/CI-007-fleet-pr-agent/kit/class-paragraph.txt")" >"${repo}/.pr_agent.toml"
+    "$(cat "${ROOT}/pr-agent/class-paragraph.txt")" >"${repo}/.pr_agent.toml"
   guard "${repo}"
   [ "${status}" -eq 0 ]
 }
