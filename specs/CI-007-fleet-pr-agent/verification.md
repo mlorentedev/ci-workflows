@@ -72,8 +72,8 @@ The secrets grant for the twelve is dotfiles#3366.
 ## Promotion candidates
 
 - [x] Lesson for the repo's `docs/lessons/`? yes: docs/lessons/lesson-016-a-shared-workflow-drops-the-callers-env-block.md
-- [ ] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? <yes: path / no: reason>
-- [ ] New pattern candidate for `00_meta/patterns/`? Only if this recurs in >1 project. <yes: path / no: reason>
+- [x] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? no: the one decision (guard the class paragraph in the shared workflow, fork A2) is recorded in the archived proposal and touches only this repository's own workflow
+- [x] New pattern candidate for `00_meta/patterns/`? Only if this recurs in >1 project. no: moving a fleet onto one shared caller is already ADR-001's model; nothing here recurs outside it
 
 ## Archive checklist
 
