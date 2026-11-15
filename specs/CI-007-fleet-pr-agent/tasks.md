@@ -51,16 +51,15 @@ Then, in order:
 - [x] [AC4] `gh pr ready` four adopters at a time. Start the next four only once each of the previous
       four has a PR-Agent review and no other review is running in the fleet.
 - [x] Triage each PR (`## Review triage`); the owner merges (adopter workflows are always-human).
-- [ ] [AC3] After each adopter merges, confirm the classification on its next PR-Agent review with findings:
+- [x] [AC3] After each adopter merges, confirm the classification on its next PR-Agent review with findings:
       the shared workflow reads `.pr_agent.toml` and the registry from the default branch, so the adopter
       PR's own review cannot exercise the paragraph it adds. Record the link in `verification.md`.
-      Nine of twelve recorded on 2026-11-12; leaving-denver, pollex and svqtriana.github.io have had no
-      review with findings yet.
+      Nine of twelve recorded on 2026-11-12, the last three on 2026-11-15.
 
 ## Closing
 
-- [ ] f1 to f5 in `features.json` exit 0. f5 fails until #82 ships in a release.
-- [ ] `verification.md` filled with the PR links and command outputs.
+- [x] f1 to f5 in `features.json` exit 0 (2026-11-15, after #82 shipped in v0.8.0).
+- [x] `verification.md` filled with the PR links and command outputs.
 - [ ] Independent adversarial review before archive.
 
 ## Machine-readable features
