@@ -48,7 +48,10 @@ The secrets grant for the twelve is dotfiles#3366.
   `ok 13 this repository's own toml and registry agree`).
 - Caller rollout of v0.8.0 (#113): all twelve callers pin `pr-agent.yml@9b34f5b` with a
   `concurrency.group` byte-identical to the kit's, checked on each default branch on 2026-11-15.
-- Manual smoke test: the first post-adoption reviews above carry `Class:` lines in each of the nine
+- leaving-denver's `pr-agent` workflow was found `disabled_manually` (since 2026-11-13, after #282's review),
+  so its v0.8.0 pin had never run. Re-enabled on 2026-11-15 (`state=active`); its next PR is the first
+  run on v0.8.0, checked with the 2026-11-17 Renovate run.
+- Manual smoke test: the first post-adoption reviews above carry `Class:` lines in each of the twelve
   repositories, which is the paragraph read from the default branch.
 - No regressions in existing test suite: yes (`bats tests/*.bats` green on main).
 
@@ -59,6 +62,9 @@ The secrets grant for the twelve is dotfiles#3366.
   the env block, and the shared workflow does not (lesson 016).
 - Fixes found while adopting went to the shared workflow, not to the adopters: #85 (#94), #91 (#96),
   #92 (#97), #87 and #88 (#100). Rolling the #96 key out to the callers is #103.
+- Callers that differ from the kit: svqtriana.github.io does not pass `PR_AGENT_ANTHROPIC_API_KEY` (the
+  reason is a comment in its caller); kubelab, web and yt-metrics-cli pass extra inputs (their own reviewer
+  pool, `declare_unreviewed`, a job `if:`).
 
 ## Promotion candidates
 
