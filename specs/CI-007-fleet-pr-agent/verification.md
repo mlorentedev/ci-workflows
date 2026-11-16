@@ -69,6 +69,14 @@ The secrets grant for the twelve is dotfiles#3366.
   reason is a comment in its caller); kubelab, web and yt-metrics-cli pass extra inputs (their own reviewer
   pool, `declare_unreviewed`, a job `if:`).
 
+- The first pre-archive review (nan/glm5.3-flash, 2026-11-15, FAIL) found the kit inside this folder, read by
+  two tests and the guard's error message, so archiving would have broken `bats tests/`. #127 moved it to
+  `pr-agent/` at the repository root and added a `tests/specs.bats` check against paths into active spec
+  folders (lesson 020). Where this record and tasks.md say `kit/`, the files are now in `pr-agent/`.
+- That review's Minor findings: a prose `Class:` mention and the paragraph's position are #128; porting the
+  guard script to `dotf` is declined, because fork 2b chose the guard in the shared workflow and
+  `tests/class-guard.bats` runs its script.
+
 ## Promotion candidates
 
 - [x] Lesson for the repo's `docs/lessons/`? yes: docs/lessons/lesson-016-a-shared-workflow-drops-the-callers-env-block.md
