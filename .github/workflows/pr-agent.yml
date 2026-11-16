@@ -15,7 +15,7 @@ on:
       dotf_version:
         description: The dotf release to install, without the leading v. Each tag defaults it to the release it was tested with.
         type: string
-        default: "0.79.0"
+        default: "0.81.0"
       pool:
         description: The reviewer pool, `embedded` (the dotf pin's) or a path in the caller.
         type: string
