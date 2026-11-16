@@ -38,7 +38,7 @@ jobs:
         with:
           persist-credentials: false
       - id: changes
-        uses: mlorentedev/ci-workflows/.github/actions/changes@8bef3a8be673bf1bb297a3cac5f8aecf84804584 # v0.3.0
+        uses: mlorentedev/ci-workflows/.github/actions/changes@9b34f5b2815a3090d77d7589ef8bcc5087045544 # v0.8.0
         with:
           filters: |
             code:
@@ -489,6 +489,6 @@ jobs:
     timeout-minutes: 2
     permissions: {}
     steps:
-      - uses: mlorentedev/ci-workflows/.github/actions/gate@8bef3a8be673bf1bb297a3cac5f8aecf84804584 # v0.3.0
+      - uses: mlorentedev/ci-workflows/.github/actions/gate@9b34f5b2815a3090d77d7589ef8bcc5087045544 # v0.8.0
         with:
           needs: ${{ toJSON(needs) }}
