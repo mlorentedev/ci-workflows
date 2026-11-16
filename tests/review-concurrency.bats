@@ -12,7 +12,7 @@ bats_require_minimum_version 1.5.0
 
 ROOT="${BATS_TEST_DIRNAME}/.."
 CALLER="${ROOT}/.github/workflows/review.yml"
-KIT="${ROOT}/specs/CI-007-fleet-pr-agent/kit/pr-agent.yml"
+KIT="${ROOT}/pr-agent/pr-agent.yml"
 SHARED="${ROOT}/.github/workflows/pr-agent.yml"
 
 group_of() { yq '.concurrency.group' "$1"; }

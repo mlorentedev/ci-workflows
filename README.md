@@ -107,6 +107,11 @@ jobs:
   `dotf secrets sync ci --repo <owner>/<repo> <SECRET>`.
 - **The caller's files.** `.pr_agent.toml` and `harness/review-attestation.json`,
   both read from its default branch.
+- **The adoption kit**, in `pr-agent/`: `pr-agent.yml` is the caller above with
+  the fleet's concurrency key, `class-paragraph.txt` goes first in
+  `pr_reviewer.extra_instructions`, and `classification.json` is the block the
+  caller's `harness/review-attestation.json` gains. The guard fails a review
+  whose registry classifies findings while the toml does not ask for them.
 - **Permissions.** The job asks for the three scopes above; a caller granting
   less fails the run before any step.
 

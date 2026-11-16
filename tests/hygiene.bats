@@ -201,9 +201,3 @@ publish() {
 @test "the gate needs smoke-hygiene" {
   yq '.jobs.gate.needs[]' "${WORKFLOW}" | grep -qx smoke-hygiene
 }
-
-@test "the spec's feature list parses and gives every feature a verification" {
-  run jq -e 'all(.[]; (.verification | type) == "string" and (.verification | length) > 0)' \
-    "${BATS_TEST_DIRNAME}/../specs/CI-005-hygiene/features.json"
-  [ "$status" -eq 0 ]
-}

@@ -47,3 +47,32 @@ broken() { printf '%s' "$1" >"${BATS_TEST_TMPDIR}/features.json" && echo "${BATS
   run ! valid_feature_list "$(broken '[{"id": "x", "verification": ""}]')"
   valid_feature_list "$(broken '[{"id": "x", "verification": "bats tests/x.bats"}]')"
 }
+
+# A spec folder moves to specs/archive/ when the spec closes, so a workflow or a
+# test that reads a file inside an active one breaks on the day it archives
+# (CI-007's kit, lesson 020). Durable files live outside specs/. Any folder
+# name counts except archive/, whatever the id's shape (CI-007-x, ADR028-004,
+# 2026-05-13-cleanup). docs/ is not scanned: lessons and ADRs cite spec paths
+# as history, and a dead link there breaks nothing.
+active_spec_paths() {
+  grep -rnoE 'specs/[A-Za-z0-9][A-Za-z0-9._-]*/' "$@" 2>/dev/null | grep -v ':specs/archive/$'
+}
+
+@test "no workflow or test reads a file inside an active spec folder" {
+  run active_spec_paths "${ROOT}/.github" "${ROOT}/tests" "${ROOT}/harness" \
+    "${ROOT}/renovate" "${ROOT}/pr-agent" "${ROOT}/README.md"
+  [ "$status" -eq 1 ] || { printf '%s\n' "${output}"; false; }
+}
+
+@test "the active-spec check finds such a path" {
+  mkdir -p "${BATS_TEST_TMPDIR}/wf"
+  local id
+  for id in CI-099-x ADR028-004 2026-05-13-cleanup; do
+    printf 'cat specs/%s/kit/a.txt\n' "${id}" >"${BATS_TEST_TMPDIR}/wf/${id}.yml"
+  done
+  printf 'cat specs/archive/CI-004-x/features.json\n' >"${BATS_TEST_TMPDIR}/wf/archived.yml"
+  run active_spec_paths "${BATS_TEST_TMPDIR}/wf"
+  [ "$status" -eq 0 ]
+  [ "${#lines[@]}" -eq 3 ]
+  [[ "${output}" != *archived.yml* ]]
+}
