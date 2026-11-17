@@ -12,7 +12,9 @@
   "prHourlyLimit": 0,
   "labels": ["dependencies", "renovate"],
   "commitMessagePrefix": "fix(deps):",
-  "dependencyDashboard": true,
+  "dependencyDashboard": {
+    "enabled": true
+  },
   "automerge": false,
   "pep621": {
     "lockFileMaintenance": { "enabled": true, "schedule": ["* * * * 1"] }
