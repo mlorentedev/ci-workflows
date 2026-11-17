@@ -1,7 +1,7 @@
 ---
 id: "CI-007-fleet-pr-agent"
 type: spec
-status: draft # draft | implementing | verifying | archived
+status: archived # draft | implementing | verifying | archived
 created: "2026-11-10"
 issue: "mlorentedev/ci-workflows#33"   # repo#NNN — GitHub issue / Project item that tracks this spec
 tags: [spec, proposal, ci, pr-agent, fleet]
@@ -140,3 +140,5 @@ still contains.
 
 - #33, #51 (self-review), #59 / #61 (classification), dotfiles#3290 (CI secrets derived from workflows), dotfiles#3188 (NaN slots), dotfiles#3212 (weights)
 - hive `.github/workflows/pr-agent-shared.yml`, the caller shape to copy
+
+<!-- archived 2026-11-16 — PR: https://github.com/mlorentedev/ci-workflows/pull/132 -->
