@@ -117,6 +117,17 @@ assert_rule() {
   [ "${status}" -ne 0 ]
 }
 
+# The image names its github_action tag beside the digest. A bare digest has no
+# tag for Renovate to follow, so it bumps it to latest, which is the CLI image
+# (`python pr_agent/cli.py`): every review step would print help and publish
+# nothing (#129).
+pins_the_action_image() {
+  local refs
+  refs=$(yq '.jobs[].steps[]?.uses // "" | select(test("^docker://pragent/pr-agent"))' "$1")
+  [ -n "${refs}" ] &&
+    ! grep -Evx 'docker://pragent/pr-agent:[0-9]+\.[0-9]+\.[0-9]+-github_action@sha256:[0-9a-f]{64}' <<<"${refs}"
+}
+
 @test "workflow_call is the only trigger" { assert_rule only_workflow_call; }
 @test "NAN_API_KEY is required and the Anthropic key optional" { assert_rule declares_secrets; }
 @test "secrets are not inherited" { assert_rule no_secrets_inherit; }
@@ -145,3 +156,4 @@ assert_rule() {
   [ "${status}" -ne 0 ]
 }
 @test "every PR-Agent step publishes its findings inline" { assert_rule inline_findings_on_every_review_step; }
+@test "every PR-Agent image is the github_action tag, pinned by digest" { assert_rule pins_the_action_image; }
