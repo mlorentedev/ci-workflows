@@ -144,3 +144,8 @@ guard() {
 @test "the paragraph the guard holds is the kit's, byte for byte" {
   [ "$(step | yq '.env.PARAGRAPH')" = "$(cat "${ROOT}/pr-agent/class-paragraph.txt")" ]
 }
+
+@test "one line of the paragraph with no registry block passes" {
+  guard "${FIXTURES}/one-line"
+  [ "${status}" -eq 0 ]
+}

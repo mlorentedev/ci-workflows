@@ -199,7 +199,7 @@ jobs:
             classification=$(jq -c '.classification // empty' <<<"${registry}")
           fi
           if [ -z "${classification}" ]; then
-            if grep -qF "${PARAGRAPH%$'\n'}" <<<"${instructions}"; then
+            if [[ "${instructions}" == *"${PARAGRAPH%$'\n'}"* ]]; then
               echo "::error::.pr_agent.toml asks the reviewer for a Class: line, but" \
                 "harness/review-attestation.json has no classification block, so no triage reads it."
               exit 1
