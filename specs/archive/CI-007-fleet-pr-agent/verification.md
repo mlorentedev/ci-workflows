@@ -69,15 +69,32 @@ The secrets grant for the twelve is dotfiles#3366.
   reason is a comment in its caller); kubelab, web and yt-metrics-cli pass extra inputs (their own reviewer
   pool, `declare_unreviewed`, a job `if:`).
 
+- The first pre-archive review (nan/glm5.3-flash, 2026-11-15, FAIL) found the kit inside this folder, read by
+  two tests and the guard's error message, so archiving would have broken `bats tests/`. #127 moved it to
+  `pr-agent/` at the repository root and added a `tests/specs.bats` check against paths into active spec
+  folders (lesson 020). Where this record and tasks.md say `kit/`, the files are now in `pr-agent/`.
+- That review's Minor findings: a prose `Class:` mention and the paragraph's position are #128; porting the
+  guard script to `dotf` is declined, because fork 2b chose the guard in the shared workflow and
+  `tests/class-guard.bats` runs its script.
+
+- The second pre-archive review (nan/deepseek-v4-flash, PASS-WITH-GAPS) is dispositioned as follows.
+  The guard accepting a superset spelling such as `` `Class: REAL` `` is added to #128, which tracks
+  replacing the substring match; until it ships, the guard still checks substrings with `grep -qF`. The claim that a bare `/review` or `/Review` gets a group of its own is
+  refuted: the key tests `startsWith(format('{0} ', body), '/review ')`, so a bare `/review` becomes
+  `/review ` and matches, and Actions' `startsWith` ignores case. The `kit/` paths left in proposal.md and
+  tasks.md stay as written, translated in the entry above, because editing the contract after review
+  would stale it. f1 accepting any pinned SHA is the intended split: the criterion is "pinned by commit",
+  and the exact v0.8.0 pin is release rollout (#113), checked above at 12/12.
+
 ## Promotion candidates
 
 - [x] Lesson for the repo's `docs/lessons/`? yes: docs/lessons/lesson-016-a-shared-workflow-drops-the-callers-env-block.md
-- [ ] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? <yes: path / no: reason>
-- [ ] New pattern candidate for `00_meta/patterns/`? Only if this recurs in >1 project. <yes: path / no: reason>
+- [x] ADR-worthy decision for the repo's `docs/adr/adr-XXX.md`? no: the one decision (guard the class paragraph in the shared workflow, fork A2) is recorded in the archived proposal and touches only this repository's own workflow
+- [x] New pattern candidate for `00_meta/patterns/`? Only if this recurs in >1 project. no: moving a fleet onto one shared caller is already ADR-001's model; nothing here recurs outside it
 
 ## Archive checklist
 
-- [ ] `proposal.md` frontmatter set to `status: archived`
-- [ ] Folder moved: `specs/CI-007-fleet-pr-agent/` -> `specs/archive/CI-007-fleet-pr-agent/`
-- [ ] Bitácora board ticket for this spec moved to Done / closed with PR link (ADR-018)
-- [ ] Promotions above executed (if any)
+- [x] `proposal.md` frontmatter set to `status: archived`
+- [x] Folder moved: `specs/CI-007-fleet-pr-agent/` -> `specs/archive/CI-007-fleet-pr-agent/`
+- [x] Bitácora board ticket for this spec moved to Done / closed with PR link (ADR-018)
+- [x] Promotions above executed (if any)
