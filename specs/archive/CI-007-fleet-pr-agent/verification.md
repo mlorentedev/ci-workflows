@@ -94,7 +94,7 @@ The secrets grant for the twelve is dotfiles#3366.
 
 ## Archive checklist
 
-- [ ] `proposal.md` frontmatter set to `status: archived`
-- [ ] Folder moved: `specs/CI-007-fleet-pr-agent/` -> `specs/archive/CI-007-fleet-pr-agent/`
-- [ ] Bitácora board ticket for this spec moved to Done / closed with PR link (ADR-018)
-- [ ] Promotions above executed (if any)
+- [x] `proposal.md` frontmatter set to `status: archived`
+- [x] Folder moved: `specs/CI-007-fleet-pr-agent/` -> `specs/archive/CI-007-fleet-pr-agent/`
+- [x] Bitácora board ticket for this spec moved to Done / closed with PR link (ADR-018)
+- [x] Promotions above executed (if any)
