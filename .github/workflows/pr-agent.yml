@@ -158,12 +158,21 @@ jobs:
       # unclassified, with no error, so a disagreement fails the run here. A
       # repository with neither passes. Reads the default branch, the way the
       # review reads the toml. A fetch that fails other than with 404 fails too.
+      # The kit's paragraph is matched as a unit and must come first (#128): a
+      # bare `Class:` in prose is not the paragraph, and a paragraph that writes
+      # a superset of a class line ("Class: REAL,") is not either. PARAGRAPH is
+      # pr-agent/class-paragraph.txt; tests/class-guard.bats fails if they drift.
       - name: Check the class paragraph against the registry
         id: class_guard
         if: steps.reviewable.outputs.reviewable != 'false'
         env:
           GH_TOKEN: ${{ github.token }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PARAGRAPH: |
+            Classify each finding as REAL, THEORETICAL or SPECULATIVE. State the class as
+            the first line of its issue_content, alone on that line and spelled exactly
+            "Class: REAL", "Class: THEORETICAL" or "Class: SPECULATIVE". The triage reads
+            only that line; a finding without it goes to a human unclassified.
         run: |
           fetch() { # $1 = path, $2 = where to write it; leaves it empty when absent
             local err="${RUNNER_TEMP}/class-guard.err" rc=0
@@ -190,7 +199,7 @@ jobs:
             classification=$(jq -c '.classification // empty' <<<"${registry}")
           fi
           if [ -z "${classification}" ]; then
-            if grep -qF 'Class:' <<<"${instructions}"; then
+            if grep -qF "${PARAGRAPH%$'\n'}" <<<"${instructions}"; then
               echo "::error::.pr_agent.toml asks the reviewer for a Class: line, but" \
                 "harness/review-attestation.json has no classification block, so no triage reads it."
               exit 1
@@ -206,6 +215,12 @@ jobs:
             echo "::error::harness/review-attestation.json classifies findings, but" \
               "pr_reviewer.extra_instructions in .pr_agent.toml does not ask for:${missing}" \
               "Copy the paragraph from pr-agent/class-paragraph.txt in ci-workflows."
+            exit 1
+          fi
+          if [[ "${instructions}" != "${PARAGRAPH%$'\n'}"* ]]; then
+            echo "::error::pr_reviewer.extra_instructions in .pr_agent.toml must start with" \
+              "the paragraph in pr-agent/class-paragraph.txt in ci-workflows, byte for byte;" \
+              "the triage reads only the lines it asks for."
             exit 1
           fi
       - name: Check out the caller's pool

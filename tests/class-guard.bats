@@ -35,7 +35,10 @@ EOF
 step() { yq ".jobs.review.steps[] | select(.name == \"${STEP_NAME}\")" "${SHARED}"; }
 
 # Runs the step's script the way a run: block runs, against one repository.
-guard() { REPO_DIR="$1" run bash -e -c "$(step | yq '.run')"; }
+# PARAGRAPH comes from the step's own env, as the runner would set it.
+guard() {
+  PARAGRAPH="$(step | yq '.env.PARAGRAPH')" REPO_DIR="$1" run bash -e -c "$(step | yq '.run')"
+}
 
 @test "the step exists, before the review is routed" {
   [ "$(step | yq '.id')" = "class_guard" ]
@@ -119,4 +122,25 @@ guard() { REPO_DIR="$1" run bash -e -c "$(step | yq '.run')"; }
   cp "${ROOT}/harness/review-attestation.json" "${repo}/harness/"
   guard "${repo}"
   [ "${status}" -eq 0 ]
+}
+
+# #128: the guard matches the kit's paragraph as a unit, not a bare prefix.
+@test "a prose Class: mention with no registry block passes" {
+  guard "${FIXTURES}/prose-mention"
+  [ "${status}" -eq 0 ]
+}
+
+@test "a registry block whose paragraph is not first fails" {
+  guard "${FIXTURES}/not-first"
+  [ "${status}" -ne 0 ]
+  grep -qF 'must start with' <<<"${output}"
+}
+
+@test "a paragraph that writes a superset of a class line fails" {
+  guard "${FIXTURES}/superset"
+  [ "${status}" -ne 0 ]
+}
+
+@test "the paragraph the guard holds is the kit's, byte for byte" {
+  [ "$(step | yq '.env.PARAGRAPH')" = "$(cat "${ROOT}/pr-agent/class-paragraph.txt")" ]
 }

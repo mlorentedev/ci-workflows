@@ -111,7 +111,9 @@ jobs:
   the fleet's concurrency key, `class-paragraph.txt` goes first in
   `pr_reviewer.extra_instructions`, and `classification.json` is the block the
   caller's `harness/review-attestation.json` gains. The guard fails a review
-  whose registry classifies findings while the toml does not ask for them.
+  whose registry classifies findings unless `extra_instructions` starts with
+  that paragraph, byte for byte, and fails a toml that carries the paragraph
+  with no registry block. A `Class:` mentioned in prose is not the paragraph.
 - **Permissions.** The job asks for the three scopes above; a caller granting
   less fails the run before any step.
 
