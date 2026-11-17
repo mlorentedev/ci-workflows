@@ -23,6 +23,11 @@ on:
         description: Repositories to run on, comma separated (e.g. mlorentedev/kubelab). Empty runs every repository with a renovate.json.
         type: string
         default: ""
+      log_level:
+        description: Renovate's log level. debug shows the HTTP error behind an abort that info reports only as "Repository has changed during renovation".
+        type: choice
+        options: [info, debug]
+        default: info
 
 permissions: {}
 
@@ -84,4 +89,5 @@ jobs:
           # once every repository has run, so the job goes red instead of green
           # (#43, lesson-006). A repository without a renovate.json is not an error.
           RENOVATE_EXIT_CODE_FOR_ERRORS: "true"
-          LOG_LEVEL: info
+          # The schedule has no inputs; a dispatch may ask for debug (#131).
+          LOG_LEVEL: ${{ inputs.log_level || 'info' }}
