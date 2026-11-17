@@ -78,8 +78,8 @@ The secrets grant for the twelve is dotfiles#3366.
   `tests/class-guard.bats` runs its script.
 
 - The second pre-archive review (nan/deepseek-v4-flash, PASS-WITH-GAPS) is dispositioned as follows.
-  The guard accepting a superset spelling such as `` `Class: REAL` `` is added to #128, which already
-  replaces the substring match. The claim that a bare `/review` or `/Review` gets a group of its own is
+  The guard accepting a superset spelling such as `` `Class: REAL` `` is added to #128, which tracks
+  replacing the substring match; until it ships, the guard still checks substrings with `grep -qF`. The claim that a bare `/review` or `/Review` gets a group of its own is
   refuted: the key tests `startsWith(format('{0} ', body), '/review ')`, so a bare `/review` becomes
   `/review ` and matches, and Actions' `startsWith` ignores case. The `kit/` paths left in proposal.md and
   tasks.md stay as written, translated in the entry above, because editing the contract after review
