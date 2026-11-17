@@ -49,6 +49,14 @@ asks_for_least() {
     [ "$(yq '.jobs.renovate.permissions | to_entries | map(.key + "=" + .value) | join(",")' "$1")" = "contents=read" ]
 }
 
+# A dispatch can raise the log level: Renovate logs the HTTP error behind a
+# "Repository has changed during renovation" abort only at debug (#131). The
+# schedule has no inputs, so it falls back to info.
+log_level_dispatchable() {
+  [ "$(yq '.on.workflow_dispatch.inputs.log_level | .type + ":" + .default + ":" + (.options | join(","))' "$1")" = "choice:info:info,debug" ] &&
+    [ "$(yq '.jobs.renovate.steps[] | select(.uses == "renovatebot/github-action@*") | .env.LOG_LEVEL' "$1")" = "\${{ inputs.log_level || 'info' }}" ]
+}
+
 assert_rule() {
   run "$1" "${WORKFLOW}"
   [ "${status}" -eq 0 ]
@@ -63,6 +71,7 @@ assert_rule() {
 @test "a repository that aborts fails the run" { assert_rule errors_fail_the_run; }
 @test "every action is pinned by full SHA" { assert_rule every_action_pinned_by_sha; }
 @test "GITHUB_TOKEN gets contents read and nothing else" { assert_rule asks_for_least; }
+@test "a dispatch can run at debug; the schedule runs at info" { assert_rule log_level_dispatchable; }
 
 @test "the engine pin names an image and a version" {
   [ "$(jq -r '.image' "${ENGINE}")" = "ghcr.io/renovatebot/renovate" ]

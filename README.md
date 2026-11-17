@@ -689,9 +689,15 @@ file. Dependabot is not used: it does not exist on Gitea.
   The run here and the Gitea run both read it, and this repository's own
   Renovate bumps it.
 - **The token** is `RENOVATE_TOKEN`, a fine-grained PAT on every repository
-  with Contents, Pull requests, Issues and Workflows write, plus Dependabot
-  alerts and checks read. It is registered in dotfiles' `secrets/registry.yaml`
-  and probed weekly by its `pat-expiry.yml`.
+  with Contents, Pull requests, Issues, Workflows and Commit statuses write,
+  plus Dependabot alerts and checks read. Without Commit statuses a branch
+  whose updates carry a release age aborts before its PR, logged at info only
+  as "Repository has changed during renovation" (#131). It is registered in
+  dotfiles' `secrets/registry.yaml` and probed weekly by its `pat-expiry.yml`.
+- **A dispatch** takes `repositories` (comma separated; empty autodiscovers)
+  and `log_level` (`info` or `debug`). `debug` logs the HTTP error behind an
+  abort. A dispatch outside the preset's Monday window only refreshes the
+  dashboards.
 
 A repository adopts it with a `renovate.json` that pins the preset by tag and
 adds only its own managers:
