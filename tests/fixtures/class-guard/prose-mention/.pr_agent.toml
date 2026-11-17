@@ -1,0 +1,4 @@
+[pr_reviewer]
+extra_instructions = """
+Be terse. Never start a finding with a Class: line of your own.
+"""

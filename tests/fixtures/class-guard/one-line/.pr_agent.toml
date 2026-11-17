@@ -1,0 +1,5 @@
+[pr_reviewer]
+extra_instructions = """
+Be terse.
+only that line; a finding without it goes to a human unclassified.
+"""
