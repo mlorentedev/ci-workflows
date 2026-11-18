@@ -125,3 +125,9 @@ jstep() { yq ".jobs.$1.steps[] | select(.id == \"$2\") | .$3" "${WORKFLOW}"; }
     grep -qx "${passed}" <<<"$output"
   done
 }
+
+@test "the build record retention passes through to the composite, a week by default (#135)" {
+  [ "$(yq '.on.workflow_call.inputs.build-record-retention-days.default' "${WORKFLOW}")" = "7" ]
+  [ "$(yq '.on.workflow_call.inputs.build-record-retention-days.type' "${WORKFLOW}")" = "string" ]
+  [ "$(jstep build build with.build-record-retention-days)" = '${{ inputs.build-record-retention-days }}' ]
+}
