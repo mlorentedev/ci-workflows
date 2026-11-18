@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.0](https://github.com/mlorentedev/ci-workflows/compare/v0.8.0...v0.9.0) (2026-11-18)
+
+
+### Features
+
+* **docker-build:** keep the build record a week by default ([#140](https://github.com/mlorentedev/ci-workflows/issues/140)) ([4b9c425](https://github.com/mlorentedev/ci-workflows/commit/4b9c4253501939353bb4b555c9f2eb94d58e6035))
+* **hygiene:** add the pinned-actions check ([#120](https://github.com/mlorentedev/ci-workflows/issues/120)) ([2407d95](https://github.com/mlorentedev/ci-workflows/commit/2407d9543812773d8cc84e11da6cb57fd244ebd1))
+* **renovate:** let a dispatch run at debug, and list the token commit statuses scope ([#137](https://github.com/mlorentedev/ci-workflows/issues/137)) ([7876c7c](https://github.com/mlorentedev/ci-workflows/commit/7876c7c5a688f87a331ff30b4dd4ecbabde3c397))
+
+
+### Bug Fixes
+
+* **deps:** Update minor and patch updates ([#130](https://github.com/mlorentedev/ci-workflows/issues/130)) ([5f84b33](https://github.com/mlorentedev/ci-workflows/commit/5f84b331d86a2ff39c6933aee543ac4a09ffc9d2))
+* **docker-publish:** write the scan report where the upload guard can see it ([#139](https://github.com/mlorentedev/ci-workflows/issues/139)) ([ed458a8](https://github.com/mlorentedev/ci-workflows/commit/ed458a8febbceab8a98266b569f50b8dfe77d1d7))
+* **pr-agent:** match the class paragraph as a unit, first in the instructions ([#134](https://github.com/mlorentedev/ci-workflows/issues/134)) ([c03fe52](https://github.com/mlorentedev/ci-workflows/commit/c03fe52ac5763076a1e64922ba7f907e82c8cf3a))
+* **pr-agent:** pin the github_action image by tag and digest ([#133](https://github.com/mlorentedev/ci-workflows/issues/133)) ([3a204f7](https://github.com/mlorentedev/ci-workflows/commit/3a204f7f0a55a234a4f5a3c4b5ca5ea39c8906a8))
+
 ## [0.8.0](https://github.com/mlorentedev/ci-workflows/compare/v0.7.0...v0.8.0) (2026-11-14)
 
 
