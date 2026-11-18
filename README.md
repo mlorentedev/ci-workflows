@@ -533,6 +533,10 @@ that builds and then runs the image keeps its shape:
 - **Load or push.** `load` puts the image in the runner's docker; `push` pushes its tags (log in first);
   `push-by-digest` pushes it untagged. They are exclusive.
 - **Labels.** `labels`, one `KEY=value` a line, for OCI labels such as `org.opencontainers.image.source`.
+- **Build record.** build-push-action uploads a `.dockerbuild` record artifact after every build.
+  `build-record-retention-days` (default `7`) sets how long it is kept; empty keeps the repository's
+  artifact retention, 90 days unless changed. It wins over a `DOCKER_BUILD_RECORD_RETENTION_DAYS` set on
+  the caller's step, and anything but a whole number above 0 fails the build.
 - **Outputs.** `digest`, `imageid` and `cache-scope`.
 
 **`.github/workflows/docker-publish.yml`** publishes. It never tags an image before the image is scanned:
