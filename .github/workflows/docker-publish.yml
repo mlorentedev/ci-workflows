@@ -144,7 +144,9 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
         run: echo "key=${PLATFORM//\//-}" >>"${GITHUB_OUTPUT}"
       # Reports CRITICAL and HIGH to the Security tab; a scanner failure here
-      # does not fail the job, the gate below does.
+      # does not fail the job, the gate below does. The report is written in the
+      # workspace because hashFiles() below sees nothing outside it (#136); this
+      # job checks nothing out, so no other file can stand in for it.
       - id: report
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         continue-on-error: true
@@ -153,15 +155,15 @@ jobs:
         with:
           image-ref: ${{ inputs.image }}@${{ needs.build.outputs.digest }}
           format: sarif
-          output: ${{ runner.temp }}/trivy.sarif
+          output: trivy.sarif
           severity: CRITICAL,HIGH
           ignore-unfixed: true
       - id: upload
-        if: hashFiles(format('{0}/trivy.sarif', runner.temp)) != ''
+        if: hashFiles('trivy.sarif') != ''
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         continue-on-error: true
         with:
-          sarif_file: ${{ runner.temp }}/trivy.sarif
+          sarif_file: trivy.sarif
           category: ${{ inputs.sarif-category }}-${{ steps.platform-key.outputs.key }}
       # Fails closed: a CRITICAL finding, or a scanner that cannot scan.
       - id: gate
