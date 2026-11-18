@@ -48,6 +48,22 @@ jstep() { yq ".jobs.$1.steps[] | select(.id == \"$2\") | .$3" "${WORKFLOW}"; }
   done
 }
 
+@test "the report is written where the upload guard can see it (#136)" {
+  # hashFiles() matches under GITHUB_WORKSPACE only. A report under
+  # runner.temp makes the guard '' and the upload is skipped on every run,
+  # which is what v0.8.0 did. The scan job checks nothing out, so the
+  # workspace holds no file the report could be confused with.
+  local out
+  out="$(jstep scan report with.output)"
+  [ -n "${out}" ] && [ "${out}" != "null" ]
+  [[ "${out}" != /* ]]
+  [[ "${out}" != *'runner.temp'* ]]
+  [[ "${out}" != *'..'* ]]
+  [ "$(jstep scan upload with.sarif_file)" = "${out}" ]
+  [ "$(jstep scan upload if)" = "steps.report.outcome == 'success' && hashFiles('${out}') != ''" ]
+  [ "$(yq '[.jobs.scan.steps[] | select(.uses // "" | test("^actions/checkout@"))] | length' "${WORKFLOW}")" = "0" ]
+}
+
 @test "the gate fails on CRITICAL, and the report is uploaded under the category and the platform" {
   [ "$(jstep scan gate with.severity)" = "CRITICAL" ]
   [ "$(jstep scan gate with.exit-code)" = "1" ]
