@@ -60,7 +60,7 @@ jstep() { yq ".jobs.$1.steps[] | select(.id == \"$2\") | .$3" "${WORKFLOW}"; }
   [[ "${out}" != *'runner.temp'* ]]
   [[ "${out}" != *'..'* ]]
   [ "$(jstep scan upload with.sarif_file)" = "${out}" ]
-  [ "$(jstep scan upload if)" = "hashFiles('${out}') != ''" ]
+  [ "$(jstep scan upload if)" = "steps.report.outcome == 'success' && hashFiles('${out}') != ''" ]
   [ "$(yq '[.jobs.scan.steps[] | select(.uses // "" | test("^actions/checkout@"))] | length' "${WORKFLOW}")" = "0" ]
 }
 

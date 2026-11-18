@@ -159,7 +159,9 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
       - id: upload
-        if: hashFiles('trivy.sarif') != ''
+        # A report step that failed may leave a partial file behind: upload
+        # only a report the scanner finished writing.
+        if: steps.report.outcome == 'success' && hashFiles('trivy.sarif') != ''
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         continue-on-error: true
         with:
