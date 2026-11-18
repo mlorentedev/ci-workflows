@@ -564,8 +564,8 @@ jobs:
 
 - **Required inputs.** `image` (with its registry, without a tag), `tags` (without the image name) and
   `sarif-category`. Optional inputs: `registry`, `context`, `file`, `platforms` (default `linux/amd64`),
-  `build-args`, `labels`, `cache-scope`, `cache-mode`, `cache-from`, `cache-to` and `cache-write`, passed
-  to the composite as described above. A repository that keeps its layer cache on a registry tag passes
+  `build-args`, `labels`, `cache-scope`, `cache-mode`, `cache-from`, `cache-to`, `cache-write` and
+  `build-record-retention-days` (default `7`), passed to the composite as described above. A repository that keeps its layer cache on a registry tag passes
   `cache-from`/`cache-to` with `type=registry`.
 - **Secrets.** `REGISTRY_USERNAME` and `REGISTRY_TOKEN`, by name. Never `secrets: inherit`.
 - **Output.** `digest`. Promote by it, never by a tag.
