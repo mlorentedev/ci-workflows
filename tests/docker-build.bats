@@ -13,7 +13,7 @@ setup() {
   export GITHUB_OUTPUT="${BATS_TEST_TMPDIR}/output"
   : >"${GITHUB_OUTPUT}"
   step resolve run >"${BATS_TEST_TMPDIR}/resolve.sh"
-  export IMAGE=app CACHE_SCOPE="" CACHE_MODE=max CACHE_FROM="" CACHE_TO="" LOAD=false PUSH=false PUSH_BY_DIGEST=false CACHE_WRITE=true
+  export IMAGE=app CACHE_SCOPE="" CACHE_MODE=max CACHE_FROM="" CACHE_TO="" LOAD=false PUSH=false PUSH_BY_DIGEST=false CACHE_WRITE=true RECORD_RETENTION_DAYS=7
 }
 
 resolve() { run bash --noprofile --norc -eo pipefail "${BATS_TEST_TMPDIR}/resolve.sh"; }
@@ -192,6 +192,37 @@ output_of() {
   [ "$(yq '.inputs.labels.default' "${ACTION}")" = "" ]
   [ "$(step resolve env.CACHE_WRITE)" = '${{ inputs.cache-write }}' ]
   [ "$(step build with.labels)" = '${{ inputs.labels }}' ]
+}
+
+# Build record retention (#135)
+
+@test "the build record is kept a week by default, through the resolved value" {
+  [ "$(yq '.inputs.build-record-retention-days.default' "${ACTION}")" = "7" ]
+  [ "$(step resolve env.RECORD_RETENTION_DAYS)" = '${{ inputs.build-record-retention-days }}' ]
+  [ "$(step build env.DOCKER_BUILD_RECORD_RETENTION_DAYS)" = '${{ steps.resolve.outputs.record-retention-days }}' ]
+  resolve
+  [ "$status" -eq 0 ]
+  [ "$(output_of record-retention-days)" = "7" ]
+}
+
+@test "an empty retention keeps the repository's own" {
+  RECORD_RETENTION_DAYS="" resolve
+  [ "$status" -eq 0 ]
+  [ "$(output_of record-retention-days)" = "" ]
+}
+
+@test "a retention that is not a positive whole number fails instead of losing the record" {
+  # build-push-action only warns on a bad value, in its post step, and then
+  # uploads no record at all.
+  local v
+  for v in 0 07 -1 7d 1.5 seven; do
+    RECORD_RETENTION_DAYS="${v}" resolve
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"build-record-retention-days"* ]]
+  done
+  RECORD_RETENTION_DAYS=" 30 " resolve
+  [ "$status" -eq 0 ]
+  [ "$(output_of record-retention-days)" = "30" ]
 }
 
 # load and push

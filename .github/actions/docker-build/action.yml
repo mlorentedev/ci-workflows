@@ -57,6 +57,9 @@ inputs:
   cache-write:
     description: Write the layer cache. false reads it and writes nothing, for a caller that writes only from its default branch. Excludes cache-to.
     default: "true"
+  build-record-retention-days:
+    description: Days to keep the .dockerbuild record build-push-action uploads after the build. Empty keeps the repository's artifact retention, 90 days unless changed. Wins over a DOCKER_BUILD_RECORD_RETENTION_DAYS the caller sets on its step.
+    default: "7"
 
 outputs:
   digest:
@@ -84,6 +87,7 @@ runs:
         PUSH: ${{ inputs.push }}
         PUSH_BY_DIGEST: ${{ inputs.push-by-digest }}
         CACHE_WRITE: ${{ inputs.cache-write }}
+        RECORD_RETENTION_DAYS: ${{ inputs.build-record-retention-days }}
       run: |
         # build-push-action reads a boolean trimmed and in any case, so the guard does too.
         is_true() { [ "$(tr -d '[:space:]' <<<"$1" | tr '[:upper:]' '[:lower:]')" = "true" ]; }
@@ -140,6 +144,13 @@ runs:
           fi
           cache_to=""
         fi
+        # build-push-action only warns on a bad retention, in its post step, and
+        # then uploads no record, so a typo fails here instead.
+        retention=$(tr -d '[:space:]' <<<"${RECORD_RETENTION_DAYS}")
+        if [ -n "${retention}" ] && ! [[ "${retention}" =~ ^[1-9][0-9]*$ ]]; then
+          echo "::error::docker-build: build-record-retention-days must be a whole number of days above 0, or empty, not '${RECORD_RETENTION_DAYS}'"
+          exit 1
+        fi
         # cache-from and cache-to may be lists, one entry a line: a delimited
         # output keeps every line.
         delim="EOF_$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')"
@@ -147,6 +158,7 @@ runs:
           echo "by-digest=${by_digest}"
           echo "outputs=${outputs}"
           echo "scope=${scope}"
+          echo "record-retention-days=${retention}"
           printf 'cache-from<<%s\n%s\n%s\n' "${delim}" "${CACHE_FROM:-type=gha,scope=${scope}}" "${delim}"
           printf 'cache-to<<%s\n%s\n%s\n' "${delim}" "${cache_to}" "${delim}"
         } >>"${GITHUB_OUTPUT}"
@@ -156,6 +168,8 @@ runs:
 
     - id: build
       uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+      env:
+        DOCKER_BUILD_RECORD_RETENTION_DAYS: ${{ steps.resolve.outputs.record-retention-days }}
       with:
         context: ${{ inputs.context }}
         file: ${{ inputs.file }}
