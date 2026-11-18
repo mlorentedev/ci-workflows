@@ -70,6 +70,10 @@ on:
         description: Image labels, one KEY=value per line.
         type: string
         default: ""
+      build-record-retention-days:
+        description: Days to keep the .dockerbuild record of each build. Empty keeps the repository's artifact retention.
+        type: string
+        default: "7"
     secrets:
       REGISTRY_USERNAME:
         required: true
@@ -107,7 +111,7 @@ jobs:
       - id: build
         # A commit on main that has every input passed below: a composite change
         # lands first, then this pin moves to its merge commit (lesson 017).
-        uses: mlorentedev/ci-workflows/.github/actions/docker-build@f515efc45c7f3e7ea632d33bb714352549e47d89
+        uses: mlorentedev/ci-workflows/.github/actions/docker-build@4b9c4253501939353bb4b555c9f2eb94d58e6035
         with:
           image: ${{ inputs.image }}
           context: ${{ inputs.context }}
@@ -121,6 +125,7 @@ jobs:
           cache-to: ${{ inputs.cache-to }}
           cache-write: ${{ inputs.cache-write }}
           labels: ${{ inputs.labels }}
+          build-record-retention-days: ${{ inputs.build-record-retention-days }}
 
   scan:
     needs: build
