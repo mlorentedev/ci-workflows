@@ -234,7 +234,7 @@ jobs:
         id: push_gate
         if: steps.reviewable.outputs.reviewable != 'false' && github.event.action == 'synchronize'
         continue-on-error: true
-        uses: mlorentedev/ci-workflows/.github/actions/push-gate@a7ece3a8f135af5895dd06f06d676da57d0d5dfa # v0.1.0
+        uses: mlorentedev/ci-workflows/.github/actions/push-gate@fb5c58afa4249e5a0dd911bd443be1f361415d80 # v0.9.0
         with:
           pr_number: ${{ github.event.pull_request.number }}
           sender_type: ${{ github.event.sender.type }}
@@ -290,7 +290,7 @@ jobs:
         if: "!cancelled() && steps.route.outputs.first == 'anthropic'"
         timeout-minutes: 8
         continue-on-error: true
-        uses: docker://pragent/pr-agent:0.48.0-github_action@sha256:80edef71baa3df28c129d858d4b53784abfc14704c235efb32b6c461d5399a6d
+        uses: docker://pragent/pr-agent:0.50.0-github_action@sha256:548e894a88071180832b2f4233f734d0acd0db1a879e2fcbaa70bac8b8372ebe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC__KEY: ${{ secrets.PR_AGENT_ANTHROPIC_API_KEY }}
@@ -346,7 +346,7 @@ jobs:
         # 120 s = 17 min. tests/pr-agent-budget.bats keeps the three in step (#87).
         timeout-minutes: 17
         continue-on-error: true
-        uses: docker://pragent/pr-agent:0.48.0-github_action@sha256:80edef71baa3df28c129d858d4b53784abfc14704c235efb32b6c461d5399a6d
+        uses: docker://pragent/pr-agent:0.50.0-github_action@sha256:548e894a88071180832b2f4233f734d0acd0db1a879e2fcbaa70bac8b8372ebe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI__KEY: ${{ secrets.NAN_API_KEY }}
@@ -405,7 +405,7 @@ jobs:
         if: "!cancelled() && steps.published_after_nan.outputs.published == 'false'"
         timeout-minutes: 8
         continue-on-error: true
-        uses: docker://pragent/pr-agent:0.48.0-github_action@sha256:80edef71baa3df28c129d858d4b53784abfc14704c235efb32b6c461d5399a6d
+        uses: docker://pragent/pr-agent:0.50.0-github_action@sha256:548e894a88071180832b2f4233f734d0acd0db1a879e2fcbaa70bac8b8372ebe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC__KEY: ${{ secrets.PR_AGENT_ANTHROPIC_API_KEY }}
