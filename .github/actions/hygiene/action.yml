@@ -8,7 +8,7 @@ description: Install a pinned dotf and run the repository hygiene checks.
 inputs:
   dotf-version:
     description: The dotf release to install, without the leading v.
-    default: "0.81.0"
+    default: "0.82.0"
   lessons:
     description: When 'true', run `dotf lessons fmt --check` on lessons-dir.
     default: "true"
